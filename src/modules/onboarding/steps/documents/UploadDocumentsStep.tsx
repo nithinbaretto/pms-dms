@@ -746,9 +746,8 @@ export function UploadDocumentsScreen({
             <button
               onClick={canContinue ? onContinue : undefined}
               disabled={!canContinue}
-              className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-colors ${
-                canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
-              }`}
+              className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-colors ${canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
+                }`}
             >
               <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>{isEditMode ? 'Go to Review' : 'Continue'}</p>
               <div className="overflow-clip size-[16px]">
@@ -837,9 +836,8 @@ export function UploadDocumentsScreen({
                 <button
                   onClick={canContinue ? onContinue : undefined}
                   disabled={!canContinue}
-                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
-                    canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
-                  }`}
+                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
+                    }`}
                 >
                   <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>Go to Review</p>
                   <div className="size-[16px]">
@@ -860,9 +858,8 @@ export function UploadDocumentsScreen({
                 <button
                   onClick={canContinue ? onContinue : undefined}
                   disabled={!canContinue}
-                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
-                    canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
-                  }`}
+                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
+                    }`}
                 >
                   <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>Continue</p>
                   <div className="size-[16px]">

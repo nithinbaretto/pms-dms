@@ -216,9 +216,8 @@ const AddGstModal = ({ open, onOpenChange }: AddGstModalProps): ReactElement => 
       open={open}
     >
       <DialogContent
-        className={`max-h-[calc(100vh-48px)] overflow-y-auto rounded-[16px] border-0 bg-[#f9f9f9] p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] ${
-          isLargeModal ? "max-w-[860px]" : "max-w-[520px]"
-        }`}
+        className={`max-h-[calc(100vh-48px)] overflow-y-auto rounded-[16px] border-0 bg-[#f9f9f9] p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] ${isLargeModal ? "max-w-[860px]" : "max-w-[520px]"
+          }`}
       >
         <div className="p-6">
           <h3 className="text-[40px] leading-[44px] font-medium text-[#5a6b7d]">Add GST</h3>
@@ -454,11 +453,10 @@ const AddGstModal = ({ open, onOpenChange }: AddGstModalProps): ReactElement => 
                 </div>
 
                 <Button
-                  className={`h-[42px] w-full rounded-[8px] text-[14px] leading-[21px] ${
-                    flowState === "manual-upload-filled"
+                  className={`h-[42px] w-full rounded-[8px] text-[14px] leading-[21px] ${flowState === "manual-upload-filled"
                       ? "bg-[#aa1722] text-white hover:bg-[#93161e]"
                       : "bg-[#d9d9d9] text-[#71859b] hover:bg-[#d9d9d9]"
-                  }`}
+                    }`}
                   disabled={flowState !== "manual-upload-filled"}
                   onClick={() => {
                     onOpenChange(false);

@@ -349,169 +349,165 @@ export function BankDetailsScreen({
                         <div className="absolute bg-[#37b400] h-[8px] left-0 rounded-[999px] top-0 w-[179px]"></div>
                       </div>
 
-                  {/* Back Button */}
-                  <div className="flex flex-col gap-[16px] items-start w-full">
-                    <button
-                      onClick={closeChangeBankScreen}
-                      className="flex gap-[4px] items-center justify-center hover:opacity-70 transition-opacity"
-                    >
-                      <svg className="size-[16px]" fill="none" viewBox="0 0 6.50314 11.5026">
-                        <path d={mobileChangeBankSvgPaths.p3893f300} fill="#93161E" />
-                      </svg>
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#93161e] text-[13px]">Back</p>
-                    </button>
-
-                    {/* Tab Switcher */}
-                    <div className="bg-[#f5f5f5] rounded-[16777200px] w-full p-[4px]">
-                      <div className="flex gap-[4px] items-center">
+                      {/* Back Button */}
+                      <div className="flex flex-col gap-[16px] items-start w-full">
                         <button
-                          onClick={() => setChangeBankTab('qr')}
-                          className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${
-                            changeBankTab === 'qr'
-                              ? 'bg-white text-[#93161e]'
-                              : 'bg-transparent text-[#5a6b7d]'
-                          }`}
+                          onClick={closeChangeBankScreen}
+                          className="flex gap-[4px] items-center justify-center hover:opacity-70 transition-opacity"
                         >
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[12px] text-center whitespace-nowrap">Add using QR Code</p>
+                          <svg className="size-[16px]" fill="none" viewBox="0 0 6.50314 11.5026">
+                            <path d={mobileChangeBankSvgPaths.p3893f300} fill="#93161E" />
+                          </svg>
+                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#93161e] text-[13px]">Back</p>
                         </button>
-                        <button
-                          onClick={() => setChangeBankTab('manual')}
-                          className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${
-                            changeBankTab === 'manual'
-                              ? 'bg-white text-[#93161e]'
-                              : 'bg-transparent text-[#5a6b7d]'
-                          }`}
-                        >
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[12px] text-center whitespace-nowrap">Add Bank Details Manually</p>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
 
-                  {changeBankTab === 'qr' ? (
-                    <>
-                      {/* Title */}
-                      <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] text-center w-full">Scan QR to add your bank account</p>
-
-                      {/* QR Code */}
-                      <div className="relative size-[116px] shrink-0">
-                        <img
-                          src={imgQrCode}
-                          alt="QR Code"
-                          onClick={handleQrPayment}
-                          className={`absolute inset-0 size-full object-cover ${qrGenerated && qrTimer > 0 ? 'cursor-pointer' : 'blur-[4px]'}`}
-                        />
-                        {(!qrGenerated || qrTimer === 0) && (
-                          <button
-                            onClick={handleQrGenerate}
-                            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#93161e] h-[29px] px-[16px] py-[7px] rounded-[8px] flex items-center justify-center hover:bg-[#7a1319] transition-colors"
-                          >
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-white text-[13px] whitespace-nowrap">
-                              {qrTimer === 0 ? 'Regenerate QR' : 'Generate QR'}
-                            </p>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Instructions */}
-                      <div className="flex gap-[8px] items-center justify-center w-full">
-                        <div className="bg-[#fffaf6] border border-[#e5e5e6] rounded-[24px] px-[8px] py-[8px] flex gap-[4px] items-center">
-                          <svg className="size-[12px]" fill="none" viewBox="0 0 9 9">
-                            <path d={mobileChangeBankSvgPaths.p3f0c3100} fill="#435160" />
-                          </svg>
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[16.5px] text-[#435160] text-[11px] text-center whitespace-nowrap">Scan this QR Code</p>
-                        </div>
-                        <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 12.0004 10.0006">
-                          <path d={mobileChangeBankSvgPaths.p16866180} fill="#435160" />
-                        </svg>
-                        <div className="bg-[#fffaf6] border border-[#e5e5e6] rounded-[24px] px-[8px] py-[8px] flex gap-[4px] items-center">
-                          <svg className="size-[12px]" fill="none" viewBox="0 0 6.75 9.37802">
-                            <path d={mobileChangeBankSvgPaths.p26ea7ef2} fill="#435160" />
-                          </svg>
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[16.5px] text-[#435160] text-[11px] text-center whitespace-nowrap">make 1 rupee payment</p>
-                        </div>
-                      </div>
-
-                      {/* Timer - shown when QR is generated and timer > 0 */}
-                      {qrGenerated && qrTimer > 0 && (
-                        <div className="flex gap-[6px] items-center justify-center">
-                          <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
-                          <img src={imgClock} alt="Clock" className="size-[18px]" />
-                          <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
-                            {String(Math.floor(qrTimer / 60)).padStart(2, '0')}:{String(qrTimer % 60).padStart(2, '0')}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Error message - shown when timer runs out */}
-                      {qrGenerated && qrTimer === 0 && (
-                        <div className="bg-[#fff1e2] flex gap-[8px] items-start p-[12px] rounded-[8px]">
-                          <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 13.7506 12.2499">
-                            <path d={qrGeneratedSvgPaths.p1682e300} fill="#93161E" />
-                          </svg>
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Payment request timed out. Please try again by clicking regenerate QR code</p>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {/* Manual Entry - Mobile */}
-                      <div className="flex flex-col gap-[16px] w-full">
-                        {/* Account Number Field */}
-                        <div className="flex flex-col gap-[4px] w-full">
-                          <div className="flex gap-[2px]">
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Account Number</p>
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#e8402f] text-[12px]">*</p>
+                        {/* Tab Switcher */}
+                        <div className="bg-[#f5f5f5] rounded-[16777200px] w-full p-[4px]">
+                          <div className="flex gap-[4px] items-center">
+                            <button
+                              onClick={() => setChangeBankTab('qr')}
+                              className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${changeBankTab === 'qr'
+                                  ? 'bg-white text-[#93161e]'
+                                  : 'bg-transparent text-[#5a6b7d]'
+                                }`}
+                            >
+                              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[12px] text-center whitespace-nowrap">Add using QR Code</p>
+                            </button>
+                            <button
+                              onClick={() => setChangeBankTab('manual')}
+                              className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${changeBankTab === 'manual'
+                                  ? 'bg-white text-[#93161e]'
+                                  : 'bg-transparent text-[#5a6b7d]'
+                                }`}
+                            >
+                              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[12px] text-center whitespace-nowrap">Add Bank Details Manually</p>
+                            </button>
                           </div>
-                          <div className="bg-white h-[36px] w-full rounded-[8px] border border-[#eee]">
-                            <input
-                              type="text"
-                              value={manualAccountNumber}
-                              onChange={(e) => setManualAccountNumber(e.target.value)}
-                              placeholder="0987654320"
-                              className="w-full h-full px-[14px] py-[8px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[#231f20] text-[13px] outline-none"
+                        </div>
+                      </div>
+
+                      {changeBankTab === 'qr' ? (
+                        <>
+                          {/* Title */}
+                          <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] text-center w-full">Scan QR to add your bank account</p>
+
+                          {/* QR Code */}
+                          <div className="relative size-[116px] shrink-0">
+                            <img
+                              src={imgQrCode}
+                              alt="QR Code"
+                              onClick={handleQrPayment}
+                              className={`absolute inset-0 size-full object-cover ${qrGenerated && qrTimer > 0 ? 'cursor-pointer' : 'blur-[4px]'}`}
                             />
+                            {(!qrGenerated || qrTimer === 0) && (
+                              <button
+                                onClick={handleQrGenerate}
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#93161e] h-[29px] px-[16px] py-[7px] rounded-[8px] flex items-center justify-center hover:bg-[#7a1319] transition-colors"
+                              >
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-white text-[13px] whitespace-nowrap">
+                                  {qrTimer === 0 ? 'Regenerate QR' : 'Generate QR'}
+                                </p>
+                              </button>
+                            )}
                           </div>
-                        </div>
 
-                        {/* IFSC Code Field */}
-                        <div className="flex flex-col gap-[4px] w-full">
-                          <div className="flex gap-[2px]">
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">IFSC Code</p>
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#e8402f] text-[12px]">*</p>
+                          {/* Instructions */}
+                          <div className="flex gap-[8px] items-center justify-center w-full">
+                            <div className="bg-[#fffaf6] border border-[#e5e5e6] rounded-[24px] px-[8px] py-[8px] flex gap-[4px] items-center">
+                              <svg className="size-[12px]" fill="none" viewBox="0 0 9 9">
+                                <path d={mobileChangeBankSvgPaths.p3f0c3100} fill="#435160" />
+                              </svg>
+                              <p className="font-['Mulish',sans-serif] font-normal leading-[16.5px] text-[#435160] text-[11px] text-center whitespace-nowrap">Scan this QR Code</p>
+                            </div>
+                            <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 12.0004 10.0006">
+                              <path d={mobileChangeBankSvgPaths.p16866180} fill="#435160" />
+                            </svg>
+                            <div className="bg-[#fffaf6] border border-[#e5e5e6] rounded-[24px] px-[8px] py-[8px] flex gap-[4px] items-center">
+                              <svg className="size-[12px]" fill="none" viewBox="0 0 6.75 9.37802">
+                                <path d={mobileChangeBankSvgPaths.p26ea7ef2} fill="#435160" />
+                              </svg>
+                              <p className="font-['Mulish',sans-serif] font-normal leading-[16.5px] text-[#435160] text-[11px] text-center whitespace-nowrap">make 1 rupee payment</p>
+                            </div>
                           </div>
-                          <div className="bg-white h-[36px] w-full rounded-[8px] border border-[#eee]">
-                            <input
-                              type="text"
-                              value={manualIfscCode}
-                              onChange={(e) => setManualIfscCode(e.target.value.toUpperCase())}
-                              placeholder="ELDHY6734A"
-                              className="w-full h-full px-[14px] py-[8px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[#231f20] text-[13px] outline-none"
-                            />
-                          </div>
-                        </div>
 
-                        {/* Validate Button */}
-                        <div className="flex items-center justify-end w-full">
-                          <button
-                            onClick={handleManualValidate}
-                            disabled={!manualAccountNumber || !manualIfscCode || manualBankValidating}
-                            className={`h-[29px] px-[16px] py-[7px] rounded-[8px] flex gap-[8px] items-center justify-center transition-colors ${
-                              manualAccountNumber && manualIfscCode && !manualBankValidating
-                                ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
-                                : 'bg-[#e5e5e6] cursor-not-allowed'
-                            }`}
-                          >
-                            <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap ${
-                              manualAccountNumber && manualIfscCode && !manualBankValidating ? 'text-white' : 'text-[#5a6b7d]'
-                            }`}>
-                              {manualBankValidating ? 'Validating...' : 'Validate'}
-                            </p>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                          {/* Timer - shown when QR is generated and timer > 0 */}
+                          {qrGenerated && qrTimer > 0 && (
+                            <div className="flex gap-[6px] items-center justify-center">
+                              <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
+                              <img src={imgClock} alt="Clock" className="size-[18px]" />
+                              <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
+                                {String(Math.floor(qrTimer / 60)).padStart(2, '0')}:{String(qrTimer % 60).padStart(2, '0')}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Error message - shown when timer runs out */}
+                          {qrGenerated && qrTimer === 0 && (
+                            <div className="bg-[#fff1e2] flex gap-[8px] items-start p-[12px] rounded-[8px]">
+                              <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 13.7506 12.2499">
+                                <path d={qrGeneratedSvgPaths.p1682e300} fill="#93161E" />
+                              </svg>
+                              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Payment request timed out. Please try again by clicking regenerate QR code</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* Manual Entry - Mobile */}
+                          <div className="flex flex-col gap-[16px] w-full">
+                            {/* Account Number Field */}
+                            <div className="flex flex-col gap-[4px] w-full">
+                              <div className="flex gap-[2px]">
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Account Number</p>
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#e8402f] text-[12px]">*</p>
+                              </div>
+                              <div className="bg-white h-[36px] w-full rounded-[8px] border border-[#eee]">
+                                <input
+                                  type="text"
+                                  value={manualAccountNumber}
+                                  onChange={(e) => setManualAccountNumber(e.target.value)}
+                                  placeholder="0987654320"
+                                  className="w-full h-full px-[14px] py-[8px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[#231f20] text-[13px] outline-none"
+                                />
+                              </div>
+                            </div>
+
+                            {/* IFSC Code Field */}
+                            <div className="flex flex-col gap-[4px] w-full">
+                              <div className="flex gap-[2px]">
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">IFSC Code</p>
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#e8402f] text-[12px]">*</p>
+                              </div>
+                              <div className="bg-white h-[36px] w-full rounded-[8px] border border-[#eee]">
+                                <input
+                                  type="text"
+                                  value={manualIfscCode}
+                                  onChange={(e) => setManualIfscCode(e.target.value.toUpperCase())}
+                                  placeholder="ELDHY6734A"
+                                  className="w-full h-full px-[14px] py-[8px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[#231f20] text-[13px] outline-none"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Validate Button */}
+                            <div className="flex items-center justify-end w-full">
+                              <button
+                                onClick={handleManualValidate}
+                                disabled={!manualAccountNumber || !manualIfscCode || manualBankValidating}
+                                className={`h-[29px] px-[16px] py-[7px] rounded-[8px] flex gap-[8px] items-center justify-center transition-colors ${manualAccountNumber && manualIfscCode && !manualBankValidating
+                                    ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+                                    : 'bg-[#e5e5e6] cursor-not-allowed'
+                                  }`}
+                              >
+                                <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap ${manualAccountNumber && manualIfscCode && !manualBankValidating ? 'text-white' : 'text-[#5a6b7d]'
+                                  }`}>
+                                  {manualBankValidating ? 'Validating...' : 'Validate'}
+                                </p>
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -532,13 +528,11 @@ export function BankDetailsScreen({
                   <button
                     disabled={!canContinue}
                     onClick={proceedToNext}
-                    className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center gap-[8px] ${
-                      canContinue ? 'bg-[#93161e]' : 'bg-[#e5e5e6]'
-                    }`}
+                    className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center gap-[8px] ${canContinue ? 'bg-[#93161e]' : 'bg-[#e5e5e6]'
+                      }`}
                   >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                      canContinue ? 'text-white' : 'text-[#5a6b7d]'
-                    }`}>Continue</p>
+                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'
+                      }`}>Continue</p>
                     <svg className="size-[16px]" fill="none" viewBox="0 0 12.0004 10.0006">
                       <path d={mobileChangeBankSvgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
                     </svg>
@@ -590,21 +584,19 @@ export function BankDetailsScreen({
                     <div className="bg-[#f5f5f5] flex gap-[4px] items-center p-[4px] rounded-full">
                       <button
                         onClick={() => setChangeBankTab('qr')}
-                        className={`px-[14px] py-[5px] rounded-full flex items-center justify-center transition-all duration-200 ${
-                          changeBankTab === 'qr'
+                        className={`px-[14px] py-[5px] rounded-full flex items-center justify-center transition-all duration-200 ${changeBankTab === 'qr'
                             ? 'bg-white text-[#93161e]'
                             : 'bg-transparent text-[#5a6b7d]'
-                        }`}
+                          }`}
                       >
                         <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap">Add using QR Code</p>
                       </button>
                       <button
                         onClick={() => setChangeBankTab('manual')}
-                        className={`px-[14px] py-[5px] rounded-full flex items-center justify-center transition-all duration-200 ${
-                          changeBankTab === 'manual'
+                        className={`px-[14px] py-[5px] rounded-full flex items-center justify-center transition-all duration-200 ${changeBankTab === 'manual'
                             ? 'bg-white text-[#93161e]'
                             : 'bg-transparent text-[#5a6b7d]'
-                        }`}
+                          }`}
                       >
                         <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap">Add Bank Details Manually</p>
                       </button>
@@ -735,15 +727,13 @@ export function BankDetailsScreen({
                         <button
                           onClick={handleManualValidate}
                           disabled={!manualAccountNumber || !manualIfscCode || manualBankValidating}
-                          className={`h-[29px] px-[16px] py-[7px] rounded-[8px] flex gap-[8px] items-center justify-center transition-colors ${
-                            manualAccountNumber && manualIfscCode && !manualBankValidating
+                          className={`h-[29px] px-[16px] py-[7px] rounded-[8px] flex gap-[8px] items-center justify-center transition-colors ${manualAccountNumber && manualIfscCode && !manualBankValidating
                               ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                               : 'bg-[#e5e5e6] cursor-not-allowed'
-                          }`}
+                            }`}
                         >
-                          <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap ${
-                            manualAccountNumber && manualIfscCode && !manualBankValidating ? 'text-white' : 'text-[#5a6b7d]'
-                          }`}>
+                          <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap ${manualAccountNumber && manualIfscCode && !manualBankValidating ? 'text-white' : 'text-[#5a6b7d]'
+                            }`}>
                             {manualBankValidating ? 'Validating...' : 'Validate'}
                           </p>
                         </button>
@@ -760,15 +750,13 @@ export function BankDetailsScreen({
             <>
               {/* Backdrop */}
               <div
-                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-50 transition-opacity duration-200 ease-out ${
-                  loadingModalAnimating ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-50 transition-opacity duration-200 ease-out ${loadingModalAnimating ? 'opacity-100' : 'opacity-0'
+                  }`}
               />
 
               {/* Modal */}
-              <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100vw-40px)] max-w-[590px] p-[24px] lg:p-[32px] z-[60] flex flex-col gap-[16px] lg:gap-[24px] items-center justify-center transition-all duration-200 ease-out ${
-                loadingModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-              }`}>
+              <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100vw-40px)] max-w-[590px] p-[24px] lg:p-[32px] z-[60] flex flex-col gap-[16px] lg:gap-[24px] items-center justify-center transition-all duration-200 ease-out ${loadingModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                }`}>
                 {/* Loading Spinner */}
                 <div className="relative size-[50px] lg:size-[70px]">
                   <svg className="size-full" fill="none" viewBox="0 0 70.0001 70.0001">
@@ -911,17 +899,15 @@ export function BankDetailsScreen({
                         <div className="flex gap-[4px] items-center">
                           <button
                             onClick={() => setManualErrorAccountType('saving')}
-                            className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${
-                              manualErrorAccountType === 'saving' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                            }`}
+                            className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${manualErrorAccountType === 'saving' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                              }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap">Saving Account</p>
                           </button>
                           <button
                             onClick={() => setManualErrorAccountType('current')}
-                            className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${
-                              manualErrorAccountType === 'current' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                            }`}
+                            className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] flex items-center justify-center transition-all duration-200 ${manualErrorAccountType === 'current' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                              }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] whitespace-nowrap">Current Account</p>
                           </button>
@@ -983,15 +969,13 @@ export function BankDetailsScreen({
                       proceedToNext();
                     }
                   }}
-                  className={`flex-1 h-[36px] rounded-[8.75px] flex gap-[8px] items-center justify-center transition-colors ${
-                    canContinueFromManualError
+                  className={`flex-1 h-[36px] rounded-[8.75px] flex gap-[8px] items-center justify-center transition-colors ${canContinueFromManualError
                       ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                       : 'bg-[#e5e5e6] cursor-not-allowed'
-                  }`}
+                    }`}
                 >
-                  <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                    canContinueFromManualError ? 'text-white' : 'text-[#5a6b7d]'
-                  }`}>Continue</p>
+                  <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinueFromManualError ? 'text-white' : 'text-[#5a6b7d]'
+                    }`}>Continue</p>
                   <div className="size-[16px] relative shrink-0">
                     <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12.0004 10.0006">
                       <path d={mobileBankFailedSvgPaths.p16866180} fill={canContinueFromManualError ? 'white' : '#5A6B7D'} />
@@ -1117,17 +1101,15 @@ export function BankDetailsScreen({
                       <div className="flex gap-[4px] items-center">
                         <button
                           onClick={() => setManualErrorAccountType('saving')}
-                          className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
-                            manualErrorAccountType === 'saving' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                          }`}
+                          className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] transition-colors ${manualErrorAccountType === 'saving' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                            }`}
                         >
                           <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Saving Account</p>
                         </button>
                         <button
                           onClick={() => setManualErrorAccountType('current')}
-                          className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
-                            manualErrorAccountType === 'current' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                          }`}
+                          className={`flex-1 px-[14px] py-[5px] rounded-[16777200px] transition-colors ${manualErrorAccountType === 'current' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                            }`}
                         >
                           <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Current Account</p>
                         </button>
@@ -1187,15 +1169,13 @@ export function BankDetailsScreen({
                     proceedToNext();
                   }
                 }}
-                className={`flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[8px] rounded-[8.75px] transition-colors ${
-                  canContinueFromManualError
+                className={`flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[8px] rounded-[8.75px] transition-colors ${canContinueFromManualError
                     ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                     : 'bg-[#e5e5e6] cursor-not-allowed'
-                }`}
+                  }`}
               >
-                <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                  canContinueFromManualError ? 'text-white' : 'text-[#5a6b7d]'
-                }`}>Continue</p>
+                <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinueFromManualError ? 'text-white' : 'text-[#5a6b7d]'
+                  }`}>Continue</p>
                 <div className="size-[16px] relative">
                   <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12.0004 10.0006">
                     <path d={mobileBankFailedSvgPaths.p16866180} fill={canContinueFromManualError ? 'white' : '#5A6B7D'} />
@@ -1221,9 +1201,8 @@ export function BankDetailsScreen({
           </div>
 
           {/* Form Container */}
-          <div className={`absolute left-[24px] lg:left-[60px] xl:left-[120px] right-[24px] lg:right-[60px] xl:right-[120px] top-[172px] lg:top-[248px] pb-[100px] z-20 transition-all duration-300 ease-in-out ${
-            isTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
-          }`}>
+          <div className={`absolute left-[24px] lg:left-[60px] xl:left-[120px] right-[24px] lg:right-[60px] xl:right-[120px] top-[172px] lg:top-[248px] pb-[100px] z-20 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
+            }`}>
             {/* Step Indicator - Desktop Only */}
             <div className="hidden lg:flex items-center justify-between mb-[8px] w-full">
               <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
@@ -1326,7 +1305,7 @@ export function BankDetailsScreen({
                         </div>
                       </button>
                       <button
-                            onClick={() => openChangeBankScreen('qr')}
+                        onClick={() => openChangeBankScreen('qr')}
                         className="flex gap-[8px] h-[29px] items-center justify-center px-[16px] py-[7px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors w-full lg:w-auto"
                       >
                         <svg className="size-[16px]" fill="none" viewBox="0 0 12.5005 12.4999">
@@ -1381,11 +1360,10 @@ export function BankDetailsScreen({
                             <button
                               onClick={handleApmiValidate}
                               disabled={bankValidationStatus === 'validating'}
-                              className={`flex gap-[8px] h-[29px] items-center justify-center px-[16px] py-[7px] rounded-[8px] transition-colors ${
-                                bankValidationStatus === 'validating'
+                              className={`flex gap-[8px] h-[29px] items-center justify-center px-[16px] py-[7px] rounded-[8px] transition-colors ${bankValidationStatus === 'validating'
                                   ? 'bg-[#b8888e] cursor-not-allowed'
                                   : 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
-                              }`}
+                                }`}
                             >
                               {bankValidationStatus === 'validating' && (
                                 <svg className="animate-spin size-[14px]" fill="none" viewBox="0 0 24 24">
@@ -1466,11 +1444,10 @@ export function BankDetailsScreen({
                           <button
                             onClick={handleApmiValidate}
                             disabled={bankValidationStatus === 'validating'}
-                            className={`flex gap-[8px] h-[29px] w-full items-center justify-center px-[16px] py-[7px] rounded-[8px] transition-colors ${
-                              bankValidationStatus === 'validating'
+                            className={`flex gap-[8px] h-[29px] w-full items-center justify-center px-[16px] py-[7px] rounded-[8px] transition-colors ${bankValidationStatus === 'validating'
                                 ? 'bg-[#b8888e] cursor-not-allowed'
                                 : 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
-                            }`}
+                              }`}
                           >
                             {bankValidationStatus === 'validating' && (
                               <svg className="animate-spin size-[14px]" fill="none" viewBox="0 0 24 24">
@@ -1496,9 +1473,8 @@ export function BankDetailsScreen({
             <>
               {/* Backdrop + scroll container */}
               <div
-                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 overflow-y-auto transition-opacity duration-200 ease-out ${
-                  chequeUploadModalAnimating ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 overflow-y-auto transition-opacity duration-200 ease-out ${chequeUploadModalAnimating ? 'opacity-100' : 'opacity-0'
+                  }`}
                 onClick={() => {
                   setChequeUploadModalAnimating(false);
                   setTimeout(() => {
@@ -1507,214 +1483,211 @@ export function BankDetailsScreen({
                   }, 200);
                 }}
               >
-              <div className="flex min-h-full items-center justify-center p-[20px]">
-              {/* Modal */}
-              <div className={`bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-full max-w-[679.5px] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-transform duration-200 ease-out ${
-                chequeUploadModalAnimating ? 'scale-100' : 'scale-95'
-              }`} onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex items-center justify-between w-full h-[33px] shrink-0">
-                  <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Upload Cancelled Cheque</p>
-                  <div className="opacity-0 pointer-events-none size-[24px] shrink-0" />
-                </div>
-
-                {/* Upload Area */}
-                <div className="border border-dashed border-[#eee] rounded-[8px] flex flex-col gap-[12px] items-center justify-center p-[12px] shrink-0">
-                  {chequeFileSelected ? (
-                    <div className="flex gap-[16px] items-start justify-between w-full">
-                      <div className="flex-1 min-w-0">
-                        <img alt="Cancelled Cheque" className="w-full max-h-[188px] object-contain rounded-[4px]" src={imgCancelledCheque} />
-                      </div>
-                      <button
-                        onClick={() => setChequeFileSelected(false)}
-                        className="size-[24px] shrink-0 flex items-center justify-center hover:opacity-70 transition-opacity"
-                      >
-                        <svg className="size-[18px]" fill="none" viewBox="0 0 18 19.5">
-                          <path d="M2.25 4.5H15.75M6.75 7.875V13.5M11.25 7.875V13.5M3.375 4.5L4.5 15.75C4.5 16.0484 4.61853 16.3345 4.8295 16.5455C5.04048 16.7565 5.32663 16.875 5.625 16.875H12.375C12.6734 16.875 12.9595 16.7565 13.1705 16.5455C13.3815 16.3345 13.5 16.0484 13.5 15.75L14.625 4.5M6.75 4.5V3.375C6.75 3.07663 6.86853 2.79048 7.0795 2.5795C7.29048 2.36853 7.57663 2.25 7.875 2.25H10.125C10.4234 2.25 10.7095 2.36853 10.9205 2.5795C11.1315 2.79048 11.25 3.07663 11.25 3.375V4.5" stroke="#71859B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
+                <div className="flex min-h-full items-center justify-center p-[20px]">
+                  {/* Modal */}
+                  <div className={`bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-full max-w-[679.5px] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-transform duration-200 ease-out ${chequeUploadModalAnimating ? 'scale-100' : 'scale-95'
+                    }`} onClick={(e) => e.stopPropagation()}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between w-full h-[33px] shrink-0">
+                      <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Upload Cancelled Cheque</p>
+                      <div className="opacity-0 pointer-events-none size-[24px] shrink-0" />
                     </div>
-                  ) : (
-                    <>
-                      <div className="overflow-clip size-[24px] shrink-0">
-                        <svg className="size-full" fill="none" viewBox="0 0 18 18">
-                          <path d={step3Pi22SvgPaths.p2f004400} fill="#71859B" />
-                        </svg>
+
+                    {/* Upload Area */}
+                    <div className="border border-dashed border-[#eee] rounded-[8px] flex flex-col gap-[12px] items-center justify-center p-[12px] shrink-0">
+                      {chequeFileSelected ? (
+                        <div className="flex gap-[16px] items-start justify-between w-full">
+                          <div className="flex-1 min-w-0">
+                            <img alt="Cancelled Cheque" className="w-full max-h-[188px] object-contain rounded-[4px]" src={imgCancelledCheque} />
+                          </div>
+                          <button
+                            onClick={() => setChequeFileSelected(false)}
+                            className="size-[24px] shrink-0 flex items-center justify-center hover:opacity-70 transition-opacity"
+                          >
+                            <svg className="size-[18px]" fill="none" viewBox="0 0 18 19.5">
+                              <path d="M2.25 4.5H15.75M6.75 7.875V13.5M11.25 7.875V13.5M3.375 4.5L4.5 15.75C4.5 16.0484 4.61853 16.3345 4.8295 16.5455C5.04048 16.7565 5.32663 16.875 5.625 16.875H12.375C12.6734 16.875 12.9595 16.7565 13.1705 16.5455C13.3815 16.3345 13.5 16.0484 13.5 15.75L14.625 4.5M6.75 4.5V3.375C6.75 3.07663 6.86853 2.79048 7.0795 2.5795C7.29048 2.36853 7.57663 2.25 7.875 2.25H10.125C10.4234 2.25 10.7095 2.36853 10.9205 2.5795C11.1315 2.79048 11.25 3.07663 11.25 3.375V4.5" stroke="#71859B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="overflow-clip size-[24px] shrink-0">
+                            <svg className="size-full" fill="none" viewBox="0 0 18 18">
+                              <path d={step3Pi22SvgPaths.p2f004400} fill="#71859B" />
+                            </svg>
+                          </div>
+                          <div className="flex flex-col gap-[12px] items-center w-full">
+                            <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px] text-center">Format Supported: PNG, PDF or JPEG up to 2MB</p>
+                            <div className="flex gap-[12px] items-center">
+                              <button className="flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[7px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors">
+                                <div className="overflow-clip size-[16px] shrink-0">
+                                  <svg className="size-full" fill="none" viewBox="0 0 13 11.5">
+                                    <path d={step3Pi22SvgPaths.pf78bc00} fill="#435160" />
+                                  </svg>
+                                </div>
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px] text-center whitespace-nowrap">Capture</p>
+                              </button>
+                              <button
+                                onClick={() => setChequeFileSelected(true)}
+                                className="bg-[#93161e] flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[7px] rounded-[8px] hover:bg-[#7a1319] transition-colors"
+                              >
+                                <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-white text-[14px] text-center whitespace-nowrap">Upload</p>
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Upload Image Guidelines */}
+                    <div className="flex flex-col gap-[11px] w-full shrink-0">
+                      <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Upload image guidelines</p>
+
+                      {/* Row 1: Good + Blurry */}
+                      <div className="flex gap-[16px] items-stretch w-full">
+                        {/* Good Example - Clear & Complete */}
+                        <div className="bg-[#eeffe5] flex-1 min-w-px relative rounded-[8px]">
+                          <div className="flex flex-row items-center justify-center size-full">
+                            <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
+                              <div className="flex flex-col gap-[8px] items-center justify-center">
+                                <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
+                                  <img alt="Clear and Complete Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
+                                </div>
+                                <div className="flex gap-[4px] items-center">
+                                  <div className="overflow-clip size-[14px] shrink-0">
+                                    <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                      <path d={step3Pi22SvgPaths.p2ae76000} fill="#37B400" />
+                                    </svg>
+                                  </div>
+                                  <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#37b400] text-[9px] whitespace-nowrap">Clear &amp; Complete</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Top-left badge */}
+                          <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
+                            <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                              <path d={step3Pi22SvgPaths.p31721900} fill="#37B400" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Bad Example - Blurry / Out of focus */}
+                        <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
+                          <div className="flex flex-row items-center justify-center size-full">
+                            <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
+                              <div className="flex flex-col gap-[8px] items-center justify-center">
+                                <div className="blur-[0.5px] h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
+                                  <img alt="Blurry Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
+                                </div>
+                                <div className="flex gap-[4px] items-center">
+                                  <div className="overflow-clip size-[14px] shrink-0">
+                                    <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                      <path d={step3Pi22SvgPaths.pd971f00} fill="#E8402F" />
+                                    </svg>
+                                  </div>
+                                  <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Blurry / Out of focus</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Top-left badge */}
+                          <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
+                            <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                              <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-[12px] items-center w-full">
-                        <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px] text-center">Format Supported: PNG, PDF or JPEG up to 2MB</p>
-                        <div className="flex gap-[12px] items-center">
-                          <button className="flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[7px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors">
-                            <div className="overflow-clip size-[16px] shrink-0">
-                              <svg className="size-full" fill="none" viewBox="0 0 13 11.5">
-                                <path d={step3Pi22SvgPaths.pf78bc00} fill="#435160" />
+
+                      {/* Row 2: Half cut + Poor lighting (gray background) */}
+                      <div className="bg-[#f5f5f5] rounded-[4px] p-[8px]">
+                        <div className="flex gap-[16px] items-stretch w-full">
+                          {/* Bad Example - Half cut / Incomplete */}
+                          <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
+                            <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
+                              <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
+                                <div className="flex flex-col gap-[8px] items-center justify-center">
+                                  <div className="h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
+                                    <img alt="Incomplete Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[126.16%] h-[138.11%] left-[-23.61%] top-[-0.05%]" src={imgPi22ChequeExample} />
+                                  </div>
+                                  <div className="flex gap-[4px] items-center">
+                                    <div className="overflow-clip size-[14px] shrink-0">
+                                      <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                        <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
+                                      </svg>
+                                    </div>
+                                    <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Half cut / Incomplete </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {/* Top-left badge */}
+                            <div className="absolute left-[6px] top-[3px] overflow-clip size-[18px]">
+                              <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                                <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
                               </svg>
                             </div>
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px] text-center whitespace-nowrap">Capture</p>
-                          </button>
-                          <button
-                            onClick={() => setChequeFileSelected(true)}
-                            className="bg-[#93161e] flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[7px] rounded-[8px] hover:bg-[#7a1319] transition-colors"
-                          >
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-white text-[14px] text-center whitespace-nowrap">Upload</p>
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                          </div>
 
-                {/* Upload Image Guidelines */}
-                <div className="flex flex-col gap-[11px] w-full shrink-0">
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Upload image guidelines</p>
-
-                  {/* Row 1: Good + Blurry */}
-                  <div className="flex gap-[16px] items-stretch w-full">
-                    {/* Good Example - Clear & Complete */}
-                    <div className="bg-[#eeffe5] flex-1 min-w-px relative rounded-[8px]">
-                      <div className="flex flex-row items-center justify-center size-full">
-                        <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
-                          <div className="flex flex-col gap-[8px] items-center justify-center">
-                            <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
-                              <img alt="Clear and Complete Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
-                            </div>
-                            <div className="flex gap-[4px] items-center">
-                              <div className="overflow-clip size-[14px] shrink-0">
-                                <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                  <path d={step3Pi22SvgPaths.p2ae76000} fill="#37B400" />
-                                </svg>
+                          {/* Bad Example - Poor lighting / Glare */}
+                          <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
+                            <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
+                              <div className="flex gap-[10px] items-center justify-center p-[12px] w-full">
+                                <div className="flex flex-col gap-[8px] items-center justify-center">
+                                  <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
+                                    <img alt="Poor lighting Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgPi22ChequeGlare} />
+                                  </div>
+                                  <div className="flex gap-[4px] items-center">
+                                    <div className="overflow-clip size-[14px] shrink-0">
+                                      <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                        <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
+                                      </svg>
+                                    </div>
+                                    <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Poor lighting / Glare</p>
+                                  </div>
+                                </div>
                               </div>
-                              <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#37b400] text-[9px] whitespace-nowrap">Clear &amp; Complete</p>
+                            </div>
+                            {/* Top-left badge */}
+                            <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
+                              <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                                <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
+                              </svg>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      {/* Top-left badge */}
-                      <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
-                        <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                          <path d={step3Pi22SvgPaths.p31721900} fill="#37B400" />
-                        </svg>
                       </div>
                     </div>
 
-                    {/* Bad Example - Blurry / Out of focus */}
-                    <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
-                      <div className="flex flex-row items-center justify-center size-full">
-                        <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
-                          <div className="flex flex-col gap-[8px] items-center justify-center">
-                            <div className="blur-[0.5px] h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
-                              <img alt="Blurry Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
-                            </div>
-                            <div className="flex gap-[4px] items-center">
-                              <div className="overflow-clip size-[14px] shrink-0">
-                                <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                  <path d={step3Pi22SvgPaths.pd971f00} fill="#E8402F" />
-                                </svg>
-                              </div>
-                              <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Blurry / Out of focus</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Top-left badge */}
-                      <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
-                        <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                          <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: Half cut + Poor lighting (gray background) */}
-                  <div className="bg-[#f5f5f5] rounded-[4px] p-[8px]">
-                    <div className="flex gap-[16px] items-stretch w-full">
-                      {/* Bad Example - Half cut / Incomplete */}
-                      <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
-                        <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
-                          <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
-                            <div className="flex flex-col gap-[8px] items-center justify-center">
-                              <div className="h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
-                                <img alt="Incomplete Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[126.16%] h-[138.11%] left-[-23.61%] top-[-0.05%]" src={imgPi22ChequeExample} />
-                              </div>
-                              <div className="flex gap-[4px] items-center">
-                                <div className="overflow-clip size-[14px] shrink-0">
-                                  <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                    <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
-                                  </svg>
-                                </div>
-                                <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Half cut / Incomplete </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Top-left badge */}
-                        <div className="absolute left-[6px] top-[3px] overflow-clip size-[18px]">
-                          <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                            <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
-                          </svg>
-                        </div>
-                      </div>
-
-                      {/* Bad Example - Poor lighting / Glare */}
-                      <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
-                        <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
-                          <div className="flex gap-[10px] items-center justify-center p-[12px] w-full">
-                            <div className="flex flex-col gap-[8px] items-center justify-center">
-                              <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
-                                <img alt="Poor lighting Cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgPi22ChequeGlare} />
-                              </div>
-                              <div className="flex gap-[4px] items-center">
-                                <div className="overflow-clip size-[14px] shrink-0">
-                                  <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                    <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
-                                  </svg>
-                                </div>
-                                <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Poor lighting / Glare</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* Top-left badge */}
-                        <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
-                          <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                            <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
-                          </svg>
-                        </div>
-                      </div>
+                    {/* Action Buttons */}
+                    <div className="flex gap-[24px] items-center w-full shrink-0">
+                      <button
+                        onClick={() => {
+                          setChequeUploadModalAnimating(false);
+                          setTimeout(() => {
+                            setShowChequeUploadModal(false);
+                            setChequeFileSelected(false);
+                          }, 200);
+                        }}
+                        className="flex-1 h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center transition-all duration-300 hover:border-[#c7aa7b] hover:shadow-md"
+                      >
+                        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Cancel</p>
+                      </button>
+                      <button
+                        onClick={handleChequeUploadSave}
+                        disabled={!chequeFileSelected}
+                        className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center transition-all duration-300 ${chequeFileSelected
+                            ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+                            : 'bg-[#e5e5e6] cursor-not-allowed'
+                          }`}
+                      >
+                        <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${chequeFileSelected ? 'text-white' : 'text-[#5a6b7d]'
+                          }`}>Save</p>
+                      </button>
                     </div>
                   </div>
                 </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-[24px] items-center w-full shrink-0">
-                  <button
-                    onClick={() => {
-                      setChequeUploadModalAnimating(false);
-                      setTimeout(() => {
-                        setShowChequeUploadModal(false);
-                        setChequeFileSelected(false);
-                      }, 200);
-                    }}
-                    className="flex-1 h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center transition-all duration-300 hover:border-[#c7aa7b] hover:shadow-md"
-                  >
-                    <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Cancel</p>
-                  </button>
-                  <button
-                    onClick={handleChequeUploadSave}
-                    disabled={!chequeFileSelected}
-                    className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center transition-all duration-300 ${
-                      chequeFileSelected
-                        ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
-                        : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
-                  >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                      chequeFileSelected ? 'text-white' : 'text-[#5a6b7d]'
-                    }`}>Save</p>
-                  </button>
-                </div>
-              </div>
-              </div>
               </div>
             </>
           )}
@@ -1724,9 +1697,8 @@ export function BankDetailsScreen({
             <>
               {/* Backdrop */}
               <div
-                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 transition-opacity duration-200 ease-out ${
-                  chequePreviewModalAnimating ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 transition-opacity duration-200 ease-out ${chequePreviewModalAnimating ? 'opacity-100' : 'opacity-0'
+                  }`}
                 onClick={() => {
                   setChequePreviewModalAnimating(false);
                   setTimeout(() => {
@@ -1736,9 +1708,8 @@ export function BankDetailsScreen({
               />
 
               {/* Modal */}
-              <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100%-48px)] max-w-[354px] z-50 flex flex-col gap-[24px] p-[24px] transition-all duration-200 ease-out ${
-                chequePreviewModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-              }`}>
+              <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100%-48px)] max-w-[354px] z-50 flex flex-col gap-[24px] p-[24px] transition-all duration-200 ease-out ${chequePreviewModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                }`}>
                 {/* Header */}
                 <div className="flex items-center justify-between w-full">
                   <p className="font-['Mulish',sans-serif] font-medium leading-[27px] text-[#435160] text-[18px]">View Cancelled Cheque</p>
@@ -1782,9 +1753,8 @@ export function BankDetailsScreen({
               {/* Backdrop */}
               {/* Backdrop + scroll container */}
               <div
-                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-[60] overflow-y-auto transition-opacity duration-200 ease-out ${
-                  manualErrorChequeModalAnimating ? 'opacity-100' : 'opacity-0'
-                }`}
+                className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-[60] overflow-y-auto transition-opacity duration-200 ease-out ${manualErrorChequeModalAnimating ? 'opacity-100' : 'opacity-0'
+                  }`}
                 onClick={() => {
                   setManualErrorChequeModalAnimating(false);
                   setTimeout(() => {
@@ -1792,207 +1762,204 @@ export function BankDetailsScreen({
                   }, 200);
                 }}
               >
-              <div className="flex min-h-full items-center justify-center p-[20px]">
-              {/* Modal */}
-              <div className={`bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-full max-w-[679.5px] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-transform duration-200 ease-out ${
-                manualErrorChequeModalAnimating ? 'scale-100' : 'scale-95'
-              }`} onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex items-center justify-between w-full h-[33px]">
-                  <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Upload Cancelled Cheque</p>
-                  <button
-                    onClick={() => {
-                      setManualErrorChequeModalAnimating(false);
-                      setTimeout(() => {
-                        setShowManualErrorChequeModal(false);
-                      }, 200);
-                    }}
-                    className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0 opacity-0 pointer-events-none"
-                  >
-                    <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
-                      <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
-                    </svg>
-                  </button>
-                </div>
+                <div className="flex min-h-full items-center justify-center p-[20px]">
+                  {/* Modal */}
+                  <div className={`bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-full max-w-[679.5px] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-transform duration-200 ease-out ${manualErrorChequeModalAnimating ? 'scale-100' : 'scale-95'
+                    }`} onClick={(e) => e.stopPropagation()}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between w-full h-[33px]">
+                      <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Upload Cancelled Cheque</p>
+                      <button
+                        onClick={() => {
+                          setManualErrorChequeModalAnimating(false);
+                          setTimeout(() => {
+                            setShowManualErrorChequeModal(false);
+                          }, 200);
+                        }}
+                        className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0 opacity-0 pointer-events-none"
+                      >
+                        <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
+                          <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
+                        </svg>
+                      </button>
+                    </div>
 
-                {/* Upload Area */}
-                <div className="border border-dashed border-[#eee] rounded-[8px] flex flex-col items-center justify-center p-[12px] gap-[12px] shrink-0">
-                  <div className="overflow-clip size-[24px] shrink-0">
-                    <svg className="size-full" fill="none" viewBox="0 0 18 18">
-                      <path d={step3Pi22SvgPaths.p2f004400} fill="#71859B" />
-                    </svg>
-                  </div>
+                    {/* Upload Area */}
+                    <div className="border border-dashed border-[#eee] rounded-[8px] flex flex-col items-center justify-center p-[12px] gap-[12px] shrink-0">
+                      <div className="overflow-clip size-[24px] shrink-0">
+                        <svg className="size-full" fill="none" viewBox="0 0 18 18">
+                          <path d={step3Pi22SvgPaths.p2f004400} fill="#71859B" />
+                        </svg>
+                      </div>
 
-                  <div className="flex flex-col items-center gap-[12px] w-full">
-                    <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px] text-center">Format Supported: PNG, PDF or JPEG up to 2MB</p>
+                      <div className="flex flex-col items-center gap-[12px] w-full">
+                        <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px] text-center">Format Supported: PNG, PDF or JPEG up to 2MB</p>
 
-                    <div className="flex gap-[12px] items-center">
-                      <button className="h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center gap-[8px] px-[21px] py-[7px] hover:border-[#c7aa7b] transition-colors">
-                        <div className="overflow-clip size-[16px] shrink-0">
-                          <svg className="size-full" fill="none" viewBox="0 0 13 11.5">
-                            <path d={step3Pi22SvgPaths.pf78bc00} fill="#435160" />
-                          </svg>
+                        <div className="flex gap-[12px] items-center">
+                          <button className="h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center gap-[8px] px-[21px] py-[7px] hover:border-[#c7aa7b] transition-colors">
+                            <div className="overflow-clip size-[16px] shrink-0">
+                              <svg className="size-full" fill="none" viewBox="0 0 13 11.5">
+                                <path d={step3Pi22SvgPaths.pf78bc00} fill="#435160" />
+                              </svg>
+                            </div>
+                            <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Capture</p>
+                          </button>
+
+                          <button
+                            onClick={() => setManualErrorChequeFileSelected(true)}
+                            className="bg-[#93161e] hover:bg-[#7a1319] transition-colors h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] px-[21px] py-[7px]"
+                          >
+                            <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-white text-[14px]">Upload</p>
+                          </button>
                         </div>
-                        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Capture</p>
+                      </div>
+                    </div>
+
+                    {/* Upload Image Guidelines - Same as main cheque upload modal */}
+                    <div className="flex flex-col gap-[11px]">
+                      <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Upload image guidelines</p>
+
+                      {/* Row 1: Good + Blurry */}
+                      <div className="flex gap-[16px] items-stretch w-full">
+                        {/* Good Example - Clear & Complete */}
+                        <div className="bg-[#eeffe5] flex-1 min-w-px relative rounded-[8px]">
+                          <div className="flex flex-row items-center justify-center size-full">
+                            <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
+                              <div className="flex flex-col gap-[8px] items-center justify-center">
+                                <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
+                                  <img alt="Clear and Complete cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
+                                </div>
+                                <div className="flex gap-[4px] items-center">
+                                  <div className="overflow-clip size-[14px] shrink-0">
+                                    <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                      <path d={step3Pi22SvgPaths.p2ae76000} fill="#37B400" />
+                                    </svg>
+                                  </div>
+                                  <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#37b400] text-[9px] whitespace-nowrap">Clear &amp; Complete</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
+                            <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                              <path d={step3Pi22SvgPaths.p31721900} fill="#37B400" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Bad Example - Blurry / Out of focus */}
+                        <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
+                          <div className="flex flex-row items-center justify-center size-full">
+                            <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
+                              <div className="flex flex-col gap-[8px] items-center justify-center">
+                                <div className="blur-[0.5px] h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
+                                  <img alt="Blurry cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
+                                </div>
+                                <div className="flex gap-[4px] items-center">
+                                  <div className="overflow-clip size-[14px] shrink-0">
+                                    <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                      <path d={step3Pi22SvgPaths.pd971f00} fill="#E8402F" />
+                                    </svg>
+                                  </div>
+                                  <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Blurry / Out of focus</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
+                            <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                              <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Half cut + Poor lighting (gray background) */}
+                      <div className="bg-[#f5f5f5] rounded-[4px] p-[8px]">
+                        <div className="flex gap-[16px] items-stretch w-full">
+                          {/* Bad Example - Half cut / Incomplete */}
+                          <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
+                            <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
+                              <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
+                                <div className="flex flex-col gap-[8px] items-center justify-center">
+                                  <div className="h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
+                                    <img alt="Incomplete cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[126.16%] h-[138.11%] left-[-23.61%] top-[-0.05%]" src={imgPi22ChequeExample} />
+                                  </div>
+                                  <div className="flex gap-[4px] items-center">
+                                    <div className="overflow-clip size-[14px] shrink-0">
+                                      <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                        <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
+                                      </svg>
+                                    </div>
+                                    <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Half cut / Incomplete </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute left-[6px] top-[3px] overflow-clip size-[18px]">
+                              <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                                <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          {/* Bad Example - Poor lighting / Glare */}
+                          <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
+                            <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
+                              <div className="flex gap-[10px] items-center justify-center p-[12px] w-full">
+                                <div className="flex flex-col gap-[8px] items-center justify-center">
+                                  <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
+                                    <img alt="Poor lighting cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgPi22ChequeGlare} />
+                                  </div>
+                                  <div className="flex gap-[4px] items-center">
+                                    <div className="overflow-clip size-[14px] shrink-0">
+                                      <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
+                                        <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
+                                      </svg>
+                                    </div>
+                                    <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Poor lighting / Glare</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
+                              <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
+                                <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Buttons */}
+                    <div className="flex gap-[24px] items-center w-full">
+                      <button
+                        onClick={() => {
+                          setManualErrorChequeModalAnimating(false);
+                          setTimeout(() => {
+                            setShowManualErrorChequeModal(false);
+                          }, 200);
+                        }}
+                        className="flex-1 h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors"
+                      >
+                        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Cancel</p>
                       </button>
 
                       <button
-                        onClick={() => setManualErrorChequeFileSelected(true)}
-                        className="bg-[#93161e] hover:bg-[#7a1319] transition-colors h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] px-[21px] py-[7px]"
+                        disabled={!manualErrorChequeFileSelected}
+                        onClick={handleManualErrorChequeSave}
+                        className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center transition-colors ${manualErrorChequeFileSelected
+                            ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+                            : 'bg-[#e5e5e6] cursor-not-allowed'
+                          }`}
                       >
-                        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-white text-[14px]">Upload</p>
+                        <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${manualErrorChequeFileSelected ? 'text-white' : 'text-[#5a6b7d]'
+                          }`}>Save</p>
                       </button>
                     </div>
                   </div>
                 </div>
-
-                {/* Upload Image Guidelines - Same as main cheque upload modal */}
-                <div className="flex flex-col gap-[11px]">
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Upload image guidelines</p>
-
-                  {/* Row 1: Good + Blurry */}
-                  <div className="flex gap-[16px] items-stretch w-full">
-                    {/* Good Example - Clear & Complete */}
-                    <div className="bg-[#eeffe5] flex-1 min-w-px relative rounded-[8px]">
-                      <div className="flex flex-row items-center justify-center size-full">
-                        <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
-                          <div className="flex flex-col gap-[8px] items-center justify-center">
-                            <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
-                              <img alt="Clear and Complete cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
-                            </div>
-                            <div className="flex gap-[4px] items-center">
-                              <div className="overflow-clip size-[14px] shrink-0">
-                                <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                  <path d={step3Pi22SvgPaths.p2ae76000} fill="#37B400" />
-                                </svg>
-                              </div>
-                              <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#37b400] text-[9px] whitespace-nowrap">Clear &amp; Complete</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
-                        <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                          <path d={step3Pi22SvgPaths.p31721900} fill="#37B400" />
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* Bad Example - Blurry / Out of focus */}
-                    <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
-                      <div className="flex flex-row items-center justify-center size-full">
-                        <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
-                          <div className="flex flex-col gap-[8px] items-center justify-center">
-                            <div className="blur-[0.5px] h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
-                              <img alt="Blurry cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[105.21%] h-[104.18%] left-[-2.6%] top-[-4.18%]" src={imgPi22ChequeExample} />
-                            </div>
-                            <div className="flex gap-[4px] items-center">
-                              <div className="overflow-clip size-[14px] shrink-0">
-                                <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                  <path d={step3Pi22SvgPaths.pd971f00} fill="#E8402F" />
-                                </svg>
-                              </div>
-                              <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Blurry / Out of focus</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
-                        <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                          <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: Half cut + Poor lighting (gray background) */}
-                  <div className="bg-[#f5f5f5] rounded-[4px] p-[8px]">
-                    <div className="flex gap-[16px] items-stretch w-full">
-                      {/* Bad Example - Half cut / Incomplete */}
-                      <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
-                        <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
-                          <div className="flex gap-[10px] items-center justify-center px-[8px] py-[12px] w-full">
-                            <div className="flex flex-col gap-[8px] items-center justify-center">
-                              <div className="h-[72px] w-full max-w-[188px] relative shadow-[-6px_6px_20px_0px_rgba(0,0,0,0.08)] overflow-hidden shrink-0">
-                                <img alt="Incomplete cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none w-[126.16%] h-[138.11%] left-[-23.61%] top-[-0.05%]" src={imgPi22ChequeExample} />
-                              </div>
-                              <div className="flex gap-[4px] items-center">
-                                <div className="overflow-clip size-[14px] shrink-0">
-                                  <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                    <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
-                                  </svg>
-                                </div>
-                                <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Half cut / Incomplete </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="absolute left-[6px] top-[3px] overflow-clip size-[18px]">
-                          <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                            <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
-                          </svg>
-                        </div>
-                      </div>
-
-                      {/* Bad Example - Poor lighting / Glare */}
-                      <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[8px]">
-                        <div className="flex flex-row items-center justify-center overflow-clip rounded-[inherit] size-full">
-                          <div className="flex gap-[10px] items-center justify-center p-[12px] w-full">
-                            <div className="flex flex-col gap-[8px] items-center justify-center">
-                              <div className="h-[72px] w-full max-w-[188px] relative overflow-hidden shrink-0">
-                                <img alt="Poor lighting cheque" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={imgPi22ChequeGlare} />
-                              </div>
-                              <div className="flex gap-[4px] items-center">
-                                <div className="overflow-clip size-[14px] shrink-0">
-                                  <svg className="size-full" fill="none" viewBox="0 0 11.375 11.375">
-                                    <path d={step3Pi22SvgPaths.p37a9c200} fill="#E8402F" />
-                                  </svg>
-                                </div>
-                                <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[9px] whitespace-nowrap">Poor lighting / Glare</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="absolute left-[5px] top-[3px] overflow-clip size-[18px]">
-                          <svg className="size-full" fill="none" viewBox="0 0 14.625 14.625">
-                            <path d={step3Pi22SvgPaths.p1e9bc580} fill="#E8402F" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Buttons */}
-                <div className="flex gap-[24px] items-center w-full">
-                  <button
-                    onClick={() => {
-                      setManualErrorChequeModalAnimating(false);
-                      setTimeout(() => {
-                        setShowManualErrorChequeModal(false);
-                      }, 200);
-                    }}
-                    className="flex-1 h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors"
-                  >
-                    <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Cancel</p>
-                  </button>
-
-                  <button
-                    disabled={!manualErrorChequeFileSelected}
-                    onClick={handleManualErrorChequeSave}
-                    className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center transition-colors ${
-                      manualErrorChequeFileSelected
-                        ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
-                        : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
-                  >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                      manualErrorChequeFileSelected ? 'text-white' : 'text-[#5a6b7d]'
-                    }`}>Save</p>
-                  </button>
-                </div>
-              </div>
-              </div>
               </div>
             </>
           )}
@@ -2044,15 +2011,13 @@ export function BankDetailsScreen({
                     }, 300);
                   }
                 }}
-                className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-all duration-300 ${
-                  (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
+                className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-all duration-300 ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
                     ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                     : 'bg-[#e5e5e6] cursor-not-allowed'
-                }`}
+                  }`}
               >
-                <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                  (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
-                }`}>
+                <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
+                  }`}>
                   {isEditMode ? 'Go to Review' : 'Continue'}
                 </p>
                 <div className="size-[16px]">
@@ -2093,15 +2058,13 @@ export function BankDetailsScreen({
                         }, 300);
                       }
                     }}
-                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${
-                      (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
+                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
                         ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                         : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
+                      }`}
                   >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                      (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
-                    }`}>Go to Review</p>
+                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
+                      }`}>Go to Review</p>
                     <div className="size-[16px]">
                       <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
                         <path d={mobileBankSvgPaths.p16866180} fill={(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? "white" : "#5A6B7D"} />
@@ -2137,15 +2100,13 @@ export function BankDetailsScreen({
                         }, 300);
                       }
                     }}
-                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${
-                      (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
+                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
                         ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                         : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
+                      }`}
                   >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${
-                      (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
-                    }`}>Continue</p>
+                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
+                      }`}>Continue</p>
                     <div className="size-[16px]">
                       <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
                         <path d={mobileBankSvgPaths.p16866180} fill={(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? "white" : "#5A6B7D"} />

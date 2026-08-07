@@ -1,0 +1,59 @@
+@import url('https://fonts.googleapis.com/css2?family=Mulish:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "./shared/styles/tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-md);
+  line-height: var(--line-height-normal);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-primary);
+  background: var(--color-background-app);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-family-primary);
+  color: var(--color-text-primary);
+}
+
+p {
+  margin: 0;
+}
+
+main {
+  display: block;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+summary {
+  cursor: pointer;
+}
