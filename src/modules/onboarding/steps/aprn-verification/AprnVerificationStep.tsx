@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import AprnFormCard from "../../components/AprnFormCard";
 import { onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
-import type { ProductCategory } from "../../types/onboarding-types";
+import type { EmpanelmentType, ProductCategory } from "../../types/onboarding-types";
 
 type AprnStepVariant = "default" | "error" | "riaVariant";
 
@@ -28,7 +28,9 @@ const AprnVerificationStep = ({
   const { setAprnNumber: setAprnNumberInStore, setAprnStatus, setInputEmail, setInputMobile, setLeadId, setArn } =
     useOnboardingStore();
   const [aprnNumber, setAprnNumber] = useState("");
+  const [empanelmentType, setEmpanelmentType] = useState<EmpanelmentType>("Distributor");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const hasAifCategory = productCategories.includes("AIF");
   const [variant, setVariant] = useState<AprnStepVariant>(
     hasAifCategory ? "riaVariant" : "default",
@@ -53,6 +55,10 @@ const AprnVerificationStep = ({
   };
 
   const handleContinue = async (): Promise<void> => {
+    if (isSubmitting) {
+      return;
+    }
+
     const validationError = validateAprn(aprnNumber);
 
     if (validationError) {
@@ -68,12 +74,15 @@ const AprnVerificationStep = ({
     }
 
     const normalizedAprn = aprnNumber.trim().toUpperCase();
+    const normalizedPan = panNumber.trim().toUpperCase();
+
+    setIsSubmitting(true);
 
     try {
       const response = await onboardingApi.verifyAprn({
         aprnNumber: normalizedAprn,
         leadId,
-        panNumber: panNumber.trim().toUpperCase(),
+        panNumber: normalizedPan,
       });
       const backendMessage = response.message?.trim();
       const hasBackendErrorMessage = /error|invalid|unable|failed|not\s+valid/i.test(backendMessage ?? "");
@@ -84,11 +93,45 @@ const AprnVerificationStep = ({
         return;
       }
 
+      const resolvedLeadId = response.leadId ?? leadId;
+      const email = (response.email ?? "").trim();
+      const mobile = (response.mobile ?? "").trim();
+
+      if (!email || !mobile) {
+        setErrorMessage("Unable to send OTP. Email or mobile not available from APMI.");
+        setVariant("error");
+        return;
+      }
+
+      const otpPayloadBase = {
+        email,
+        leadId: resolvedLeadId,
+        mobile,
+        panNumber: normalizedPan,
+      };
+
+      try {
+        const otpResponse = await onboardingApi.sendOtp({
+          ...otpPayloadBase,
+          type: "Partner Integration",
+        });
+
+        if (!otpResponse.success) {
+          setErrorMessage(otpResponse.message || "Unable to send OTP. Please try again.");
+          setVariant("error");
+          return;
+        }
+      } catch {
+        setErrorMessage("Unable to send OTP. Please try again.");
+        setVariant("error");
+        return;
+      }
+
       setAprnNumberInStore(normalizedAprn);
-      setInputEmail(response.email ?? null);
-      setInputMobile(response.mobile ?? null);
+      setInputEmail(email);
+      setInputMobile(mobile);
       setAprnStatus(response.aprnStatus ?? true);
-      setLeadId(response.leadId ?? leadId);
+      setLeadId(resolvedLeadId);
       setArn(normalizedAprn);
       setErrorMessage(null);
       setVariant(hasAifCategory ? "riaVariant" : "default");
@@ -96,12 +139,16 @@ const AprnVerificationStep = ({
     } catch {
       setErrorMessage("Invalid APRN");
       setVariant("error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <AprnFormCard
+      empanelmentType={empanelmentType}
       errorMessage={errorMessage}
+      isSubmitting={isSubmitting}
       onBack={onBack}
       onChange={(next) => {
         setAprnNumber(next);
@@ -114,6 +161,7 @@ const AprnVerificationStep = ({
       onContinue={() => {
         void handleContinue();
       }}
+      onEmpanelmentTypeChange={setEmpanelmentType}
       panNumber={panNumber}
       productLabel={productLabel}
       showRiaVariant={variant === "riaVariant"}

@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import type { ChangeEvent, CSSProperties, ReactElement, ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 import svgPaths from '../../../../assets/figma-svg/svg-fcmqq9l0qc';
 import modalSvgPaths from '../../../../assets/figma-svg/svg-kmnbjcgk4j';
@@ -9,16 +10,14 @@ import imgBgImg from '../../../../assets/images/background_img.png';
 import imgSignatureExample from '../../../../assets/images/guidlines_img_1.png';
 import imgSignatureGlare from '../../../../assets/images/guidlines_img_4.png';
 import imgPhotoExample from '../../../../assets/images/guidlines_img_2.png';
+import OnboardingStepSkeleton from '../../components/OnboardingStepSkeleton';
+import { useDocumentsFlow } from './useDocumentsFlow';
 
 type UploadDocumentsStepProps = {
   onBack: () => void;
   onContinue: () => void;
   isEditMode?: boolean;
   onGoToReview?: () => void;
-  signatureUploaded?: boolean;
-  photoUploaded?: boolean;
-  onSignatureUploadedChange?: (value: boolean) => void;
-  onPhotoUploadedChange?: (value: boolean) => void;
   documentRules?: {
     requiresPhoto?: boolean;
     requiresSignature?: boolean;
@@ -29,9 +28,7 @@ type UploadDocumentsStepProps = {
 
 interface Props {
   signatureUploaded: boolean;
-  setSignatureUploaded: (v: boolean) => void;
   photoUploaded: boolean;
-  setPhotoUploaded: (v: boolean) => void;
   documentRules?: {
     requiresPhoto?: boolean;
     requiresSignature?: boolean;
@@ -41,8 +38,17 @@ interface Props {
   showUploadInfoBanner: boolean;
   setShowUploadInfoBanner: (v: boolean) => void;
   isEditMode: boolean;
+  isSaving: boolean;
+  continueLabel: string;
+  errorMessage: string | null;
+  initialSignatureUrl: string;
+  initialPhotoUrl: string;
   onPrevious: () => void;
   onContinue: () => void;
+  onConfirmSignatureUpload: (file: File) => Promise<boolean>;
+  onConfirmPhotoUpload: (file: File) => Promise<boolean>;
+  onRemoveSignature: () => void;
+  onRemovePhoto: () => void;
 }
 
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
@@ -397,24 +403,43 @@ function MobileUploadCard({
 
 export function UploadDocumentsScreen({
   signatureUploaded,
-  setSignatureUploaded,
   photoUploaded,
-  setPhotoUploaded,
   showUploadInfoBanner,
   documentRules,
   setShowUploadInfoBanner,
   isEditMode,
+  isSaving,
+  continueLabel,
+  errorMessage,
+  initialSignatureUrl,
+  initialPhotoUrl,
   onPrevious,
   onContinue,
+  onConfirmSignatureUpload,
+  onConfirmPhotoUpload,
+  onRemoveSignature,
+  onRemovePhoto,
 }: Props) {
   const requiresSignature = documentRules?.requiresSignature ?? true;
   const requiresPhoto = documentRules?.requiresPhoto ?? true;
-  const canContinue = (!requiresSignature || signatureUploaded) && (!requiresPhoto || photoUploaded);
+  const canContinue =
+    !isSaving &&
+    (!requiresSignature || signatureUploaded) &&
+    (!requiresPhoto || photoUploaded);
   /* Signature upload state */
   const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string>('');
+  const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string>(initialSignatureUrl);
+  const [signatureObjectUrl, setSignatureObjectUrl] = useState<string>('');
+  const [pendingSignatureFile, setPendingSignatureFile] = useState<File | null>(null);
   const sigFileInputRef = useRef<HTMLInputElement>(null);
   const captureSequenceRef = useRef(0);
+
+  /* Photo upload state */
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>(initialPhotoUrl);
+  const [photoObjectUrl, setPhotoObjectUrl] = useState<string>('');
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
+  const photoFileInputRef = useRef<HTMLInputElement>(null);
 
   function validateSelectedFile(file: File, fileLabel: 'signature' | 'photo'): boolean {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -435,11 +460,14 @@ export function UploadDocumentsScreen({
       return;
     }
 
-    if (signaturePreviewUrl) {
-      URL.revokeObjectURL(signaturePreviewUrl);
+    if (signatureObjectUrl) {
+      URL.revokeObjectURL(signatureObjectUrl);
     }
 
-    setSignaturePreviewUrl(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setSignatureObjectUrl(objectUrl);
+    setSignaturePreviewUrl(objectUrl);
+    setPendingSignatureFile(file);
     setShowSignatureModal(true);
   }
 
@@ -448,11 +476,14 @@ export function UploadDocumentsScreen({
       return;
     }
 
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl);
+    if (photoObjectUrl) {
+      URL.revokeObjectURL(photoObjectUrl);
     }
 
-    setPhotoPreviewUrl(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setPhotoObjectUrl(objectUrl);
+    setPhotoPreviewUrl(objectUrl);
+    setPendingPhotoFile(file);
     setShowPhotoModal(true);
   }
 
@@ -547,39 +578,60 @@ export function UploadDocumentsScreen({
     prepareSignaturePreview(file);
     e.target.value = '';
   }
+  useEffect(() => {
+    if (!showSignatureModal && initialSignatureUrl) {
+      setSignaturePreviewUrl(initialSignatureUrl);
+    }
+  }, [initialSignatureUrl, showSignatureModal]);
+
+  useEffect(() => {
+    if (!showPhotoModal && initialPhotoUrl) {
+      setPhotoPreviewUrl(initialPhotoUrl);
+    }
+  }, [initialPhotoUrl, showPhotoModal]);
+
   function handleSignatureTrash() {
-    if (signaturePreviewUrl) {
-      URL.revokeObjectURL(signaturePreviewUrl);
+    if (signatureObjectUrl) {
+      URL.revokeObjectURL(signatureObjectUrl);
     }
     setShowSignatureModal(false);
-    setSignaturePreviewUrl('');
-    setSignatureUploaded(false);
+    setSignatureObjectUrl('');
+    setPendingSignatureFile(null);
+    setSignaturePreviewUrl(initialSignatureUrl);
     if (sigFileInputRef.current) {
       sigFileInputRef.current.value = '';
     }
   }
   function handleSignatureCancel() {
-    if (signaturePreviewUrl) {
-      URL.revokeObjectURL(signaturePreviewUrl);
-    }
-    setShowSignatureModal(false);
-    setSignaturePreviewUrl('');
-    setSignatureUploaded(false);
-    if (sigFileInputRef.current) {
-      sigFileInputRef.current.value = '';
-    }
+    handleSignatureTrash();
   }
-  function handleSignatureSave() { setSignatureUploaded(true); setShowSignatureModal(false); }
-  function handleSignatureRemove() {
-    if (signaturePreviewUrl) URL.revokeObjectURL(signaturePreviewUrl);
-    setSignaturePreviewUrl('');
-    setSignatureUploaded(false);
-  }
+  async function handleSignatureSave() {
+    if (!pendingSignatureFile) {
+      setShowSignatureModal(false);
+      return;
+    }
 
-  /* Photo upload state */
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string>('');
-  const photoFileInputRef = useRef<HTMLInputElement>(null);
+    const uploaded = await onConfirmSignatureUpload(pendingSignatureFile);
+    if (!uploaded) {
+      return;
+    }
+
+    if (signatureObjectUrl) {
+      URL.revokeObjectURL(signatureObjectUrl);
+    }
+    setSignatureObjectUrl('');
+    setPendingSignatureFile(null);
+    setShowSignatureModal(false);
+  }
+  function handleSignatureRemove() {
+    if (signatureObjectUrl) {
+      URL.revokeObjectURL(signatureObjectUrl);
+    }
+    setSignatureObjectUrl('');
+    setPendingSignatureFile(null);
+    setSignaturePreviewUrl('');
+    onRemoveSignature();
+  }
 
   function handlePhotoUploadClick() { triggerInput(photoFileInputRef); }
   function handlePhotoCaptureClick() { void captureFromFrontCamera('photo'); }
@@ -593,44 +645,58 @@ export function UploadDocumentsScreen({
     e.target.value = '';
   }
   function handlePhotoTrash() {
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl);
+    if (photoObjectUrl) {
+      URL.revokeObjectURL(photoObjectUrl);
     }
     setShowPhotoModal(false);
-    setPhotoPreviewUrl('');
-    setPhotoUploaded(false);
+    setPhotoObjectUrl('');
+    setPendingPhotoFile(null);
+    setPhotoPreviewUrl(initialPhotoUrl);
     if (photoFileInputRef.current) {
       photoFileInputRef.current.value = '';
     }
   }
   function handlePhotoCancel() {
-    if (photoPreviewUrl) {
-      URL.revokeObjectURL(photoPreviewUrl);
-    }
-    setShowPhotoModal(false);
-    setPhotoPreviewUrl('');
-    setPhotoUploaded(false);
-    if (photoFileInputRef.current) {
-      photoFileInputRef.current.value = '';
-    }
+    handlePhotoTrash();
   }
-  function handlePhotoSave() { setPhotoUploaded(true); setShowPhotoModal(false); }
+  async function handlePhotoSave() {
+    if (!pendingPhotoFile) {
+      setShowPhotoModal(false);
+      return;
+    }
+
+    const uploaded = await onConfirmPhotoUpload(pendingPhotoFile);
+    if (!uploaded) {
+      return;
+    }
+
+    if (photoObjectUrl) {
+      URL.revokeObjectURL(photoObjectUrl);
+    }
+    setPhotoObjectUrl('');
+    setPendingPhotoFile(null);
+    setShowPhotoModal(false);
+  }
   function handlePhotoRemove() {
-    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    if (photoObjectUrl) {
+      URL.revokeObjectURL(photoObjectUrl);
+    }
+    setPhotoObjectUrl('');
+    setPendingPhotoFile(null);
     setPhotoPreviewUrl('');
-    setPhotoUploaded(false);
+    onRemovePhoto();
   }
 
   useEffect(() => {
     return () => {
-      if (signaturePreviewUrl) {
-        URL.revokeObjectURL(signaturePreviewUrl);
+      if (signatureObjectUrl) {
+        URL.revokeObjectURL(signatureObjectUrl);
       }
-      if (photoPreviewUrl) {
-        URL.revokeObjectURL(photoPreviewUrl);
+      if (photoObjectUrl) {
+        URL.revokeObjectURL(photoObjectUrl);
       }
     };
-  }, [photoPreviewUrl, signaturePreviewUrl]);
+  }, [photoObjectUrl, signatureObjectUrl]);
 
   return (
     <>
@@ -685,6 +751,9 @@ export function UploadDocumentsScreen({
               </div>
 
               <div className="flex flex-col gap-[20px] p-[16px]">
+                {errorMessage ? (
+                  <p className="text-sm text-[#e2585f]">{errorMessage}</p>
+                ) : null}
                 {/* Info banner */}
                 {showUploadInfoBanner && (
                   <div className="bg-[#e8f1fb] h-[32px] rounded-[8px] flex items-center justify-between px-[12px] shrink-0">
@@ -734,7 +803,11 @@ export function UploadDocumentsScreen({
 
         {/* Desktop bottom nav */}
         <div className="fixed bottom-0 left-0 right-0 bg-white h-[64px] shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)] flex items-center justify-between px-[60px] xl:px-[120px] py-[8px] z-30">
-          <button onClick={onPrevious} className="h-[36px] w-[180px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors">
+          <button
+            onClick={onPrevious}
+            disabled={isSaving}
+            className="h-[36px] w-[180px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors disabled:opacity-60"
+          >
             <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
           </button>
           <div className="flex gap-[24px] items-center">
@@ -746,15 +819,27 @@ export function UploadDocumentsScreen({
             <button
               onClick={canContinue ? onContinue : undefined}
               disabled={!canContinue}
-              className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-colors ${canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
-                }`}
+              className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-colors ${
+                canContinue || isSaving
+                  ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+                  : 'bg-[#e5e5e6] cursor-not-allowed'
+              } ${isSaving ? 'cursor-not-allowed' : ''}`}
             >
-              <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>{isEditMode ? 'Go to Review' : 'Continue'}</p>
-              <div className="overflow-clip size-[16px]">
-                <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                  <path d={svgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
-                </svg>
-              </div>
+              {isSaving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin text-white" />
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">{continueLabel}</p>
+                </>
+              ) : (
+                <>
+                  <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>{continueLabel}</p>
+                  <div className="overflow-clip size-[16px]">
+                    <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
+                      <path d={svgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
+                    </svg>
+                  </div>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -782,6 +867,9 @@ export function UploadDocumentsScreen({
               </div>
 
               <div className="flex flex-col gap-[16px] p-[16px]">
+                {errorMessage ? (
+                  <p className="text-sm text-[#e2585f]">{errorMessage}</p>
+                ) : null}
                 {showUploadInfoBanner && (
                   <div className="bg-[#e8f1fb] rounded-[8px] flex items-start justify-between gap-[8px] p-[12px]">
                     <div className="flex gap-[8px] items-start flex-1">
@@ -836,15 +924,27 @@ export function UploadDocumentsScreen({
                 <button
                   onClick={canContinue ? onContinue : undefined}
                   disabled={!canContinue}
-                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
+                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
+                    canContinue || isSaving
+                      ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+                      : 'bg-[#e5e5e6] cursor-not-allowed'
+                  } ${isSaving ? 'cursor-not-allowed' : ''}`}
                 >
-                  <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>Go to Review</p>
-                  <div className="size-[16px]">
-                    <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                      <path d={svgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
-                    </svg>
-                  </div>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin text-white" />
+                      <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">{continueLabel}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>{continueLabel}</p>
+                      <div className="size-[16px]">
+                        <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
+                          <path d={svgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
+                        </svg>
+                      </div>
+                    </>
+                  )}
                 </button>
               </div>
             </>
@@ -852,21 +952,37 @@ export function UploadDocumentsScreen({
             <>
               <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#5a6b7d] text-[13px] text-left">Next: Review &amp; Confirm</p>
               <div className="flex gap-[12px] items-center w-full">
-                <button onClick={onPrevious} className="flex-1 h-[44px] md:h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors">
+                <button
+                  onClick={onPrevious}
+                  disabled={isSaving}
+                  className="flex-1 h-[44px] md:h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors disabled:opacity-60"
+                >
                   <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
                 </button>
                 <button
                   onClick={canContinue ? onContinue : undefined}
                   disabled={!canContinue}
-                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${canContinue ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer' : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
+                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
+                    canContinue || isSaving
+                      ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+                      : 'bg-[#e5e5e6] cursor-not-allowed'
+                  } ${isSaving ? 'cursor-not-allowed' : ''}`}
                 >
-                  <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>Continue</p>
-                  <div className="size-[16px]">
-                    <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                      <path d={svgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
-                    </svg>
-                  </div>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin text-white" />
+                      <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">{continueLabel}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'}`}>{continueLabel}</p>
+                      <div className="size-[16px]">
+                        <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
+                          <path d={svgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
+                        </svg>
+                      </div>
+                    </>
+                  )}
                 </button>
               </div>
             </>
@@ -882,35 +998,40 @@ const UploadDocumentsStep = ({
   onContinue,
   isEditMode = false,
   onGoToReview,
-  signatureUploaded: initialSignatureUploaded = false,
-  photoUploaded: initialPhotoUploaded = false,
-  onSignatureUploadedChange,
-  onPhotoUploadedChange,
   documentRules,
 }: UploadDocumentsStepProps): ReactElement => {
-  const [signatureUploaded, setSignatureUploaded] = useState(initialSignatureUploaded);
-  const [photoUploaded, setPhotoUploaded] = useState(initialPhotoUploaded);
   const [showUploadInfoBanner, setShowUploadInfoBanner] = useState(true);
+  const {
+    photoDisplayUrl,
+    signatureDisplayUrl,
+    photoUploaded,
+    signatureUploaded,
+    isLoading,
+    isUploadingPhoto,
+    isUploadingSignature,
+    isSaving,
+    error,
+    canContinue,
+    uploadPhoto,
+    uploadSignature,
+    clearPhoto,
+    clearSignature,
+    saveDocuments,
+  } = useDocumentsFlow({
+    requiresPhoto: documentRules?.requiresPhoto ?? true,
+    requiresSignature: documentRules?.requiresSignature ?? true,
+  });
 
-  useEffect(() => {
-    setSignatureUploaded(initialSignatureUploaded);
-  }, [initialSignatureUploaded]);
+  const handleContinue = async () => {
+    if (!canContinue) {
+      return;
+    }
 
-  useEffect(() => {
-    setPhotoUploaded(initialPhotoUploaded);
-  }, [initialPhotoUploaded]);
+    const saved = await saveDocuments();
+    if (!saved) {
+      return;
+    }
 
-  const handleSignatureUploadedChange = (value: boolean) => {
-    setSignatureUploaded(value);
-    onSignatureUploadedChange?.(value);
-  };
-
-  const handlePhotoUploadedChange = (value: boolean) => {
-    setPhotoUploaded(value);
-    onPhotoUploadedChange?.(value);
-  };
-
-  const handleContinue = () => {
     if (isEditMode && onGoToReview) {
       onGoToReview();
       return;
@@ -919,18 +1040,47 @@ const UploadDocumentsStep = ({
     onContinue();
   };
 
+  if (isLoading) {
+    return (
+      <OnboardingStepSkeleton
+        nextLabel="Review & Confirm"
+        progressPercent={80}
+        stepLabel="Step 5 of 6"
+        subtitle="Upload a clear and properly aligned file (JPG, PNG, or PDF) under 2MB."
+        title="Upload Documents"
+      />
+    );
+  }
+
+  const continueLabel = isSaving
+    ? "Saving..."
+    : isUploadingPhoto || isUploadingSignature
+      ? "Uploading..."
+      : isEditMode
+        ? "Go to Review"
+        : "Continue";
+
   return (
     <UploadDocumentsScreen
       signatureUploaded={signatureUploaded}
-      setSignatureUploaded={handleSignatureUploadedChange}
       photoUploaded={photoUploaded}
-      setPhotoUploaded={handlePhotoUploadedChange}
       documentRules={documentRules}
       showUploadInfoBanner={showUploadInfoBanner}
       setShowUploadInfoBanner={setShowUploadInfoBanner}
       isEditMode={isEditMode}
+      isSaving={isSaving || isUploadingPhoto || isUploadingSignature}
+      continueLabel={continueLabel}
+      errorMessage={error}
+      initialSignatureUrl={signatureDisplayUrl}
+      initialPhotoUrl={photoDisplayUrl}
       onPrevious={onBack}
-      onContinue={handleContinue}
+      onContinue={() => {
+        void handleContinue();
+      }}
+      onConfirmSignatureUpload={uploadSignature}
+      onConfirmPhotoUpload={uploadPhoto}
+      onRemoveSignature={clearSignature}
+      onRemovePhoto={clearPhoto}
     />
   );
 };

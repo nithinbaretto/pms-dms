@@ -39,4 +39,18 @@ export type PersonalDetailsModel = {
   email: VerificationStatus;
   permanentAddress: Address;
   correspondenceAddress: Address;
+  isCorrespoingSameAsPermanent: boolean;
+  nextInfoSection?: string;
+  applicationStatus?: string;
+};
+
+export type PersonalDetailsUiState = {
+  data: PersonalDetailsModel | null;
+  isLoading: boolean;
+  isSaving: boolean;
+  isSendingOtp: boolean;
+  isVerifyingOtp: boolean;
+  error: string | null;
+  otpChannel: VerificationChannel | null;
+  otpModalOpen: boolean;
 };

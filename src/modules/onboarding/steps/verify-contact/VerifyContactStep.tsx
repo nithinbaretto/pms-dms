@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
@@ -224,6 +224,7 @@ const VerifyContactStep = ({
         <div className="mt-4 grid grid-cols-2 gap-5">
           <Button
             className="h-9 rounded-[8px] border border-[#eeeeee] bg-white text-sm text-[var(--color-onboarding-heading)] hover:bg-[#f8f8f8] lg:rounded-[8.75px]"
+            disabled={isSubmitting}
             onClick={onBack}
             type="button"
             variant="outline"
@@ -237,7 +238,16 @@ const VerifyContactStep = ({
             onClick={handleContinue}
             type="button"
           >
-            Continue <ArrowRight className="size-4" />
+            {isSubmitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              <>
+                Continue <ArrowRight className="size-4" />
+              </>
+            )}
           </Button>
         </div>
 

@@ -48,4 +48,5 @@ export const MOCK_PERSONAL_DETAILS: PersonalDetailsModel = {
     state: "Maharashtra",
     pincode: "400077",
   },
+  isCorrespoingSameAsPermanent: true,
 };

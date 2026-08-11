@@ -18,8 +18,6 @@ import { OtpVerificationStep } from "../steps/otp-verification";
 import { PersonalDetailsStep } from "../steps/personal-details";
 import { ReviewConfirmStep } from "../steps/review";
 import { EntityDetailsStep } from "../steps/entity-details";
-import { MOCK_PERSONAL_DETAILS } from "../steps/personal-details/constants";
-import type { EntityType, PersonalDetailsModel } from "../steps/personal-details/types";
 import type { Step } from "../types/onboarding-types";
 
 const OnboardingContainer = (): ReactElement => {
@@ -35,9 +33,7 @@ const OnboardingContainer = (): ReactElement => {
     inputEmail,
     inputMobile,
     productCategories,
-    personalDetails,
     isEditMode,
-    documentUploads,
     bankDocuments,
     nextStep,
     prevStep,
@@ -57,8 +53,6 @@ const OnboardingContainer = (): ReactElement => {
     setOtpTimerSeconds,
     setOtpAttempts,
     setAccountRestricted,
-    emailVerified,
-    mobileVerified,
     setEmailVerified,
     setMobileVerified,
     setEmailVerifiedAt,
@@ -66,8 +60,6 @@ const OnboardingContainer = (): ReactElement => {
     setPersonalDetails,
     setStep,
     setIsEditMode,
-    setSignatureUploaded,
-    setPhotoUploaded,
     setChequeUploaded,
     setPanValidationMeta,
   } = useOnboardingStore();
@@ -79,45 +71,6 @@ const OnboardingContainer = (): ReactElement => {
   const [isSavingBusinessCategory, setIsSavingBusinessCategory] = useState(false);
 
   const flowConfig = useMemo(() => getFlowConfig(currentFlow), [currentFlow]);
-
-  const getEntityTypeFromPan = (value: string): EntityType => {
-    const fourthCharacter = value.trim().toUpperCase()[3];
-
-    if (fourthCharacter === "C") return "Company";
-    if (fourthCharacter === "F") return "Partnership";
-    if (fourthCharacter === "H") return "HUF";
-    if (fourthCharacter === "T") return "Trust";
-    if (fourthCharacter === "A") return "AOP";
-
-    return "Individual";
-  };
-
-  const buildInitialPersonalDetails = (): PersonalDetailsModel => {
-    if (personalDetails) {
-      return personalDetails;
-    }
-
-    const resolvedPan = (pan || panNumber || MOCK_PERSONAL_DETAILS.personalDetails.pan).trim().toUpperCase();
-    const isAifArnFlow = currentFlow === "aif-individual" && onboardingMethod === "ARN";
-
-    return {
-      ...MOCK_PERSONAL_DETAILS,
-      personalDetails: {
-        ...MOCK_PERSONAL_DETAILS.personalDetails,
-        pan: resolvedPan,
-        entityType: getEntityTypeFromPan(resolvedPan),
-        entityTypeLocked: true,
-      },
-      mobile: {
-        value: inputMobile ?? MOCK_PERSONAL_DETAILS.mobile.value,
-        verified: isAifArnFlow ? mobileVerified : MOCK_PERSONAL_DETAILS.mobile.verified,
-      },
-      email: {
-        value: inputEmail ?? MOCK_PERSONAL_DETAILS.email.value,
-        verified: isAifArnFlow ? emailVerified : MOCK_PERSONAL_DETAILS.email.verified,
-      },
-    };
-  };
 
   const renderStep = (): ReactElement => {
     if (currentStep === "entity-details") {
@@ -141,7 +94,7 @@ const OnboardingContainer = (): ReactElement => {
               const hasErrorMessage = /error|invalid|unable|failed|not\s+valid|not\s+eligible/i.test(responseMessage ?? "");
 
               if (!panValidation.isValid || hasErrorMessage) {
-                setPanEntryError(responseMessage || "Please enter a valid PAN.");
+                setPanEntryError(responseMessage || "Invalid PAN number");
                 setIsValidatingPan(false);
                 return;
               }
@@ -170,12 +123,16 @@ const OnboardingContainer = (): ReactElement => {
     if (currentStep === "personal-details") {
       return (
         <PersonalDetailsStep
-          initialData={buildInitialPersonalDetails()}
-          onContinue={(details) => {
+          onContinue={(details, routedStep) => {
             setPersonalDetails(details);
             if (isEditMode) {
               setIsEditMode(false);
               setStep("review-confirm");
+              return;
+            }
+
+            if (routedStep) {
+              setStep(routedStep as Step);
               return;
             }
 
@@ -191,6 +148,11 @@ const OnboardingContainer = (): ReactElement => {
           externalError={businessCategoryError}
           initialCategories={productCategories}
           isSubmitting={isSavingBusinessCategory}
+          onEditPan={() => {
+            setBusinessCategoryError(null);
+            setPanEntryError(null);
+            setStep("entity-details");
+          }}
           onContinue={async (categories) => {
             setBusinessCategoryError(null);
 
@@ -231,10 +193,16 @@ const OnboardingContainer = (): ReactElement => {
               setApplicationIds(data.applicationIds);
               setLeadId(data.leadId ?? leadId);
 
-              if (flowConfig?.steps?.includes("onboarding-method")) {
+              const configuredSteps = Array.isArray(flowConfig?.steps) ? flowConfig.steps : [];
+              const currentIndex = configuredSteps.indexOf("business-category");
+              const nextConfiguredStep = configuredSteps[currentIndex + 1] as Step | undefined;
+
+              if (nextConfiguredStep) {
+                setStep(nextConfiguredStep);
+              } else if (configuredSteps.includes("onboarding-method")) {
                 setStep("onboarding-method");
               } else {
-                nextStep();
+                setStep("aprn-verification");
               }
 
               setIsSavingBusinessCategory(false);
@@ -315,28 +283,32 @@ const OnboardingContainer = (): ReactElement => {
               },
             };
 
-            const response = await onboardingApi.validateAmfiContact(requestPayload);
-            if (!response.success) {
-              setVerifyContactError(response.message ?? "AMFI validation failed.");
-              setIsVerifyingContact(false);
-              return;
-            }
+            try {
+              const response = await onboardingApi.validateAmfiContact(requestPayload);
+              if (!response.success) {
+                setVerifyContactError(response.message ?? "AMFI validation failed.");
+                return;
+              }
 
-            setArn(payload.arn || null);
-            setInputEmail(payload.email || null);
-            setInputMobile(payload.mobile || null);
-            setAmfiMaskedEmail(response.maskedEmail || null);
-            setAmfiMaskedMobile(response.maskedMobile || null);
-            resetAifOtpState();
-            setOtpAttempts(0);
-            setAccountRestricted(false);
-            setEmailVerified(false);
-            setMobileVerified(false);
-            setEmailVerifiedAt(null);
-            setMobileVerifiedAt(null);
-            setOtpTimerSeconds(30);
-            setIsVerifyingContact(false);
-            setStep("otp-verification");
+              setArn(payload.arn || null);
+              setInputEmail(payload.email || null);
+              setInputMobile(payload.mobile || null);
+              setAmfiMaskedEmail(response.maskedEmail || null);
+              setAmfiMaskedMobile(response.maskedMobile || null);
+              resetAifOtpState();
+              setOtpAttempts(0);
+              setAccountRestricted(false);
+              setEmailVerified(false);
+              setMobileVerified(false);
+              setEmailVerifiedAt(null);
+              setMobileVerifiedAt(null);
+              setOtpTimerSeconds(30);
+              setStep("otp-verification");
+            } catch {
+              setVerifyContactError("AMFI validation failed.");
+            } finally {
+              setIsVerifyingContact(false);
+            }
           }}
           panNumber={pan || panNumber}
         />
@@ -347,10 +319,15 @@ const OnboardingContainer = (): ReactElement => {
       return (
         <BusinessDetailsStep
           onBack={prevStep}
-          onContinue={() => {
+          onContinue={(routedStep) => {
             if (isEditMode) {
               setIsEditMode(false);
               setStep("review-confirm");
+              return;
+            }
+
+            if (routedStep) {
+              setStep(routedStep as Step);
               return;
             }
 
@@ -434,10 +411,6 @@ const OnboardingContainer = (): ReactElement => {
             setIsEditMode(false);
             setStep("review-confirm");
           }}
-          signatureUploaded={documentUploads.signatureUploaded}
-          photoUploaded={documentUploads.photoUploaded}
-          onSignatureUploadedChange={setSignatureUploaded}
-          onPhotoUploadedChange={setPhotoUploaded}
         />
       );
     }
@@ -445,15 +418,8 @@ const OnboardingContainer = (): ReactElement => {
     if (currentStep === "review-confirm") {
       return (
         <ReviewConfirmStep
-          flowConfig={flowConfig}
           onBack={prevStep}
-          panNumber={panNumber}
-          productCategories={productCategories}
-          personalDetails={personalDetails}
-          signatureUploaded={documentUploads.signatureUploaded}
-          photoUploaded={documentUploads.photoUploaded}
-          chequeUploaded={bankDocuments.chequeUploaded}
-          onEditSection={(section: 'personal' | 'business' | 'bank' | 'nominee' | 'documents') => {
+          onEditSection={(section) => {
             setIsEditMode(true);
 
             if (section === "personal") {
@@ -515,11 +481,11 @@ const OnboardingContainer = (): ReactElement => {
         {currentStep === "personal-details" || currentStep === "business-details" || currentStep === "bank-details" || currentStep === "nominee-details" || currentStep === "upload-documents" || currentStep === "review-confirm" ? (
           <div className="mt-6 pb-28 lg:mt-10 lg:pb-24">{renderStep()}</div>
         ) : (
-          <div className="mt-6 grid items-center gap-10 lg:mt-16 lg:grid-cols-[minmax(0,610px)_minmax(0,488px)] lg:justify-between">
-            <div className="block">
+          <div className="mt-6 grid min-w-0 items-center gap-10 lg:mt-16 lg:grid-cols-[minmax(0,610px)_minmax(0,488px)] lg:justify-between">
+            <div className="min-w-0">
               <OnboardingHero />
             </div>
-            <div className="w-full max-w-[488px] justify-self-center lg:justify-self-end">{renderStep()}</div>
+            <div className="w-full min-w-0 max-w-[488px] justify-self-center lg:justify-self-end">{renderStep()}</div>
           </div>
         )}
       </div>

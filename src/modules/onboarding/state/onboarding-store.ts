@@ -38,6 +38,8 @@ type OnboardingStore = OnboardingStateType & {
   setAmfiMaskedMobile: (value: string | null) => void;
   setEmailVerified: (value: boolean) => void;
   setMobileVerified: (value: boolean) => void;
+  setEmailVerifiedFromEntry: (value: boolean) => void;
+  setMobileVerifiedFromEntry: (value: boolean) => void;
   setEmailVerifiedAt: (value: string | null) => void;
   setMobileVerifiedAt: (value: string | null) => void;
   setOtpAttempts: (value: number) => void;
@@ -76,6 +78,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   amfiMaskedMobile: null,
   emailVerified: false,
   mobileVerified: false,
+  emailVerifiedFromEntry: false,
+  mobileVerifiedFromEntry: false,
   emailVerifiedAt: null,
   mobileVerifiedAt: null,
   otpAttempts: 0,
@@ -128,6 +132,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   setAmfiMaskedMobile: (value) => set({ amfiMaskedMobile: value }),
   setEmailVerified: (value) => set({ emailVerified: value }),
   setMobileVerified: (value) => set({ mobileVerified: value }),
+  setEmailVerifiedFromEntry: (value) => set({ emailVerifiedFromEntry: value }),
+  setMobileVerifiedFromEntry: (value) => set({ mobileVerifiedFromEntry: value }),
   setEmailVerifiedAt: (value) => set({ emailVerifiedAt: value }),
   setMobileVerifiedAt: (value) => set({ mobileVerifiedAt: value }),
   setOtpAttempts: (value) => set({ otpAttempts: value }),
@@ -141,6 +147,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     set({
       emailVerified: false,
       mobileVerified: false,
+      emailVerifiedFromEntry: false,
+      mobileVerifiedFromEntry: false,
       emailVerifiedAt: null,
       mobileVerifiedAt: null,
       otpAttempts: 0,

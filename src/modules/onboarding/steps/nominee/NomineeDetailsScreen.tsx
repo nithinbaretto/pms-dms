@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { Loader2 } from 'lucide-react';
 import nomineeFormSvgPaths from '../../../../assets/figma-svg/svg-2tncnp7dy5';
 import nomineeSvgPaths from '../../../../assets/figma-svg/svg-7h2pdnxf7l';
 import emailOtpSvgPaths from '../../../../assets/figma-svg/svg-ftc9bj5bhu';
@@ -8,6 +9,7 @@ import imgLogo from '../../../../assets/logo.png';
 import imgEmptyNominee from '../../../../assets/images/guidlines_img_2.png';
 import imgMapPreview from '../../../../assets/images/guidlines_img_1.png';
 import imgGuardianMapPreview from '../../../../assets/images/guidlines_img_1.png';
+import { PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
 
 interface NomineeDetailsScreenProps {
   // Nominee form state
@@ -163,7 +165,22 @@ export function NomineeDetailsScreen({
   setCurrentStep,
   setIsEditMode,
 }: NomineeDetailsScreenProps) {
-  void isTransitioning;
+  const continueButtonContent = (label: string) =>
+    isTransitioning ? (
+      <>
+        <Loader2 className="size-4 animate-spin text-white" />
+        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">Saving...</p>
+      </>
+    ) : (
+      <>
+        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">{label}</p>
+        <div className="size-[16px]">
+          <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
+            <path d={nomineeSvgPaths.p16866180} fill="white" />
+          </svg>
+        </div>
+      </>
+    );
 
   return (
     <>
@@ -263,7 +280,7 @@ export function NomineeDetailsScreen({
                       {/* Relationship Dropdown */}
                       {showRelationshipDropdown && (
                         <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto">
-                          {['Father', 'Mother', 'Son', 'Daughter', 'Spouse', 'Wife', 'Husband', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Grandson', 'Granddaughter'].map((relationship) => (
+                          {RELATIONSHIP_OPTIONS.map((relationship) => (
                             <button
                               key={relationship}
                               onClick={() => {
@@ -295,57 +312,37 @@ export function NomineeDetailsScreen({
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </button>
-                        <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] px-[12px]">
-                          {nomineeProofNumber}
-                        </p>
+                        <input
+                          type="text"
+                          value={nomineeProofNumber}
+                          onChange={(e) => setNomineeProofNumber(e.target.value)}
+                          placeholder="Enter Proof Number"
+                          className="flex-1 px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                        />
                       </div>
 
                       {/* Dropdown Menu */}
                       {showProofDropdown && (
                         <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg">
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('Aadhar');
-                              setNomineeProofNumber('1111 2222 3333');
-                              setShowProofDropdown(false);
-                            }}
-                            className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">Aadhar</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('PAN');
-                              setNomineeProofNumber('EHSYT7465H');
-                              setShowProofDropdown(false);
-                            }}
-                            className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">PAN</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('Driving License');
-                              setNomineeProofNumber('DL1234567890');
-                              setShowProofDropdown(false);
-                            }}
-                            className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">Driving License</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('Passport');
-                              setNomineeProofNumber('P1234567');
-                              setShowProofDropdown(false);
-                            }}
-                            className="w-full h-[36px] flex items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
-                              <p className="leading-[1.452] mb-0 text-[13px]">Passport</p>
-                              <p className="leading-[1.452] text-[8px]">(For NRI nominees)</p>
-                            </div>
-                          </button>
+                          {PROOF_OF_IDENTITY_OPTIONS.map((proofType) => (
+                            <button
+                              key={proofType}
+                              onClick={() => {
+                                setNomineeProofType(proofType);
+                                setShowProofDropdown(false);
+                              }}
+                              className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
+                            >
+                              {proofType === 'Passport' ? (
+                                <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
+                                  <p className="leading-[1.452] mb-0 text-[13px]">Passport</p>
+                                  <p className="leading-[1.452] text-[8px]">(For NRI nominees)</p>
+                                </div>
+                              ) : (
+                                <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">{proofType}</p>
+                              )}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -559,7 +556,7 @@ export function NomineeDetailsScreen({
             )}
             <button
               onClick={() => {
-                if (!canProceed) {
+                if (!canProceed || isTransitioning) {
                   return;
                 }
                 setIsTransitioning(true);
@@ -573,15 +570,14 @@ export function NomineeDetailsScreen({
                   setTimeout(() => setIsTransitioning(false), 50);
                 }, 300);
               }}
-              disabled={!canProceed}
-              className="h-[36px] w-[180px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed"
+              disabled={!canProceed || isTransitioning}
+              className={`h-[36px] w-[180px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
+                isTransitioning
+                  ? 'bg-[#93161e] cursor-not-allowed'
+                  : 'bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed'
+              }`}
             >
-              <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">{isEditMode ? 'Go to Review' : 'Continue'}</p>
-              <div className="size-[16px]">
-                <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                  <path d={nomineeSvgPaths.p16866180} fill="white" />
-                </svg>
-              </div>
+              {continueButtonContent(isEditMode ? 'Go to Review' : 'Continue')}
             </button>
           </div>
         </div>
@@ -690,7 +686,7 @@ export function NomineeDetailsScreen({
                       {/* Relationship Dropdown */}
                       {showRelationshipDropdown && (
                         <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto">
-                          {['Father', 'Mother', 'Son', 'Daughter', 'Spouse', 'Wife', 'Husband', 'Brother', 'Sister', 'Grandfather', 'Grandmother', 'Grandson', 'Granddaughter'].map((relationship) => (
+                          {RELATIONSHIP_OPTIONS.map((relationship) => (
                             <button
                               key={relationship}
                               onClick={() => {
@@ -722,57 +718,37 @@ export function NomineeDetailsScreen({
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </button>
-                        <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] px-[12px]">
-                          {nomineeProofNumber}
-                        </p>
+                        <input
+                          type="text"
+                          value={nomineeProofNumber}
+                          onChange={(e) => setNomineeProofNumber(e.target.value)}
+                          placeholder="Enter Proof Number"
+                          className="flex-1 px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                        />
                       </div>
 
                       {/* Dropdown Menu */}
                       {showProofDropdown && (
                         <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg">
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('Aadhar');
-                              setNomineeProofNumber('1111 2222 3333');
-                              setShowProofDropdown(false);
-                            }}
-                            className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">Aadhar</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('PAN');
-                              setNomineeProofNumber('EHSYT7465H');
-                              setShowProofDropdown(false);
-                            }}
-                            className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">PAN</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('Driving License');
-                              setNomineeProofNumber('DL1234567890');
-                              setShowProofDropdown(false);
-                            }}
-                            className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">Driving License</p>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setNomineeProofType('Passport');
-                              setNomineeProofNumber('P1234567');
-                              setShowProofDropdown(false);
-                            }}
-                            className="w-full h-[36px] flex items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                          >
-                            <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
-                              <p className="leading-[1.452] mb-0 text-[13px]">Passport</p>
-                              <p className="leading-[1.452] text-[8px]">(For NRI nominees)</p>
-                            </div>
-                          </button>
+                          {PROOF_OF_IDENTITY_OPTIONS.map((proofType) => (
+                            <button
+                              key={proofType}
+                              onClick={() => {
+                                setNomineeProofType(proofType);
+                                setShowProofDropdown(false);
+                              }}
+                              className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
+                            >
+                              {proofType === 'Passport' ? (
+                                <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
+                                  <p className="leading-[1.452] mb-0 text-[13px]">Passport</p>
+                                  <p className="leading-[1.452] text-[8px]">(For NRI nominees)</p>
+                                </div>
+                              ) : (
+                                <p className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px] whitespace-nowrap">{proofType}</p>
+                              )}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -970,7 +946,7 @@ export function NomineeDetailsScreen({
               <div className="flex gap-[12px] items-center w-full">
                 <button
                   onClick={() => {
-                    if (!canProceed) {
+                    if (!canProceed || isTransitioning) {
                       return;
                     }
                     setIsTransitioning(true);
@@ -980,15 +956,14 @@ export function NomineeDetailsScreen({
                       setTimeout(() => setIsTransitioning(false), 50);
                     }, 300);
                   }}
-                  disabled={!canProceed}
-                  className="flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed"
+                  disabled={!canProceed || isTransitioning}
+                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
+                    isTransitioning
+                      ? 'bg-[#93161e] cursor-not-allowed'
+                      : 'bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed'
+                  }`}
                 >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">Go to Review</p>
-                  <div className="size-[16px]">
-                    <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                      <path d={nomineeSvgPaths.p16866180} fill="white" />
-                    </svg>
-                  </div>
+                  {continueButtonContent('Go to Review')}
                 </button>
               </div>
             </>
@@ -998,19 +973,23 @@ export function NomineeDetailsScreen({
               <div className="flex gap-[12px] items-center w-full">
                 <button
                   onClick={() => {
+                    if (isTransitioning) {
+                      return;
+                    }
                     setIsTransitioning(true);
                     setTimeout(() => {
                       setCurrentStep('bank-details');
                       setTimeout(() => setIsTransitioning(false), 50);
                     }, 300);
                   }}
-                  className="flex-1 h-[44px] md:h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors"
+                  disabled={isTransitioning}
+                  className="flex-1 h-[44px] md:h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors disabled:opacity-60"
                 >
                   <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
                 </button>
                 <button
                   onClick={() => {
-                    if (!canProceed) {
+                    if (!canProceed || isTransitioning) {
                       return;
                     }
                     setIsTransitioning(true);
@@ -1019,15 +998,14 @@ export function NomineeDetailsScreen({
                       setTimeout(() => setIsTransitioning(false), 50);
                     }, 300);
                   }}
-                  disabled={!canProceed}
-                  className="flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed"
+                  disabled={!canProceed || isTransitioning}
+                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
+                    isTransitioning
+                      ? 'bg-[#93161e] cursor-not-allowed'
+                      : 'bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed'
+                  }`}
                 >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">Continue</p>
-                  <div className="size-[16px]">
-                    <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                      <path d={nomineeSvgPaths.p16866180} fill="white" />
-                    </svg>
-                  </div>
+                  {continueButtonContent('Continue')}
                 </button>
               </div>
             </>

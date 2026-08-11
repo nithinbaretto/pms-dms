@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import changeBankSvgPaths from '../../../../assets/figma-svg/svg-1hi99h9mgv';
 import qrGeneratedSvgPaths from '../../../../assets/figma-svg/svg-idaonln9ok';
 import loadingSvgPaths from '../../../../assets/figma-svg/svg-0crc3rdhsl';
@@ -21,6 +22,19 @@ import imgLogo from '../../../../assets/logo.png';
 
 interface BankDetailsScreenProps {
   contactPersonName: string;
+  accountHolderName?: string;
+  bankName?: string;
+  accountTypeLabel?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchDisplay?: string;
+  qrImageUrl?: string;
+  isSaving?: boolean;
+  onApmiValidate?: () => void;
+  onManualValidate?: () => void;
+  onQrGenerate?: () => void;
+  onQrPayment?: () => void;
+  onSaveAndContinue?: () => void;
   isEditMode: boolean;
   isTransitioning: boolean;
   bankValidationStatus: 'pending' | 'validating' | 'success' | 'failed';
@@ -80,6 +94,19 @@ interface BankDetailsScreenProps {
 
 export function BankDetailsScreen({
   contactPersonName,
+  accountHolderName = '',
+  bankName = '',
+  accountTypeLabel = 'Savings',
+  accountNumber = '',
+  ifscCode = '',
+  branchDisplay = '',
+  qrImageUrl = '',
+  isSaving = false,
+  onApmiValidate,
+  onManualValidate,
+  onQrGenerate,
+  onQrPayment,
+  onSaveAndContinue,
   isEditMode,
   isTransitioning,
   bankValidationStatus,
@@ -184,7 +211,11 @@ export function BankDetailsScreen({
   };
 
   const proceedToNext = () => {
-    if (!canContinue) {
+    if (onSaveAndContinue) {
+      onSaveAndContinue();
+      return;
+    }
+    if (!canContinue || isTransitioning) {
       return;
     }
     setIsTransitioning(true);
@@ -199,16 +230,53 @@ export function BankDetailsScreen({
     }, 300);
   };
 
-  const shouldPennyDropFail = (accountNumber: string, ifscCode: string) => {
-    const normalizedIfsc = ifscCode.trim().toUpperCase();
-    return accountNumber === '1234567890' || normalizedIfsc.startsWith('FAIL');
+  const continueButtonContent = (label: string, enabled: boolean) =>
+    isTransitioning || isSaving ? (
+      <>
+        <Loader2 className="size-4 animate-spin text-white" />
+        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">Saving...</p>
+      </>
+    ) : (
+      <>
+        <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${enabled ? 'text-white' : 'text-[#5a6b7d]'}`}>
+          {label}
+        </p>
+        <div className="size-[16px]">
+          <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
+            <path d={mobileBankSvgPaths.p16866180} fill={enabled ? 'white' : '#5A6B7D'} />
+          </svg>
+        </div>
+      </>
+    );
+
+  const shouldPennyDropFail = (accountNumberValue: string, ifscCodeValue: string) => {
+    const normalizedIfsc = ifscCodeValue.trim().toUpperCase();
+    return accountNumberValue === '1234567890' || normalizedIfsc.startsWith('FAIL');
   };
 
+  const displayAccountHolderName =
+    accountHolderName.trim() ||
+    manualErrorAccountHolderName.trim() ||
+    contactPersonName.trim() ||
+    '—';
+  const displayBankName = bankName.trim() || ifscData.bankName;
+  const displayAccountNumber = accountNumber.trim() || manualAccountNumber.trim() || '—';
+  const displayIfscCode = ifscCode.trim() || normalizedIfscCode || '—';
+  const displayBranch =
+    branchDisplay.trim() ||
+    manualErrorBankBranch.trim() ||
+    ifscData.branchAddress;
+  const resolvedQrImage = qrImageUrl.trim() || imgQrCode;
+
   const handleApmiValidate = () => {
-    if (bankValidationStatus !== 'pending') {
+    if (bankValidationStatus !== 'pending' && bankValidationStatus !== 'failed') {
       return;
     }
     setChequeUploaded(false);
+    if (onApmiValidate) {
+      onApmiValidate();
+      return;
+    }
     setBankValidationStatus('validating');
     setTimeout(() => {
       const apmiShouldFail =
@@ -224,12 +292,20 @@ export function BankDetailsScreen({
   };
 
   const handleQrGenerate = () => {
+    if (onQrGenerate) {
+      onQrGenerate();
+      return;
+    }
     setQrGenerated(true);
     setQrTimer(213);
   };
 
   const handleQrPayment = () => {
     if (!qrGenerated || qrTimer <= 0) {
+      return;
+    }
+    if (onQrPayment) {
+      onQrPayment();
       return;
     }
     setShowLoadingModal(true);
@@ -247,6 +323,11 @@ export function BankDetailsScreen({
 
   const handleManualValidate = () => {
     if (!manualAccountNumber || !normalizedIfscCode || manualBankValidating) {
+      return;
+    }
+
+    if (onManualValidate) {
+      onManualValidate();
       return;
     }
 
@@ -394,7 +475,7 @@ export function BankDetailsScreen({
                           {/* QR Code */}
                           <div className="relative size-[116px] shrink-0">
                             <img
-                              src={imgQrCode}
+                              src={resolvedQrImage}
                               alt="QR Code"
                               onClick={handleQrPayment}
                               className={`absolute inset-0 size-full object-cover ${qrGenerated && qrTimer > 0 ? 'cursor-pointer' : 'blur-[4px]'}`}
@@ -526,16 +607,13 @@ export function BankDetailsScreen({
                     <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
                   </button>
                   <button
-                    disabled={!canContinue}
+                    disabled={!canContinue || isTransitioning}
                     onClick={proceedToNext}
-                    className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center gap-[8px] ${canContinue ? 'bg-[#93161e]' : 'bg-[#e5e5e6]'
-                      }`}
+                    className={`flex-1 h-[36px] rounded-[8.75px] flex items-center justify-center gap-[8px] ${
+                      canContinue || isTransitioning ? 'bg-[#93161e]' : 'bg-[#e5e5e6]'
+                    }`}
                   >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinue ? 'text-white' : 'text-[#5a6b7d]'
-                      }`}>Continue</p>
-                    <svg className="size-[16px]" fill="none" viewBox="0 0 12.0004 10.0006">
-                      <path d={mobileChangeBankSvgPaths.p16866180} fill={canContinue ? 'white' : '#5A6B7D'} />
-                    </svg>
+                    {continueButtonContent('Continue', canContinue)}
                   </button>
                 </div>
               </div>
@@ -611,7 +689,7 @@ export function BankDetailsScreen({
                       {/* QR Code */}
                       <div className="relative size-[116px]">
                         <img
-                          src={imgQrCode}
+                          src={resolvedQrImage}
                           alt="QR Code"
                           onClick={handleQrPayment}
                           className={`absolute inset-0 size-full object-cover ${qrGenerated && qrTimer > 0 ? 'cursor-pointer' : 'blur-[4px]'}`}
@@ -963,24 +1041,19 @@ export function BankDetailsScreen({
                   <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
                 </button>
                 <button
-                  disabled={!canContinueFromManualError}
+                  disabled={!canContinueFromManualError || isTransitioning}
                   onClick={() => {
                     if (canContinueFromManualError) {
                       proceedToNext();
                     }
                   }}
-                  className={`flex-1 h-[36px] rounded-[8.75px] flex gap-[8px] items-center justify-center transition-colors ${canContinueFromManualError
+                  className={`flex-1 h-[36px] rounded-[8.75px] flex gap-[8px] items-center justify-center transition-colors ${
+                    canContinueFromManualError || isTransitioning
                       ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                       : 'bg-[#e5e5e6] cursor-not-allowed'
-                    }`}
+                  }`}
                 >
-                  <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinueFromManualError ? 'text-white' : 'text-[#5a6b7d]'
-                    }`}>Continue</p>
-                  <div className="size-[16px] relative shrink-0">
-                    <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12.0004 10.0006">
-                      <path d={mobileBankFailedSvgPaths.p16866180} fill={canContinueFromManualError ? 'white' : '#5A6B7D'} />
-                    </svg>
-                  </div>
+                  {continueButtonContent('Continue', canContinueFromManualError)}
                 </button>
               </div>
             </div>
@@ -1163,24 +1236,19 @@ export function BankDetailsScreen({
             <div className="flex gap-[24px] items-center">
               <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#5a6b7d] text-[13px] text-right">Next: Nominee Details</p>
               <button
-                disabled={!canContinueFromManualError}
+                disabled={!canContinueFromManualError || isTransitioning}
                 onClick={() => {
                   if (canContinueFromManualError) {
                     proceedToNext();
                   }
                 }}
-                className={`flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[8px] rounded-[8.75px] transition-colors ${canContinueFromManualError
+                className={`flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[8px] rounded-[8.75px] transition-colors ${
+                  canContinueFromManualError || isTransitioning
                     ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                     : 'bg-[#e5e5e6] cursor-not-allowed'
-                  }`}
+                }`}
               >
-                <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${canContinueFromManualError ? 'text-white' : 'text-[#5a6b7d]'
-                  }`}>Continue</p>
-                <div className="size-[16px] relative">
-                  <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 12.0004 10.0006">
-                    <path d={mobileBankFailedSvgPaths.p16866180} fill={canContinueFromManualError ? 'white' : '#5A6B7D'} />
-                  </svg>
-                </div>
+                {continueButtonContent('Continue', canContinueFromManualError)}
               </button>
             </div>
           </div>
@@ -1234,11 +1302,11 @@ export function BankDetailsScreen({
                         <img alt="Bank Logo" className="size-[26px] object-contain" src={imgBankLogo} />
                       </div>
                       <div className="flex flex-col gap-[4px]">
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{manualErrorAccountHolderName || contactPersonName || 'Rajesh Gupta'}</p>
+                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{displayAccountHolderName}</p>
                         <div className="flex gap-[4px] items-center">
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">{ifscData.bankName}</p>
+                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">{displayBankName}</p>
                           <div className="bg-[rgba(147,22,30,0.06)] px-[8px] py-[2px] rounded-full">
-                            <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Savings</p>
+                            <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">{accountTypeLabel}</p>
                           </div>
                         </div>
                       </div>
@@ -1253,7 +1321,7 @@ export function BankDetailsScreen({
                       </div>
                       <div className="flex flex-col min-w-0">
                         <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#435160] text-[12px]">Account Number</p>
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{manualAccountNumber || '0987654320'}</p>
+                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{displayAccountNumber}</p>
                       </div>
                     </div>
 
@@ -1266,7 +1334,7 @@ export function BankDetailsScreen({
                       </div>
                       <div className="flex flex-col min-w-0">
                         <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#435160] text-[12px]">IFSC Code</p>
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{normalizedIfscCode || 'ELDHY6734A'}</p>
+                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{displayIfscCode}</p>
                       </div>
                     </div>
 
@@ -1279,7 +1347,7 @@ export function BankDetailsScreen({
                       </div>
                       <div className="flex flex-col flex-1">
                         <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#435160] text-[12px]">Branch Name & Address</p>
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{manualErrorBankBranch || ifscData.branchAddress}</p>
+                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px]">{displayBranch || '—'}</p>
                       </div>
                     </div>
                   </div>
@@ -1996,35 +2064,15 @@ export function BankDetailsScreen({
                 <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#5a6b7d] text-[13px]">Next: Nominee Details</p>
               )}
               <button
-                disabled={bankValidationStatus === 'success' ? false : (bankValidationStatus === 'failed' && chequeUploaded ? false : true)}
-                onClick={() => {
-                  if (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) {
-                    setIsTransitioning(true);
-                    setTimeout(() => {
-                      if (isEditMode) {
-                        setCurrentStep('review-confirm');
-                        setIsEditMode(false);
-                      } else {
-                        setCurrentStep('nominee-details');
-                      }
-                      setTimeout(() => setIsTransitioning(false), 50);
-                    }, 300);
-                  }
-                }}
-                className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-all duration-300 ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
+                disabled={!canContinue || isTransitioning}
+                onClick={proceedToNext}
+                className={`h-[36px] w-[180px] rounded-[8.75px] flex items-center justify-center gap-[8px] transition-all duration-300 ${
+                  canContinue || isTransitioning
                     ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                     : 'bg-[#e5e5e6] cursor-not-allowed'
-                  }`}
+                } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
               >
-                <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
-                  }`}>
-                  {isEditMode ? 'Go to Review' : 'Continue'}
-                </p>
-                <div className="size-[16px]">
-                  <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                    <path d={mobileBankSvgPaths.p16866180} fill={(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? "white" : "#5A6B7D"} />
-                  </svg>
-                </div>
+                {continueButtonContent(isEditMode ? 'Go to Review' : 'Continue', canContinue)}
               </button>
             </div>
           </div>
@@ -2047,29 +2095,15 @@ export function BankDetailsScreen({
                 </p>
                 <div className="flex gap-[12px] items-center w-full">
                   <button
-                    disabled={bankValidationStatus === 'success' ? false : (bankValidationStatus === 'failed' && chequeUploaded ? false : true)}
-                    onClick={() => {
-                      if (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) {
-                        setIsTransitioning(true);
-                        setTimeout(() => {
-                          setCurrentStep('review-confirm');
-                          setIsEditMode(false);
-                          setTimeout(() => setIsTransitioning(false), 50);
-                        }, 300);
-                      }
-                    }}
-                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
+                    disabled={!canContinue || isTransitioning}
+                    onClick={proceedToNext}
+                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${
+                      canContinue || isTransitioning
                         ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                         : 'bg-[#e5e5e6] cursor-not-allowed'
-                      }`}
+                    } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
                   >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
-                      }`}>Go to Review</p>
-                    <div className="size-[16px]">
-                      <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                        <path d={mobileBankSvgPaths.p16866180} fill={(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? "white" : "#5A6B7D"} />
-                      </svg>
-                    </div>
+                    {continueButtonContent('Go to Review', canContinue)}
                   </button>
                 </div>
               </>
@@ -2090,28 +2124,15 @@ export function BankDetailsScreen({
                     <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
                   </button>
                   <button
-                    disabled={bankValidationStatus === 'success' ? false : (bankValidationStatus === 'failed' && chequeUploaded ? false : true)}
-                    onClick={() => {
-                      if (bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) {
-                        setIsTransitioning(true);
-                        setTimeout(() => {
-                          setCurrentStep('nominee-details');
-                          setTimeout(() => setIsTransitioning(false), 50);
-                        }, 300);
-                      }
-                    }}
-                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded))
+                    disabled={!canContinue || isTransitioning}
+                    onClick={proceedToNext}
+                    className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-all duration-300 ${
+                      canContinue || isTransitioning
                         ? 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
                         : 'bg-[#e5e5e6] cursor-not-allowed'
-                      }`}
+                    } ${isTransitioning ? 'cursor-not-allowed' : ''}`}
                   >
-                    <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? 'text-white' : 'text-[#5a6b7d]'
-                      }`}>Continue</p>
-                    <div className="size-[16px]">
-                      <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-                        <path d={mobileBankSvgPaths.p16866180} fill={(bankValidationStatus === 'success' || (bankValidationStatus === 'failed' && chequeUploaded)) ? "white" : "#5A6B7D"} />
-                      </svg>
-                    </div>
+                    {continueButtonContent('Continue', canContinue)}
                   </button>
                 </div>
               </>

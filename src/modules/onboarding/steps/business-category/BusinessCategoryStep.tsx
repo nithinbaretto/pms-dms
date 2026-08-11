@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { ArrowRight, Pencil } from "lucide-react";
+import { ArrowRight, Loader2, Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
@@ -13,6 +13,7 @@ type BusinessCategoryStepProps = {
   externalError?: string | null;
   isSubmitting?: boolean;
   onContinue: (categories: ProductCategory[]) => void;
+  onEditPan?: () => void;
 };
 
 const BusinessCategoryStep = ({
@@ -21,6 +22,7 @@ const BusinessCategoryStep = ({
   externalError,
   isSubmitting = false,
   onContinue,
+  onEditPan,
 }: BusinessCategoryStepProps): ReactElement => {
   const [selectedCategories, setSelectedCategories] = useState<ProductCategory[]>(
     initialCategories,
@@ -58,10 +60,16 @@ const BusinessCategoryStep = ({
               Get Started
             </h2>
 
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-onboarding-pill-background)] px-2 py-1 text-xs font-medium text-[var(--color-onboarding-primary)]">
+            <button
+              aria-label="Edit PAN"
+              className="inline-flex items-center gap-1 rounded-full bg-[var(--color-onboarding-pill-background)] px-2 py-1 text-xs font-medium text-[var(--color-onboarding-primary)] transition-opacity hover:opacity-80 disabled:opacity-50"
+              disabled={isSubmitting}
+              onClick={onEditPan}
+              type="button"
+            >
               PAN : {panNumber}
               <Pencil className="size-3" />
-            </span>
+            </button>
           </div>
 
           <p className="text-[15px] text-[var(--color-onboarding-heading)]">
@@ -112,7 +120,16 @@ const BusinessCategoryStep = ({
             onClick={handleContinue}
             type="button"
           >
-            Continue <ArrowRight className="size-4" />
+            {isSubmitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Continue <ArrowRight className="size-4" />
+              </>
+            )}
           </Button>
         </div>
 

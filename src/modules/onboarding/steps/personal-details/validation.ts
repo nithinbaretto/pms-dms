@@ -5,12 +5,21 @@ const MOBILE_PATTERN = /^\d{10}$/;
 const PINCODE_PATTERN = /^\d{6}$/;
 
 export const isAddressValid = (address: Address): boolean => {
-  return Boolean(
-    address.addressLine.trim() &&
-      address.city.trim() &&
-      address.state.trim() &&
-      PINCODE_PATTERN.test(address.pincode.trim()),
-  );
+  const hasStructuredFields =
+    Boolean(address.city.trim()) || Boolean(address.state.trim()) || Boolean(address.pincode.trim());
+
+  // Structured address (manual/map edit path)
+  if (hasStructuredFields) {
+    return Boolean(
+      address.addressLine.trim() &&
+        address.city.trim() &&
+        address.state.trim() &&
+        PINCODE_PATTERN.test(address.pincode.trim()),
+    );
+  }
+
+  // API single-line address while map/parse helpers are on hold
+  return Boolean(address.addressLine.trim());
 };
 
 export const isMobileValid = (mobile: string): boolean => {

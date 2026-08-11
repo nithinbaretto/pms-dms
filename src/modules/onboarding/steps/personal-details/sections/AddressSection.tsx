@@ -10,7 +10,15 @@ type AddressSectionProps = {
 };
 
 const formatAddress = (address: Address): string => {
-  return `${address.addressLine}, ${address.city}, ${address.state} ${address.pincode}`;
+  const parts = [address.addressLine, address.city, address.state, address.pincode]
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!address.city.trim() && !address.state.trim() && !address.pincode.trim()) {
+    return address.addressLine.trim();
+  }
+
+  return parts.join(", ");
 };
 
 const AddressSection = ({

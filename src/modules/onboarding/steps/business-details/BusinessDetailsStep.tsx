@@ -1,59 +1,67 @@
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
 import { Button } from "../../../../shared/ui/button";
-import { BRANCH_OPTIONS, MOCK_GST_RECORDS } from "./constants";
-import type { BusinessDetailsMode, GstRecord } from "./types";
+import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import AddGstModal from "./modals/AddGstModal";
 import BranchSelectionSection from "./sections/BranchSelectionSection";
 import GstSelectionSection from "./sections/GstSelectionSection";
+import { useBusinessDetailsFlow } from "./useBusinessDetailsFlow";
 
 type BusinessDetailsStepProps = {
   onBack: () => void;
-  onContinue: () => void;
-  mode?: BusinessDetailsMode;
+  onContinue: (nextStep?: string | null) => void;
 };
 
 const BusinessDetailsStep = ({
   onBack,
   onContinue,
-  mode = "selection",
 }: BusinessDetailsStepProps): ReactElement => {
-  const resolvedMode = useMemo<BusinessDetailsMode>(() => {
-    if (typeof window === "undefined") {
-      return mode;
-    }
+  const {
+    records,
+    selectedBranch,
+    branchOptions,
+    stateOptions,
+    isLoading,
+    isSaving,
+    isValidatingGst,
+    isUploading,
+    error,
+    canContinue,
+    addGstModalOpen,
+    openAddGstModal,
+    closeAddGstModal,
+    selectBranch,
+    toggleGstSelection,
+    selectAllGst,
+    addManualGst,
+    validateGstNumber,
+    uploadGstDocument,
+    uploadGstDocumentForRecord,
+    saveBusinessDetails,
+  } = useBusinessDetailsFlow();
 
-    const modeFromQuery = new URLSearchParams(window.location.search).get(
-      "businessDetailsMode",
+  if (isLoading) {
+    return (
+      <OnboardingStepSkeleton
+        nextLabel="Bank Details"
+        progressPercent={35}
+        stepLabel="Step 2 of 6"
+        subtitle="Your details have been fetched from APMI. Fields shown in grey cannot be changed"
+        title="Business Details"
+      />
     );
-
-    if (modeFromQuery === "empty" || modeFromQuery === "selection") {
-      return modeFromQuery;
-    }
-
-    return mode;
-  }, [mode]);
-
-  const [records, setRecords] = useState<GstRecord[]>(
-    resolvedMode === "selection" ? MOCK_GST_RECORDS : [],
-  );
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [isAddGstModalOpen, setIsAddGstModalOpen] = useState(true);
-
-  const canContinue = useMemo(() => {
-    const hasAtLeastOneSelection = records.some((record) => record.selected);
-    return hasAtLeastOneSelection && selectedBranch.length > 0;
-  }, [records, selectedBranch]);
+  }
 
   return (
     <>
       <div className="mx-auto w-full max-w-[1240px] space-y-3 pb-28 lg:pb-24">
         <section className="space-y-3">
           <header className="space-y-1">
-            <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">Business Details</h1>
-            {resolvedMode === "selection" ? (
+            <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">
+              Business Details
+            </h1>
+            {records.length > 0 ? (
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 Your details have been fetched from APMI. Fields shown in grey cannot be changed
               </p>
@@ -73,19 +81,13 @@ const BusinessDetailsStep = ({
 
           <div className="space-y-5 px-4 pb-4 pt-6 md:px-6 md:pb-6">
             <GstSelectionSection
+              isUploading={isUploading}
               mode={records.length > 0 ? "selection" : "empty"}
-              onOpenAddGst={() => {
-                setIsAddGstModalOpen(true);
-              }}
-              onSelectAll={() => {
-                setRecords((current) => current.map((record) => ({ ...record, selected: true })));
-              }}
-              onToggleRecord={(id) => {
-                setRecords((current) =>
-                  current.map((record) =>
-                    record.id === id ? { ...record, selected: !record.selected } : record,
-                  ),
-                );
+              onOpenAddGst={openAddGstModal}
+              onSelectAll={selectAllGst}
+              onToggleRecord={toggleGstSelection}
+              onUploadForRecord={(id, file) => {
+                void uploadGstDocumentForRecord(id, file);
               }}
               records={records}
             />
@@ -93,10 +95,12 @@ const BusinessDetailsStep = ({
             <div className="h-px bg-[#e5e5e6]" />
 
             <BranchSelectionSection
-              onSelectBranch={setSelectedBranch}
-              options={BRANCH_OPTIONS}
+              onSelectBranch={selectBranch}
+              options={branchOptions}
               selectedBranch={selectedBranch}
             />
+
+            {error ? <p className="text-sm text-[#e2585f]">{error}</p> : null}
           </div>
         </section>
       </div>
@@ -105,6 +109,7 @@ const BusinessDetailsStep = ({
         <div className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-2 px-6 py-2 sm:items-end lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:px-[120px]">
           <Button
             className="h-9 w-full rounded-[8px] border border-[#eeeeee] bg-white px-[21px] py-[7px] text-[14px] font-normal text-[#435160] hover:bg-white sm:w-[180px]"
+            disabled={isSaving}
             onClick={onBack}
             type="button"
             variant="outline"
@@ -115,21 +120,53 @@ const BusinessDetailsStep = ({
           <div className="flex w-full flex-col items-start gap-2 sm:items-end lg:w-auto lg:flex-row lg:items-center lg:gap-6">
             <p className="text-[13px] leading-[19.5px] text-[#5a6b7d]">Next: Bank Details</p>
             <Button
-              className="h-9 w-full rounded-[8.75px] bg-[#93161e] px-[21px] py-2 text-[14px] font-normal text-white hover:bg-[#7f141a] sm:w-[180px] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
-              disabled={!canContinue}
-              onClick={onContinue}
+              className={`h-9 w-full rounded-[8.75px] px-[21px] py-2 text-[14px] font-normal text-white sm:w-[180px] ${
+                isSaving
+                  ? "bg-[#93161e] hover:bg-[#93161e]"
+                  : "bg-[#93161e] hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
+              }`}
+              disabled={!canContinue || isSaving}
+              onClick={() => {
+                void (async () => {
+                  const result = await saveBusinessDetails();
+                  if (!result) {
+                    return;
+                  }
+                  onContinue(result.nextStep);
+                })();
+              }}
               type="button"
             >
-              Continue
-              <ArrowRight className="h-4 w-4" />
+              {isSaving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  Continue <ArrowRight className="size-4" />
+                </>
+              )}
             </Button>
           </div>
         </div>
       </div>
 
       <AddGstModal
-        onOpenChange={setIsAddGstModalOpen}
-        open={isAddGstModalOpen}
+        isUploading={isUploading}
+        isValidatingGst={isValidatingGst}
+        onOpenChange={(open) => {
+          if (open) {
+            openAddGstModal();
+            return;
+          }
+          closeAddGstModal();
+        }}
+        onSave={addManualGst}
+        onUploadFile={uploadGstDocument}
+        onValidateGst={validateGstNumber}
+        open={addGstModalOpen}
+        stateOptions={stateOptions}
       />
     </>
   );

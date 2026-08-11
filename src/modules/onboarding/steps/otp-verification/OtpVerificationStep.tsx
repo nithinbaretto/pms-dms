@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Check, Mail, Smartphone } from "lucide-react";
+import { Check, Loader2, Mail, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
@@ -7,6 +7,7 @@ import { useOnboardingStore } from "../../state/onboarding-store";
 import OtpInput from "../../components/OtpInput";
 import SupportFooter from "../../components/SupportFooter";
 import { onboardingApi } from "../../services/onboarding-api";
+import { normalizeVerifiedSource } from "../personal-details/helpers";
 
 type OtpStatus = "pending" | "success";
 
@@ -17,6 +18,25 @@ type OtpVerificationStepProps = {
   maxAttempts?: number;
 };
 
+const maskMobile = (mobile: string): string => {
+  const digits = mobile.replace(/\D/g, "");
+  if (digits.length < 4) {
+    return mobile;
+  }
+
+  return `${"x".repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
+};
+
+const maskEmail = (email: string): string => {
+  const [name = "", domain = ""] = email.split("@");
+
+  if (!name || !domain) {
+    return email;
+  }
+
+  return `${name.slice(0, 2)}${"x".repeat(Math.max(0, name.length - 2))}@${domain}`;
+};
+
 const OtpVerificationStep = ({
   onBack,
   onContinue,
@@ -25,6 +45,10 @@ const OtpVerificationStep = ({
 }: OtpVerificationStepProps): ReactElement => {
   const {
     onboardingMethod,
+    panNumber,
+    leadId,
+    inputEmail,
+    inputMobile,
     amfiMaskedEmail,
     amfiMaskedMobile,
     emailVerified,
@@ -34,6 +58,8 @@ const OtpVerificationStep = ({
     accountRestricted,
     setEmailVerified,
     setMobileVerified,
+    setEmailVerifiedFromEntry,
+    setMobileVerifiedFromEntry,
     setEmailVerifiedAt,
     setMobileVerifiedAt,
     setOtpAttempts,
@@ -42,14 +68,16 @@ const OtpVerificationStep = ({
   } = useOnboardingStore();
 
   const aifArnFlow = onboardingMethod === "ARN";
-  const hasEmail = Boolean(amfiMaskedEmail);
-  const hasMobile = Boolean(amfiMaskedMobile);
+  const hasAmfiEmail = Boolean(amfiMaskedEmail);
+  const hasAmfiMobile = Boolean(amfiMaskedMobile);
+  const hasEntryEmail = Boolean(inputEmail?.trim());
+  const hasEntryMobile = Boolean(inputMobile?.trim());
 
   const [otpValue, setOtpValue] = useState("");
   const [timer, setTimer] = useState(aifArnFlow ? otpTimerSeconds : initialTimerSeconds);
   const [status, setStatus] = useState<OtpStatus>("pending");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [legacyMaskedContact, setLegacyMaskedContact] = useState<{ mobile: string; email: string } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -66,34 +94,28 @@ const OtpVerificationStep = ({
     };
   }, [onContinue, status]);
 
+  // AIF ARN path still triggers OTP on mount. Entry (APRN) OTP is generated before navigation.
   useEffect(() => {
-    if (initializedRef.current) {
+    if (!aifArnFlow || initializedRef.current) {
       return;
     }
 
     initializedRef.current = true;
 
     const triggerOtp = async (): Promise<void> => {
-      if (aifArnFlow) {
-        if (hasEmail) {
-          await onboardingApi.sendAmfiOtp({ channel: "email" });
-        }
-
-        if (hasMobile) {
-          await onboardingApi.sendAmfiOtp({ channel: "mobile" });
-        }
-
-        setTimer(otpTimerSeconds);
-        return;
+      if (hasAmfiEmail) {
+        await onboardingApi.sendAmfiOtp({ channel: "email" });
       }
 
-      const response = await onboardingApi.sendOtp({ panNumber: "ABCDR1234A", channel: "mobile" });
-      setLegacyMaskedContact({ mobile: response.maskedMobile, email: response.maskedEmail });
-      setTimer(response.expiresInSeconds);
+      if (hasAmfiMobile) {
+        await onboardingApi.sendAmfiOtp({ channel: "mobile" });
+      }
+
+      setTimer(otpTimerSeconds);
     };
 
     void triggerOtp();
-  }, [aifArnFlow, hasEmail, hasMobile, otpTimerSeconds]);
+  }, [aifArnFlow, hasAmfiEmail, hasAmfiMobile, otpTimerSeconds]);
 
   useEffect(() => {
     if (timer <= 0 || status === "success") {
@@ -124,6 +146,10 @@ const OtpVerificationStep = ({
   }, [timer]);
 
   const handleContinue = async (): Promise<void> => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (otpValue.length !== 6) {
       setErrorMessage("Please enter the 6-digit OTP");
       return;
@@ -135,32 +161,79 @@ const OtpVerificationStep = ({
     }
 
     if (aifArnFlow) {
-      let emailNowVerified = emailVerified;
-      let mobileNowVerified = mobileVerified;
+      setIsSubmitting(true);
 
-      if (hasEmail && !emailNowVerified) {
-        const emailResponse = await onboardingApi.verifyAmfiOtp({ channel: "email", otp: otpValue });
-        if (emailResponse.verified) {
-          emailNowVerified = true;
-          setEmailVerified(true);
-          setEmailVerifiedAt(new Date().toISOString());
+      try {
+        let emailNowVerified = emailVerified;
+        let mobileNowVerified = mobileVerified;
+
+        if (hasAmfiEmail && !emailNowVerified) {
+          const emailResponse = await onboardingApi.verifyAmfiOtp({ channel: "email", otp: otpValue });
+          if (emailResponse.verified) {
+            emailNowVerified = true;
+            setEmailVerified(true);
+            setEmailVerifiedFromEntry(true);
+            setEmailVerifiedAt(new Date().toISOString());
+          }
         }
-      }
 
-      if (hasMobile && !mobileNowVerified) {
-        const mobileResponse = await onboardingApi.verifyAmfiOtp({ channel: "mobile", otp: otpValue });
-        if (mobileResponse.verified) {
-          mobileNowVerified = true;
-          setMobileVerified(true);
-          setMobileVerifiedAt(new Date().toISOString());
+        if (hasAmfiMobile && !mobileNowVerified) {
+          const mobileResponse = await onboardingApi.verifyAmfiOtp({ channel: "mobile", otp: otpValue });
+          if (mobileResponse.verified) {
+            mobileNowVerified = true;
+            setMobileVerified(true);
+            setMobileVerifiedFromEntry(true);
+            setMobileVerifiedAt(new Date().toISOString());
+          }
         }
-      }
 
-      if (!emailNowVerified && !mobileNowVerified) {
+        if (!emailNowVerified && !mobileNowVerified) {
+          const nextAttempts = otpAttempts + 1;
+          setOtpAttempts(nextAttempts);
+          setErrorMessage("Invalid OTP. Please try again.");
+
+          if (nextAttempts > maxAttempts) {
+            setAccountRestricted(true);
+            setErrorMessage("Account restricted. Please contact support.");
+          }
+          return;
+        }
+
+        setErrorMessage(null);
+        setStatus("success");
+      } catch {
+        setErrorMessage("Unable to verify OTP. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (!leadId || !panNumber.trim() || !hasEntryEmail || !hasEntryMobile) {
+      setErrorMessage("Unable to verify OTP. Please restart onboarding.");
+      return;
+    }
+
+    const otpNumber = Number(otpValue);
+    if (!Number.isFinite(otpNumber)) {
+      setErrorMessage("Please enter a valid OTP.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await onboardingApi.verifyOtp({
+        leadId,
+        otp: otpNumber,
+        panNumber: panNumber.trim().toUpperCase(),
+        type: "Partner Integration",
+      });
+
+      if (!response.verified) {
         const nextAttempts = otpAttempts + 1;
         setOtpAttempts(nextAttempts);
-        setErrorMessage("Invalid OTP. Please try again.");
-
+        setErrorMessage(response.message || "Invalid OTP. Please try again.");
         if (nextAttempts > maxAttempts) {
           setAccountRestricted(true);
           setErrorMessage("Account restricted. Please contact support.");
@@ -168,25 +241,34 @@ const OtpVerificationStep = ({
         return;
       }
 
+      const verifiedAt = new Date().toISOString();
+      const verifiedChannel = normalizeVerifiedSource(response.verifiedSource);
+
+      if (verifiedChannel === "mobile") {
+        setMobileVerified(true);
+        setMobileVerifiedFromEntry(true);
+        setMobileVerifiedAt(verifiedAt);
+      } else if (verifiedChannel === "email") {
+        setEmailVerified(true);
+        setEmailVerifiedFromEntry(true);
+        setEmailVerifiedAt(verifiedAt);
+      } else {
+        // Backend did not indicate channel — keep prior behavior as safe fallback.
+        setEmailVerified(true);
+        setMobileVerified(true);
+        setEmailVerifiedFromEntry(true);
+        setMobileVerifiedFromEntry(true);
+        setEmailVerifiedAt(verifiedAt);
+        setMobileVerifiedAt(verifiedAt);
+      }
+
       setErrorMessage(null);
       setStatus("success");
-      return;
+    } catch {
+      setErrorMessage("Unable to verify OTP. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const response = await onboardingApi.verifyOtp({ otp: otpValue });
-
-    if (!response.verified) {
-      const nextAttempts = otpAttempts + 1;
-      setOtpAttempts(nextAttempts);
-      setErrorMessage("Invalid OTP. Please try again.");
-      if (nextAttempts > maxAttempts) {
-        setAccountRestricted(true);
-      }
-      return;
-    }
-
-    setErrorMessage(null);
-    setStatus("success");
   };
 
   const handleResend = async (): Promise<void> => {
@@ -195,11 +277,11 @@ const OtpVerificationStep = ({
     }
 
     if (aifArnFlow) {
-      if (hasEmail && !emailVerified) {
+      if (hasAmfiEmail && !emailVerified) {
         await onboardingApi.sendAmfiOtp({ channel: "email" });
       }
 
-      if (hasMobile && !mobileVerified) {
+      if (hasAmfiMobile && !mobileVerified) {
         await onboardingApi.sendAmfiOtp({ channel: "mobile" });
       }
 
@@ -209,15 +291,43 @@ const OtpVerificationStep = ({
       return;
     }
 
-    const response = await onboardingApi.sendOtp({ panNumber: "ABCDR1234A", channel: "mobile" });
-    setLegacyMaskedContact({ mobile: response.maskedMobile, email: response.maskedEmail });
-    setOtpValue("");
-    setErrorMessage(null);
-    setTimer(response.expiresInSeconds);
+    if (!leadId || !panNumber.trim() || !hasEntryEmail || !hasEntryMobile) {
+      setErrorMessage("Unable to resend OTP. Please restart onboarding.");
+      return;
+    }
+
+    try {
+      const otpResponse = await onboardingApi.sendOtp({
+        email: inputEmail!.trim(),
+        leadId,
+        mobile: inputMobile!.trim(),
+        panNumber: panNumber.trim().toUpperCase(),
+        type: "Partner Integration",
+      });
+
+      if (!otpResponse.success) {
+        setErrorMessage(otpResponse.message || "Unable to resend OTP. Please try again.");
+        return;
+      }
+
+      setOtpValue("");
+      setErrorMessage(null);
+      setTimer(initialTimerSeconds);
+    } catch {
+      setErrorMessage("Unable to resend OTP. Please try again.");
+    }
   };
 
-  const visibleMobile = aifArnFlow ? amfiMaskedMobile : legacyMaskedContact?.mobile ?? "+91 9xxxxxxx23";
-  const visibleEmail = aifArnFlow ? amfiMaskedEmail : legacyMaskedContact?.email ?? "rixxxxx@xxxxx.com";
+  const visibleMobile = aifArnFlow
+    ? amfiMaskedMobile
+    : inputMobile
+      ? maskMobile(inputMobile)
+      : null;
+  const visibleEmail = aifArnFlow
+    ? amfiMaskedEmail
+    : inputEmail
+      ? maskEmail(inputEmail)
+      : null;
 
   if (status === "success") {
     return (
@@ -234,24 +344,24 @@ const OtpVerificationStep = ({
   }
 
   return (
-    <section className="w-full rounded-2xl bg-[var(--color-onboarding-surface)] p-8 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)]">
-      <div className="space-y-5">
+    <section className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl bg-[var(--color-onboarding-surface)] p-6 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)] lg:p-8">
+      <div className="min-w-0 space-y-5">
         <header className="space-y-2">
-          <h2 className="text-[32px] font-medium text-[var(--color-onboarding-heading)]">Verify OTP</h2>
+          <h2 className="text-[22px] font-medium text-[var(--color-onboarding-heading)] lg:text-[32px]">Verify OTP</h2>
 
           <p className="text-[15px] text-[var(--color-onboarding-heading)]">
             OTP has been sent to your AMFI registered contact details
           </p>
 
-          <div className="flex flex-wrap gap-4 text-sm text-[var(--color-onboarding-primary)]">
+          <div className="flex min-w-0 flex-col gap-2 text-sm text-[var(--color-onboarding-primary)] sm:flex-row sm:flex-wrap sm:gap-4">
             {visibleMobile ? (
-              <span className="inline-flex items-center gap-1">
-                <Smartphone className="size-3.5" /> +91 {visibleMobile}
+              <span className="inline-flex min-w-0 items-center gap-1 break-all">
+                <Smartphone className="size-3.5 shrink-0" /> +91 {visibleMobile}
               </span>
             ) : null}
             {visibleEmail ? (
-              <span className="inline-flex items-center gap-1">
-                <Mail className="size-3.5" /> {visibleEmail}
+              <span className="inline-flex min-w-0 items-center gap-1 break-all">
+                <Mail className="size-3.5 shrink-0" /> {visibleEmail}
               </span>
             ) : null}
           </div>
@@ -294,9 +404,10 @@ const OtpVerificationStep = ({
           </p>
         ) : null}
 
-        <div className="mt-4 grid grid-cols-2 gap-5">
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:gap-5">
           <Button
-            className="h-9 rounded-[8.75px] border border-[#eeeeee] bg-white text-sm text-[var(--color-onboarding-heading)] hover:bg-[#f8f8f8]"
+            className="h-9 rounded-[8px] border border-[#eeeeee] bg-white text-sm text-[var(--color-onboarding-heading)] hover:bg-[#f8f8f8] lg:rounded-[8.75px]"
+            disabled={isSubmitting}
             onClick={onBack}
             type="button"
             variant="outline"
@@ -305,14 +416,21 @@ const OtpVerificationStep = ({
           </Button>
 
           <Button
-            className="h-9 rounded-[8.75px] bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a]"
-            disabled={accountRestricted}
+            className="h-9 rounded-[8px] bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a] lg:rounded-[8.75px]"
+            disabled={accountRestricted || isSubmitting}
             onClick={() => {
               void handleContinue();
             }}
             type="button"
           >
-            Continue
+            {isSubmitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              "Continue"
+            )}
           </Button>
         </div>
 

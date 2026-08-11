@@ -12,17 +12,21 @@ import GstGridSection from "./GstGridSection";
 type GstSelectionSectionProps = {
   mode: BusinessDetailsMode;
   records: GstRecord[];
+  isUploading: boolean;
   onToggleRecord: (id: string) => void;
   onSelectAll: () => void;
   onOpenAddGst: () => void;
+  onUploadForRecord: (id: string, file: File) => void;
 };
 
 const GstSelectionSection = ({
   mode,
   records,
+  isUploading,
   onToggleRecord,
   onSelectAll,
   onOpenAddGst,
+  onUploadForRecord,
 }: GstSelectionSectionProps): ReactElement => {
   const selectedCount = records.filter((record) => record.selected).length;
 
@@ -47,7 +51,9 @@ const GstSelectionSection = ({
       {mode === "selection" ? (
         <>
           <div className="flex items-center gap-5">
-            <p className="text-[12px] leading-[18px] text-[#231f20]">{selectedCount} of 12 Item(s) Selected</p>
+            <p className="text-[12px] leading-[18px] text-[#231f20]">
+              {selectedCount} of {records.length} Item(s) Selected
+            </p>
             <button
               className="h-[29px] rounded-[8px] border border-[#eeeeee] px-4 text-[13px] leading-[19.5px] text-[#435160]"
               onClick={onSelectAll}
@@ -57,7 +63,12 @@ const GstSelectionSection = ({
             </button>
           </div>
 
-          <GstGridSection onToggle={onToggleRecord} records={records} />
+          <GstGridSection
+            isUploading={isUploading}
+            onToggle={onToggleRecord}
+            onUploadForRecord={onUploadForRecord}
+            records={records}
+          />
         </>
       ) : (
         <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[8px] bg-transparent py-6 text-center">

@@ -44,6 +44,9 @@ export type OnboardingStateType = {
   amfiMaskedMobile: string | null;
   emailVerified: boolean;
   mobileVerified: boolean;
+  /** Verified on entry OTP screen — locked on personal details. */
+  emailVerifiedFromEntry: boolean;
+  mobileVerifiedFromEntry: boolean;
   otpAttempts: number;
   otpTimerSeconds: number;
   accountRestricted: boolean;

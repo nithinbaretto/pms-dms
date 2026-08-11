@@ -11,7 +11,7 @@ const OnboardingHero = (): ReactElement => {
   return (
     <section className="max-w-[610px] space-y-8">
       <div className="space-y-[22px]">
-        <h1 className="text-[52px] leading-[1.1] font-semibold text-[var(--color-onboarding-heading-strong)] tracking-[-0.02em]">
+        <h1 className="text-[32px] leading-[1.1] font-semibold tracking-[-0.02em] text-[var(--color-onboarding-heading-strong)] sm:text-[40px] lg:text-[52px]">
           <span>Grow Your </span>
           <span className="text-[var(--color-onboarding-accent)]">Practice </span>
           <br />

@@ -22,7 +22,8 @@ export const defaultValidators: Record<string, ValidatorFn> = {
     const signatureValid = !docRules.requiresSignature || context.signatureUploaded;
     const photoValid = !docRules.requiresPhoto || context.photoUploaded;
     const chequeValid = !docRules.requiresCheque || context.chequeUploaded;
-    const dueDiligenceValid = !docRules.requiresDueDiligenceDoc || context.dueDiligenceDocUploaded !== false;
+    const dueDiligenceValid =
+      !docRules.requiresDueDiligenceDoc || context.dueDiligenceDocUploaded !== false;
 
     return signatureValid && photoValid && chequeValid && dueDiligenceValid;
   },

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
@@ -28,10 +28,15 @@ const EntityDetailsStep = ({
 
   const normalizedPan = useMemo(() => pan.trim().toUpperCase(), [pan]);
   const isPanValid = PAN_REGEX.test(normalizedPan);
-  const shouldShowError = (showValidationError && !isPanValid) || Boolean(externalError);
-  const resolvedError = externalError ?? "Please enter a valid PAN.";
+  const shouldShowError =
+    (showValidationError && normalizedPan.length > 0 && !isPanValid) || Boolean(externalError);
+  const resolvedError = externalError ?? "Invalid PAN number";
 
   const handleContinue = (): void => {
+    if (!normalizedPan) {
+      return;
+    }
+
     if (!isPanValid) {
       setShowValidationError(true);
       return;
@@ -60,11 +65,9 @@ const EntityDetailsStep = ({
 
           <Input
             className="h-9 rounded-lg border-[#eeeeee] px-3 text-[13px]"
+            disabled={isSubmitting}
             id="pan-number"
             maxLength={10}
-            onBlur={() => {
-              setShowValidationError(true);
-            }}
             onChange={(event) => {
               setShowValidationError(false);
               const sanitizedValue = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
@@ -80,22 +83,23 @@ const EntityDetailsStep = ({
           ) : null}
         </div>
 
-        <div
-          onPointerDown={() => {
-            if (!isPanValid) {
-              setShowValidationError(true);
-            }
-          }}
+        <Button
+          className="h-9 w-full rounded-lg bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a]"
+          disabled={!normalizedPan || isSubmitting}
+          onClick={handleContinue}
+          type="button"
         >
-          <Button
-            className="h-9 w-full rounded-lg bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a]"
-            disabled={!isPanValid || isSubmitting}
-            onClick={handleContinue}
-            type="button"
-          >
-            Continue <ArrowRight className="size-4" />
-          </Button>
-        </div>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="size-4 animate-spin" />
+              Validating...
+            </>
+          ) : (
+            <>
+              Continue <ArrowRight className="size-4" />
+            </>
+          )}
+        </Button>
 
         <SupportFooter showSecureMessage />
       </div>

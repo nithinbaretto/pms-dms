@@ -1,47 +1,76 @@
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Loader2 } from "lucide-react";
 
 import { Button } from "../../../../shared/ui/button";
-import { ENTITY_TYPE_OPTIONS, MOCK_PERSONAL_DETAILS } from "./constants";
+import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
+import { ENTITY_TYPE_OPTIONS } from "./constants";
 import CorrespondenceAddressModal from "./modals/CorrespondenceAddressModal";
 import OtpVerificationModal from "./modals/OtpVerificationModal";
 import AddressSection from "./sections/AddressSection";
 import ContactDetailsSection from "./sections/ContactDetailsSection";
 import EntitySummarySection from "./sections/EntitySummarySection";
-import type {
-  EntityType,
-  PersonalDetailsModel,
-  VerificationChannel,
-} from "./types";
-import { isPersonalDetailsStepValid } from "./validation";
+import type { EntityType, PersonalDetailsModel } from "./types";
+import { usePersonalDetailsFlow } from "./usePersonalDetailsFlow";
 
 type PersonalDetailsStepProps = {
-  initialData?: PersonalDetailsModel;
-  onContinue: (value: PersonalDetailsModel) => void;
+  onContinue: (value: PersonalDetailsModel, nextStep?: string | null) => void;
 };
 
-const PersonalDetailsStep = ({
-  initialData = MOCK_PERSONAL_DETAILS,
-  onContinue,
-}: PersonalDetailsStepProps): ReactElement => {
-  const [data, setData] = useState<PersonalDetailsModel>(initialData);
-  const [otpChannel, setOtpChannel] = useState<VerificationChannel>("email");
-  const [showOtpModal, setShowOtpModal] = useState(false);
+const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactElement => {
+  const {
+    data,
+    isLoading,
+    isSaving,
+    isSendingOtp,
+    isVerifyingOtp,
+    error,
+    otpChannel,
+    otpModalOpen,
+    canSave,
+    emailLockedFromEntry,
+    mobileLockedFromEntry,
+    setEmailValue,
+    setMobileValue,
+    startOtpForChannel,
+    resendOtp,
+    verifyOtpForChannel,
+    closeOtpModal,
+    saveCorrespondenceAddress,
+    saveDetails,
+  } = usePersonalDetailsFlow();
+
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  const canContinue = useMemo(() => isPersonalDetailsStepValid(data), [data]);
-
   const handleEntityTypeSelect = (value: EntityType): void => {
-    setData((current) => ({
-      ...current,
-      personalDetails: {
-        ...current.personalDetails,
-        entityType: value,
-        entityTypeLocked: true,
-      },
-    }));
+    // Entity type stays locked for PMS Individual; keep handler for existing section API.
+    void value;
   };
+
+  if (isLoading) {
+    return (
+      <OnboardingStepSkeleton
+        nextLabel="Business Details"
+        progressPercent={20}
+        showPrevious={false}
+        stepLabel="Step 1 of 6"
+        subtitle="Your details have been fetched from APMI. Fields shown in grey cannot be changed."
+        title="Personal Information"
+      />
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="mx-auto w-full max-w-[1240px] space-y-3 py-16 text-center">
+        <p className="text-sm text-[var(--color-onboarding-danger)]">
+          {error || "Unable to load personal details."}
+        </p>
+      </div>
+    );
+  }
+
+  const nextLabel = data.nextInfoSection?.trim() || "Business Details";
 
   return (
     <>
@@ -76,28 +105,14 @@ const PersonalDetailsStep = ({
 
             <ContactDetailsSection
               email={data.email}
+              emailLocked={emailLockedFromEntry}
+              isSendingOtp={isSendingOtp}
               mobile={data.mobile}
-              onEmailChange={(value) => {
-                setData((current) => ({
-                  ...current,
-                  email: {
-                    value,
-                    verified: false,
-                  },
-                }));
-              }}
-              onMobileChange={(value) => {
-                setData((current) => ({
-                  ...current,
-                  mobile: {
-                    value,
-                    verified: false,
-                  },
-                }));
-              }}
+              mobileLocked={mobileLockedFromEntry}
+              onEmailChange={setEmailValue}
+              onMobileChange={setMobileValue}
               onStartVerify={(channel) => {
-                setOtpChannel(channel);
-                setShowOtpModal(true);
+                void startOtpForChannel(channel);
               }}
             />
 
@@ -108,6 +123,10 @@ const PersonalDetailsStep = ({
               }}
               permanentAddress={data.permanentAddress}
             />
+
+            {error && !otpModalOpen ? (
+              <p className="text-sm text-[var(--color-onboarding-danger)]">{error}</p>
+            ) : null}
           </div>
         </section>
       </div>
@@ -116,59 +135,63 @@ const PersonalDetailsStep = ({
         <div className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-2 px-6 py-2 sm:items-end lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:px-[120px]">
           <div className="hidden h-9 w-[180px] opacity-0 lg:block" aria-hidden="true" />
           <div className="flex w-full flex-col items-start gap-2 sm:items-end lg:w-auto lg:flex-row lg:items-center lg:gap-6">
-            <p className="text-[13px] leading-[19.5px] text-[#5a6b7d]">Next: Business Details</p>
+            <p className="text-[13px] leading-[19.5px] text-[#5a6b7d]">Next: {nextLabel}</p>
             <Button
-              className="h-10 w-full rounded-[8.75px] bg-[var(--color-onboarding-primary)] px-[21px] py-2 text-sm text-white hover:bg-[#7f141a] sm:w-[180px] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
-              disabled={!canContinue}
+              className={`h-10 w-full rounded-[8.75px] px-[21px] py-2 text-sm text-white sm:w-[180px] ${
+                isSaving
+                  ? "bg-[var(--color-onboarding-primary)] hover:bg-[var(--color-onboarding-primary)]"
+                  : "bg-[var(--color-onboarding-primary)] hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
+              }`}
+              disabled={!canSave || isSaving}
               onClick={() => {
-                onContinue(data);
+                void (async () => {
+                  const result = await saveDetails();
+                  if (!result) {
+                    return;
+                  }
+
+                  onContinue(result.data, result.nextStep);
+                })();
               }}
               type="button"
             >
-              <span className="text-sm font-normal leading-[21px]">Continue</span> <ArrowRight className="h-4 w-4" />
+              {isSaving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  Continue <ArrowRight className="size-4" />
+                </>
+              )}
             </Button>
           </div>
         </div>
       </div>
 
-      <OtpVerificationModal
-        channel={otpChannel}
-        onCancel={() => {
-          setShowOtpModal(false);
-        }}
-        onVerify={() => {
-          setData((current) => {
-            if (otpChannel === "mobile") {
-              return {
-                ...current,
-                mobile: {
-                  ...current.mobile,
-                  verified: true,
-                },
-              };
-            }
-
-            return {
-              ...current,
-              email: {
-                ...current.email,
-                verified: true,
-              },
-            };
-          });
-          setShowOtpModal(false);
-        }}
-        open={showOtpModal}
-        value={otpChannel === "mobile" ? data.mobile.value : data.email.value}
-      />
+      {otpChannel ? (
+        <OtpVerificationModal
+          channel={otpChannel}
+          errorMessage={otpModalOpen ? error : null}
+          isSendingOtp={isSendingOtp}
+          isVerifyingOtp={isVerifyingOtp}
+          onCancel={closeOtpModal}
+          onResend={resendOtp}
+          onVerify={verifyOtpForChannel}
+          open={otpModalOpen}
+          value={otpChannel === "mobile" ? data.mobile.value : data.email.value}
+        />
+      ) : null}
 
       <CorrespondenceAddressModal
         initialAddress={data.correspondenceAddress}
+        initialSameAsPermanent={data.isCorrespoingSameAsPermanent}
         onCancel={() => {
           setShowAddressModal(false);
         }}
-        onSave={(address) => {
-          setData((current) => ({ ...current, correspondenceAddress: address }));
+        onSave={(address, sameAsPermanent) => {
+          saveCorrespondenceAddress(address, sameAsPermanent);
           setShowAddressModal(false);
         }}
         open={showAddressModal}

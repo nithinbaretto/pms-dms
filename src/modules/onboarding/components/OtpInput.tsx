@@ -66,11 +66,11 @@ const OtpInput = ({
   };
 
   return (
-    <div className={cn("flex items-center justify-center gap-4", containerClassName)}>
+    <div className={cn("flex w-full max-w-full items-center justify-center gap-2 sm:gap-3 lg:gap-4", containerClassName)}>
       {characters.map((character, index) => (
         <input
           className={cn(
-            "h-10 w-10 rounded-lg border border-[#eeeeee] px-0 text-center text-2xl text-[var(--color-onboarding-heading)] outline-none",
+            "h-9 w-9 shrink-0 rounded-lg border border-[#eeeeee] px-0 text-center text-xl text-[var(--color-onboarding-heading)] outline-none sm:h-10 sm:w-10 sm:text-2xl",
             "focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]",
             inputClassName,
           )}

@@ -19,8 +19,9 @@ type CorrespondenceAddressModalProps = {
   open: boolean;
   permanentAddress: Address;
   initialAddress: Address;
+  initialSameAsPermanent?: boolean;
   onCancel: () => void;
-  onSave: (address: Address) => void;
+  onSave: (address: Address, sameAsPermanent: boolean) => void;
 };
 
 type LatLng = {
@@ -53,6 +54,7 @@ const CorrespondenceAddressModal = ({
   open,
   permanentAddress,
   initialAddress,
+  initialSameAsPermanent,
   onCancel,
   onSave,
 }: CorrespondenceAddressModalProps): ReactElement => {
@@ -63,7 +65,7 @@ const CorrespondenceAddressModal = ({
   });
 
   const [sameAsPermanent, setSameAsPermanent] = useState(
-    isSameAddress(initialAddress, permanentAddress),
+    initialSameAsPermanent ?? isSameAddress(initialAddress, permanentAddress),
   );
   const [isLocatingUser, setIsLocatingUser] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -78,8 +80,8 @@ const CorrespondenceAddressModal = ({
 
     setDraft(initialAddress);
     setLocationError(null);
-    setSameAsPermanent(isSameAddress(initialAddress, permanentAddress));
-  }, [initialAddress, open, permanentAddress]);
+    setSameAsPermanent(initialSameAsPermanent ?? isSameAddress(initialAddress, permanentAddress));
+  }, [initialAddress, initialSameAsPermanent, open, permanentAddress]);
 
   const mapCenter = useMemo<LatLng>(() => {
     if (draft.lat && draft.lng) {
@@ -144,7 +146,7 @@ const CorrespondenceAddressModal = ({
   const resolvedAddress = sameAsPermanent ? permanentAddress : draft;
 
   const handleSave = (): void => {
-    onSave(resolvedAddress);
+    onSave(resolvedAddress, sameAsPermanent);
   };
 
   return (
