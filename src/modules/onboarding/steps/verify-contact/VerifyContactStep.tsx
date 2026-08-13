@@ -120,7 +120,6 @@ const VerifyContactStep = ({
           </label>
 
           <Input
-            className="h-9 rounded-lg border-[#eeeeee] px-3 text-[13px]"
             id="verify-arn-number"
             onChange={(event) => {
               setArnValue(event.target.value);
@@ -150,9 +149,8 @@ const VerifyContactStep = ({
             Mobile Number*
           </label>
           <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-2">
-            <Input className="h-9 rounded-lg border-[#eeeeee] px-2 text-xs" disabled value="+91 [IND]" />
+            <Input className="px-2 text-xs" disabled value="+91 [IND]" />
             <Input
-              className="h-9 rounded-lg border-[#eeeeee] px-3 text-[13px]"
               id="verify-mobile-number"
               inputMode="numeric"
               maxLength={10}
@@ -177,7 +175,6 @@ const VerifyContactStep = ({
             Email Address
           </label>
           <Input
-            className="h-9 rounded-lg border-[#eeeeee] px-3 text-[13px]"
             id="verify-email-address"
             onChange={(event) => {
               setEmailValue(event.target.value);

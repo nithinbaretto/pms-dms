@@ -39,7 +39,7 @@ const AprnFormCard = ({
       <div className="space-y-5">
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-2 lg:gap-4">
-            <h2 className="shrink-0 whitespace-nowrap text-[22px] font-medium leading-[33px] text-[var(--color-onboarding-heading)] lg:text-[32px] lg:leading-[1.2]">
+            <h2 className="shrink-0 whitespace-nowrap font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[var(--color-onboarding-heading)]">
               Verify APRN
             </h2>
             <div className="flex min-w-0 shrink items-center justify-end gap-2">
@@ -53,75 +53,77 @@ const AprnFormCard = ({
             </div>
           </div>
 
-          <p className="text-[15px] text-[var(--color-onboarding-heading)]">
+          <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[var(--color-onboarding-heading)]">
             Verify your identity with your APRN to proceed securely.
           </p>
         </header>
 
         <div className="space-y-3">
-          <p className="text-xs text-[var(--color-onboarding-heading-strong)]">
-            Select empanelment type
-          </p>
+          <div className="flex flex-col items-start gap-2">
+            <p className="text-xs text-[var(--color-onboarding-heading-strong)]">
+              Select empanelment type
+            </p>
 
-          <div className="inline-flex rounded-full bg-[#f8f8f8] p-1">
-            <button
-              className={cn(
-                "h-7 rounded-full px-4 text-xs transition-colors",
-                empanelmentType === "Distributor"
-                  ? "bg-white text-[var(--color-onboarding-primary)] shadow-sm"
-                  : "text-[var(--color-onboarding-heading)]",
-              )}
-              onClick={() => {
-                onEmpanelmentTypeChange("Distributor");
+            <div className="inline-flex w-fit rounded-full bg-[#f8f8f8] p-1">
+              <button
+                className={cn(
+                  "h-7 rounded-full px-4 text-xs transition-colors",
+                  empanelmentType === "Distributor"
+                    ? "bg-white text-[var(--color-onboarding-primary)] shadow-sm"
+                    : "text-[var(--color-onboarding-heading)]",
+                )}
+                onClick={() => {
+                  onEmpanelmentTypeChange("Distributor");
+                }}
+                type="button"
+              >
+                Distributor
+              </button>
+              <button
+                className={cn(
+                  "h-7 rounded-full px-4 text-xs transition-colors",
+                  empanelmentType === "RIA"
+                    ? "bg-white text-[var(--color-onboarding-primary)] shadow-sm"
+                    : "text-[var(--color-onboarding-heading)]",
+                )}
+                onClick={() => {
+                  onEmpanelmentTypeChange("RIA");
+                }}
+                type="button"
+              >
+                RIA
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-[var(--color-onboarding-heading-strong)]" htmlFor="aprn-number">
+              APRN Number <span className="text-[var(--color-onboarding-danger)]">*</span>
+            </label>
+
+            <Input
+              autoComplete="off"
+              id="aprn-number"
+              onChange={(event) => {
+                const sanitizedValue = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+                onChange(sanitizedValue);
               }}
-              type="button"
-            >
-              Distributor
-            </button>
-            <button
-              className={cn(
-                "h-7 rounded-full px-4 text-xs transition-colors",
-                empanelmentType === "RIA"
-                  ? "bg-white text-[var(--color-onboarding-primary)] shadow-sm"
-                  : "text-[var(--color-onboarding-heading)]",
-              )}
-              onClick={() => {
-                onEmpanelmentTypeChange("RIA");
-              }}
-              type="button"
-            >
-              RIA
-            </button>
+              placeholder="APRN 102030"
+              value={value}
+            />
+
+            {errorMessage ? (
+              <p className="text-xs text-[var(--color-onboarding-danger)]">{errorMessage}</p>
+            ) : null}
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs text-[var(--color-onboarding-heading-strong)]" htmlFor="aprn-number">
-            APRN Number <span className="text-[var(--color-onboarding-danger)]">*</span>
-          </label>
-
-          <Input
-            className="h-9 rounded-lg border-[#eeeeee] px-3 text-[13px]"
-            id="aprn-number"
-            onChange={(event) => {
-              const sanitizedValue = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-              onChange(sanitizedValue);
-            }}
-            placeholder="APRN 102030"
-            value={value}
-          />
-
-          {errorMessage ? (
-            <p className="text-xs text-[var(--color-onboarding-danger)]">{errorMessage}</p>
-          ) : null}
-        </div>
-
         {showRiaVariant ? (
-          <p className="text-sm text-[var(--color-onboarding-primary)] underline">
+          <p className="text-left font-['Mulish',sans-serif] text-[14px] font-normal leading-[18px] tracking-normal text-[#93161E] underline decoration-solid underline-offset-0">
             Looking to register as an RIA?
           </p>
         ) : (
-          <p className="text-sm text-[var(--color-onboarding-primary)] underline">
+          <p className="text-left font-['Mulish',sans-serif] text-[14px] font-normal leading-[18px] tracking-normal text-[#93161E] underline decoration-solid underline-offset-0">
             Looking to register as an RIA? Click here
           </p>
         )}

@@ -1,7 +1,8 @@
 import type { ReactElement } from "react";
-import { ArrowRight, Loader2, Pencil } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 
+import editIcon from "../../../../assets/icons/edit_icon.png";
 import { Button } from "../../../../shared/ui/button";
 import ProductCategoryCard from "../../components/ProductCategoryCard";
 import SupportFooter from "../../components/SupportFooter";
@@ -56,33 +57,37 @@ const BusinessCategoryStep = ({
       <div className="space-y-5">
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[22px] font-medium leading-[33px] text-[var(--color-onboarding-heading)] lg:text-[32px] lg:leading-[1.2]">
+            <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
               Get Started
             </h2>
 
             <button
               aria-label="Edit PAN"
-              className="inline-flex items-center gap-1 rounded-full bg-[var(--color-onboarding-pill-background)] px-2 py-1 text-xs font-medium text-[var(--color-onboarding-primary)] transition-opacity hover:opacity-80 disabled:opacity-50"
+              className="inline-flex h-[26px] items-center gap-2 rounded-full bg-[rgba(147,22,30,0.06)] px-2 py-1 font-['Mulish',sans-serif] text-[12px] font-medium leading-[18px] tracking-normal text-[#93161E] transition-opacity hover:opacity-80 disabled:opacity-50"
               disabled={isSubmitting}
               onClick={onEditPan}
               type="button"
             >
               PAN : {panNumber}
-              <Pencil className="size-3" />
+              <img
+                alt=""
+                className="size-[11px] shrink-0"
+                src={editIcon}
+              />
             </button>
           </div>
 
-          <p className="text-[15px] text-[var(--color-onboarding-heading)]">
+          <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
             Join our distribution network and expand your client offerings
           </p>
         </header>
 
-        <div className="space-y-3">
-          <p className="text-xs text-[var(--color-onboarding-heading-strong)]">
+        <div className="flex flex-col gap-4">
+          <p className="mb-0 font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
             Select Product Category
           </p>
 
-          <div className="space-y-2.5">
+          <div className="flex flex-col gap-2.5">
             <ProductCategoryCard
               description="Portfolio Management Services"
               onSelect={() => {
@@ -115,7 +120,7 @@ const BusinessCategoryStep = ({
           }}
         >
           <Button
-            className="h-9 w-full rounded-lg bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a]"
+            className="h-9 w-full rounded-lg bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a] disabled:bg-[#E5E5E6] disabled:text-[#5A6B7D] disabled:opacity-100 disabled:[&_svg]:text-[#5A6B7D] hover:disabled:bg-[#E5E5E6]"
             disabled={isContinueDisabled || isSubmitting}
             onClick={handleContinue}
             type="button"
@@ -127,7 +132,7 @@ const BusinessCategoryStep = ({
               </>
             ) : (
               <>
-                Continue <ArrowRight className="size-4" />
+                Continue <ArrowRight className="size-4 text-current" />
               </>
             )}
           </Button>

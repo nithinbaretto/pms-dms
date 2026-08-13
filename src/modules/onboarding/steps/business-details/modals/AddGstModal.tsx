@@ -13,6 +13,7 @@ import {
 
 import { Button } from "../../../../../shared/ui/button";
 import { Dialog, DialogContent } from "../../../../../shared/ui/dialog";
+import { Input } from "../../../../../shared/ui/input";
 import guidlinesImg1 from "../../../../../assets/images/guidlines_img_1.png";
 import guidlinesImg2 from "../../../../../assets/images/guidlines_img_2.png";
 import guidlinesImg3 from "../../../../../assets/images/guidlines_img_3.png";
@@ -21,6 +22,7 @@ import { MAX_GST_CERTIFICATE_BYTES } from "../constants";
 import { formatStateLabel } from "../helpers";
 import type { ManualGstDraft, ValidateGstResult } from "../types";
 import { formatGstName, isValidGstNumber } from "../validation";
+import CameraCaptureModal from "../../../components/CameraCaptureModal";
 
 type AddGstModalProps = {
   open: boolean;
@@ -92,6 +94,7 @@ const AddGstModal = ({
     previewUrl: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -103,6 +106,7 @@ const AddGstModal = ({
     setManualMode(false);
     setFieldsLocked(false);
     setLocalPreview(null);
+    setShowCamera(false);
   }, [open]);
 
   useEffect(() => {
@@ -201,12 +205,7 @@ const AddGstModal = ({
     }));
   };
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const selectedFile = event.target.files?.[0];
-    if (!selectedFile) {
-      return;
-    }
-
+  const processSelectedFile = async (selectedFile: File): Promise<void> => {
     if (selectedFile.size > MAX_GST_CERTIFICATE_BYTES) {
       setFormatError("File must be PNG, JPEG or PDF up to 2MB");
       return;
@@ -233,6 +232,21 @@ const AddGstModal = ({
     setDraft((current) => ({ ...current, fileURL }));
   };
 
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) {
+      return;
+    }
+
+    await processSelectedFile(selectedFile);
+    event.target.value = "";
+  };
+
+  const handleCameraSave = async (file: File): Promise<void> => {
+    await processSelectedFile(file);
+    setShowCamera(false);
+  };
+
   const canSave =
     Boolean(draft.legalName.trim()) &&
     Boolean(draft.stateCode.trim()) &&
@@ -240,6 +254,7 @@ const AddGstModal = ({
     (!draft.gstNumber.trim() || isValidGstNumber(draft.gstNumber));
 
   return (
+    <>
     <Dialog
       onOpenChange={(nextOpen) => {
         onOpenChange(nextOpen);
@@ -248,7 +263,7 @@ const AddGstModal = ({
     >
       <DialogContent className="max-h-[calc(100vh-48px)] max-w-[860px] overflow-y-auto rounded-[16px] border-0 bg-[#f9f9f9] p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)]">
         <div className="p-6">
-          <h3 className="text-[22px] font-medium leading-none text-[var(--color-onboarding-heading,#435160)]">
+          <h3 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
             Add GST
           </h3>
 
@@ -260,8 +275,8 @@ const AddGstModal = ({
                 ) : null}
               </label>
               <div className="flex h-[38px] overflow-hidden rounded-[8px] border border-[#d8787d] bg-white">
-                <input
-                  className="flex-1 bg-transparent px-3 text-[13px] outline-none uppercase"
+                <Input
+                  className="h-full flex-1 rounded-none border-0 bg-transparent px-3 uppercase shadow-none focus-visible:border-transparent focus-visible:ring-0"
                   disabled={fieldsLocked || isValidatingGst}
                   onChange={(event) => {
                     setDraft((current) => ({
@@ -340,8 +355,7 @@ const AddGstModal = ({
                     <label className="text-[14px] leading-[21px] text-[#435160]">
                       Legal Name <span className="text-[#e2585f]">*</span>
                     </label>
-                    <input
-                      className="flex h-[38px] w-full items-center rounded-[8px] border border-[#e5e5e6] bg-white px-3 text-[13px] text-[#231f20] outline-none disabled:bg-[#f5f6f8]"
+                    <Input
                       disabled={fieldsLocked}
                       onChange={(event) => {
                         setDraft((current) => ({
@@ -407,7 +421,7 @@ const AddGstModal = ({
                                 className="h-[34px] border border-[#e5e5e6] bg-white text-[13px] text-[#5a6b7d] hover:bg-white"
                                 disabled={isUploading}
                                 onClick={() => {
-                                  fileInputRef.current?.click();
+                                  setShowCamera(true);
                                 }}
                                 type="button"
                                 variant="outline"
@@ -509,6 +523,14 @@ const AddGstModal = ({
         </div>
       </DialogContent>
     </Dialog>
+    {showCamera ? (
+      <CameraCaptureModal
+        title="Capture GST Certificate"
+        onCancel={() => setShowCamera(false)}
+        onSave={handleCameraSave}
+      />
+    ) : null}
+    </>
   );
 };
 

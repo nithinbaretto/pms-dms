@@ -2,6 +2,7 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useRef } from "react";
 import { Check, Upload } from "lucide-react";
 
+import { abbreviateStateName } from "../helpers";
 import type { GstRecord } from "../types";
 
 type GstGridSectionProps = {
@@ -20,21 +21,22 @@ const GstGridSection = ({
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {records.map((record) => {
         const cardClass = record.selected
           ? "border-[#d8787d] bg-[#fffaf6]"
           : "border-[#eeeeee] bg-white";
         const needsUpload =
           record.selected && record.requiresCertificate && !record.fileURL.trim();
+        const stateAbbrev = abbreviateStateName(record.stateCode);
 
         return (
           <div
-            className={`flex w-full flex-col rounded-[8px] border p-3 text-left transition-colors ${cardClass}`}
+            className={`flex w-full min-w-0 flex-col rounded-[8px] border p-3 text-left transition-colors ${cardClass}`}
             key={record.id}
           >
             <button
-              className="flex w-full items-start text-left"
+              className="flex w-full min-w-0 items-start text-left"
               onClick={() => {
                 onToggle(record.id);
               }}
@@ -48,21 +50,18 @@ const GstGridSection = ({
                 {record.selected ? <Check className="h-[9px] w-[9px] text-white" /> : null}
               </span>
 
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center justify-between gap-3 text-[13px] leading-[19px] text-[#231f20]">
-                  <span className="truncate">
+              <span className="min-w-0 flex-1 overflow-hidden">
+                <span className="flex min-w-0 items-center justify-between gap-2 text-[13px] leading-[19px] text-[#231f20]">
+                  <span className="min-w-0 truncate">
                     {record.gstNumber || "Unregistered"}
                   </span>
-                  <span>{record.stateCode}</span>
+                  {stateAbbrev ? (
+                    <span className="shrink-0 whitespace-nowrap">{stateAbbrev}</span>
+                  ) : null}
                 </span>
-                <span className="mt-1 block text-[11px] leading-[16.5px] text-[#71859b]">
+                <span className="mt-1 block truncate text-[11px] leading-[16.5px] text-[#71859b]">
                   {record.legalName || "—"}
                 </span>
-                {record.fileURL ? (
-                  <span className="mt-1 block text-[10px] leading-[15px] text-[#8ea2b8]">
-                    Doc attached
-                  </span>
-                ) : null}
               </span>
             </button>
 

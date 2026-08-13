@@ -1,14 +1,13 @@
 import type { RefObject } from 'react';
-import { Loader2 } from 'lucide-react';
 import nomineeFormSvgPaths from '../../../../assets/figma-svg/svg-2tncnp7dy5';
-import nomineeSvgPaths from '../../../../assets/figma-svg/svg-7h2pdnxf7l';
 import emailOtpSvgPaths from '../../../../assets/figma-svg/svg-ftc9bj5bhu';
 import nomineeAddressSvgPaths from '../../../../assets/figma-svg/svg-8pstwmmui8';
 import guardianAddressSvgPaths from '../../../../assets/figma-svg/svg-31cjxfwjep';
-import imgLogo from '../../../../assets/logo.png';
-import imgEmptyNominee from '../../../../assets/images/guidlines_img_2.png';
+import imgEmptyNominee from '../../../../assets/icons/svg/empty_nominee_icon.svg';
 import imgMapPreview from '../../../../assets/images/guidlines_img_1.png';
 import imgGuardianMapPreview from '../../../../assets/images/guidlines_img_1.png';
+import { Input } from '../../../../shared/ui/input';
+import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import { PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
 
 interface NomineeDetailsScreenProps {
@@ -29,7 +28,6 @@ interface NomineeDetailsScreenProps {
   nomineeEmail: string;
   setNomineeEmail: (email: string) => void;
   nomineeIsMinor: 'yes' | 'no';
-  setNomineeIsMinor: (isMinor: 'yes' | 'no') => void;
   nomineeDob: string;
   nomineeAddress: string;
 
@@ -112,7 +110,6 @@ export function NomineeDetailsScreen({
   nomineeEmail,
   setNomineeEmail,
   nomineeIsMinor,
-  setNomineeIsMinor,
   nomineeDob,
   nomineeAddress,
   guardianName,
@@ -165,30 +162,11 @@ export function NomineeDetailsScreen({
   setCurrentStep,
   setIsEditMode,
 }: NomineeDetailsScreenProps) {
-  const continueButtonContent = (label: string) =>
-    isTransitioning ? (
-      <>
-        <Loader2 className="size-4 animate-spin text-white" />
-        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">Saving...</p>
-      </>
-    ) : (
-      <>
-        <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] text-white">{label}</p>
-        <div className="size-[16px]">
-          <svg className="size-full" fill="none" viewBox="0 0 12.0004 10.0006">
-            <path d={nomineeSvgPaths.p16866180} fill="white" />
-          </svg>
-        </div>
-      </>
-    );
-
   return (
     <>
       {/* Desktop View */}
-      <div className="hidden lg:block min-h-screen bg-[#fffaf6] pb-[80px]">
-        {/* Main Content - Scrollable with centered container */}
-        <div className="relative z-10">
-          <div className="max-w-[1200px] mx-auto flex flex-col gap-[24px]">
+      <div className="hidden lg:block">
+        <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-[24px]">
             {/* Header */}
             <div className="flex flex-col gap-[4px]">
               <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Nominee Details</p>
@@ -204,10 +182,10 @@ export function NomineeDetailsScreen({
             </div>
 
             {/* White Card - Content hugs, no internal scroll */}
-            <div className="bg-white rounded-[16px] shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)] w-full">
+            <div className="w-full overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
               {/* Progress Bar - Full width at top */}
-              <div className="bg-[#e6e7e8] h-[8px] w-full">
-                <div className="bg-[#37b400] h-full w-[60%]"></div>
+              <div className="h-2 w-full bg-[#e6e7e8]">
+                <div className="h-full w-[60%] rounded-r-full bg-[#37b400]" />
               </div>
 
               <div className="flex flex-col gap-[20px] p-[16px]">
@@ -238,32 +216,29 @@ export function NomineeDetailsScreen({
                   /* Empty State */
                   <div className="flex flex-col items-center justify-center py-[24px] gap-[12px]">
                     <img src={imgEmptyNominee} alt="No nominee added" className="w-[108px] h-[66px] object-contain" />
-                    <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px] text-center">Add a nominee now for convenience or complete this step later.</p>
+                    <p className="font-['Mulish',sans-serif] font-normal leading-none text-[#71859B] text-[14px] text-center tracking-[0px]">Add a nominee now for convenience or complete this step later.</p>
                   </div>
                 ) : (
                   /* Nominee Form */
                   <div className="flex flex-wrap gap-[16px]">
                     {/* Nominee Name */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                        <p className="text-[#231f20]">Nominee Name</p>
-                        <p className="text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Nominee Name</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative">
-                        <input
-                          type="text"
-                          value={nomineeName}
-                          onChange={(e) => setNomineeName(e.target.value)}
-                          className="w-full h-full px-[14px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none"
-                        />
-                      </div>
+                      <Input
+                        type="text"
+                        value={nomineeName}
+                        onChange={(e) => setNomineeName(e.target.value)}
+                      />
                     </div>
 
                     {/* Relationship with Applicant */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)] relative" ref={relationshipDropdownRef}>
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                        <p className="text-[#231f20]">Relationship with Applicant</p>
-                        <p className="text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Relationship with Applicant</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
                       <button
                         onClick={() => setShowRelationshipDropdown(!showRelationshipDropdown)}
@@ -298,9 +273,9 @@ export function NomineeDetailsScreen({
 
                     {/* Proof of Identity */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)] relative" ref={proofDropdownRef}>
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                        <p className="text-[#231f20]">Proof of Identity</p>
-                        <p className="text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Proof of Identity</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
                       <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex items-center">
                         <button
@@ -312,12 +287,12 @@ export function NomineeDetailsScreen({
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </button>
-                        <input
+                        <Input
                           type="text"
                           value={nomineeProofNumber}
                           onChange={(e) => setNomineeProofNumber(e.target.value)}
                           placeholder="Enter Proof Number"
-                          className="flex-1 px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                          className="h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0"
                         />
                       </div>
 
@@ -349,7 +324,7 @@ export function NomineeDetailsScreen({
 
                     {/* Mobile Number */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Mobile Number</p>
+                      <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Mobile Number</p>
                       <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex">
                         <div className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px]">
                           <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b] w-[59px]">{nomineeMobileCountry}</p>
@@ -357,50 +332,52 @@ export function NomineeDetailsScreen({
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </div>
-                        <input
+                        <Input
                           type="text"
                           value={nomineeMobile}
                           onChange={(e) => setNomineeMobile(e.target.value)}
                           placeholder="Enter Mobile Number"
-                          className="flex-1 px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                          className="h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0"
                         />
                       </div>
                     </div>
 
                     {/* Email ID */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Email ID</p>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative">
-                        <input
-                          type="email"
-                          value={nomineeEmail}
-                          onChange={(e) => setNomineeEmail(e.target.value)}
-                          placeholder="Enter Email ID"
-                          className="w-full h-full px-[14px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
-                        />
-                      </div>
+                      <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Email ID</p>
+                      <Input
+                        type="email"
+                        value={nomineeEmail}
+                        onChange={(e) => setNomineeEmail(e.target.value)}
+                        placeholder="Enter Email ID"
+                      />
                     </div>
 
                     {/* Is nominee a minor */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal text-[12px]">
-                        <p className="leading-[18px] text-[#231f20]">Is nominee a minor?</p>
-                        <p className="leading-[18px] text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Is nominee a minor?</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
                       <div className="flex gap-[30px] items-center">
                         {/* Yes/No Switcher */}
-                        <div className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px]">
+                        <div
+                          className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px] cursor-not-allowed"
+                          title="This is set automatically from the nominee date of birth"
+                        >
                           <button
-                            onClick={() => setNomineeIsMinor('yes')}
-                            className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                            type="button"
+                            disabled
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
                               nomineeIsMinor === 'yes' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                             }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Yes</p>
                           </button>
                           <button
-                            onClick={() => setNomineeIsMinor('no')}
-                            className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                            type="button"
+                            disabled
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
                               nomineeIsMinor === 'no' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                             }`}
                           >
@@ -431,9 +408,9 @@ export function NomineeDetailsScreen({
                     {/* Address */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
                       <div className="flex items-center justify-between w-full">
-                        <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                          <p className="text-[#231f20]">Address</p>
-                          <p className="text-[#e8402f]">*</p>
+                        <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                          <p className="text-[#231F20]">Address</p>
+                          <p className="text-[#E8402F]">*</p>
                         </div>
                         <button onClick={handleOpenNomineeAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
                           <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
@@ -472,26 +449,23 @@ export function NomineeDetailsScreen({
 
                         {/* Guardian Name */}
                         <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                          <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                            <p className="text-[#231f20]">Guardian Name</p>
-                            <p className="text-[#e8402f]">*</p>
+                          <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                            <p className="text-[#231F20]">Guardian Name</p>
+                            <p className="text-[#E8402F]">*</p>
                           </div>
-                          <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative">
-                            <input
-                              type="text"
-                              value={guardianName}
-                              onChange={(e) => setGuardianName(e.target.value)}
-                              className="w-full h-full px-[14px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none"
-                            />
-                          </div>
+                          <Input
+                            type="text"
+                            value={guardianName}
+                            onChange={(e) => setGuardianName(e.target.value)}
+                          />
                         </div>
 
                         {/* Guardian Address */}
                         <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
                           <div className="flex items-center justify-between w-full">
-                            <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                              <p className="text-[#231f20]">Address</p>
-                              <p className="text-[#e8402f]">*</p>
+                            <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                              <p className="text-[#231F20]">Address</p>
+                              <p className="text-[#E8402F]">*</p>
                             </div>
                             <button onClick={handleOpenGuardianAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
                               <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
@@ -517,81 +491,11 @@ export function NomineeDetailsScreen({
             </div>
             </div>
           </div>
-        </div>
-
-        {/* Bottom Navigation - Desktop - Fixed */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white h-[64px] shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)] flex items-center justify-between px-[60px] xl:px-[120px] py-[8px] z-30">
-          <button
-            onClick={() => {
-              setIsTransitioning(true);
-              setTimeout(() => {
-                setCurrentStep('bank-details');
-                setTimeout(() => setIsTransitioning(false), 50);
-              }, 300);
-            }}
-            className="h-[36px] w-[180px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors"
-          >
-            <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
-          </button>
-
-          <div className="flex gap-[24px] items-center">
-            {isEditMode ? (
-              <p
-                onClick={() => {
-                  if (!canProceed) {
-                    return;
-                  }
-                  setIsTransitioning(true);
-                  setTimeout(() => {
-                    setCurrentStep('upload-documents');
-                    setTimeout(() => setIsTransitioning(false), 50);
-                  }, 300);
-                }}
-                className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] text-right ${canProceed ? 'text-[#e8402f] cursor-pointer hover:underline' : 'text-[#b7b7b8] cursor-not-allowed'}`}
-              >
-                Next: Upload Documents
-              </p>
-            ) : (
-              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#5a6b7d] text-[13px] text-right">Next: Upload Documents</p>
-            )}
-            <button
-              onClick={() => {
-                if (!canProceed || isTransitioning) {
-                  return;
-                }
-                setIsTransitioning(true);
-                setTimeout(() => {
-                  if (isEditMode) {
-                    setCurrentStep('review-confirm');
-                    setIsEditMode(false);
-                  } else {
-                    setCurrentStep('upload-documents');
-                  }
-                  setTimeout(() => setIsTransitioning(false), 50);
-                }, 300);
-              }}
-              disabled={!canProceed || isTransitioning}
-              className={`h-[36px] w-[180px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
-                isTransitioning
-                  ? 'bg-[#93161e] cursor-not-allowed'
-                  : 'bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed'
-              }`}
-            >
-              {continueButtonContent(isEditMode ? 'Go to Review' : 'Continue')}
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Mobile/Tablet View */}
-      <div className="lg:hidden flex flex-col min-h-screen w-full bg-[#fffaf6]">
-        {/* Logo */}
-        <div className="absolute left-[20px] md:left-[40px] top-[32px] md:top-[48px] w-[80px] md:w-[100px] h-[40px] md:h-[50px] z-10">
-          <img alt="ICICI Prudential" className="w-full h-full object-contain" src={imgLogo} />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex flex-col px-[20px] md:px-[40px] pt-[100px] md:pt-[130px] pb-[120px] relative z-10 gap-[24px]">
+      <div className="lg:hidden">
+        <div className="flex flex-col gap-[24px]">
           {/* Header */}
           <div className="flex flex-col gap-[4px]">
             <p className="font-['Mulish',sans-serif] font-medium leading-[28px] md:leading-[33px] text-[#231f20] text-[20px] md:text-[22px]">Nominee Details</p>
@@ -607,10 +511,10 @@ export function NomineeDetailsScreen({
             </div>
 
             {/* White Card */}
-            <div className="bg-white rounded-[16px] shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)] w-full overflow-hidden">
+            <div className="w-full overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
               {/* Progress Bar - Full width at top */}
-              <div className="bg-[#e6e7e8] h-[8px] w-full">
-                <div className="bg-[#37b400] h-full w-[60%]"></div>
+              <div className="h-2 w-full bg-[#e6e7e8]">
+                <div className="h-full w-[60%] rounded-r-full bg-[#37b400]" />
               </div>
 
               <div className="flex flex-col gap-[20px] p-[16px] pb-0">
@@ -644,32 +548,29 @@ export function NomineeDetailsScreen({
                   /* Empty State */
                   <div className="flex flex-col items-center justify-center py-[24px] gap-[12px]">
                     <img src={imgEmptyNominee} alt="No nominee added" className="w-[108px] h-[66px] object-contain" />
-                    <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px] text-center">Add a nominee now for convenience or complete this step later.</p>
+                    <p className="font-['Mulish',sans-serif] font-normal leading-none text-[#71859B] text-[14px] text-center tracking-[0px]">Add a nominee now for convenience or complete this step later.</p>
                   </div>
                 ) : (
                   /* Nominee Form */
                   <div className="flex flex-wrap gap-[16px]">
                     {/* Nominee Name */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                        <p className="text-[#231f20]">Nominee Name</p>
-                        <p className="text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Nominee Name</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative">
-                        <input
-                          type="text"
-                          value={nomineeName}
-                          onChange={(e) => setNomineeName(e.target.value)}
-                          className="w-full h-full px-[14px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none"
-                        />
-                      </div>
+                      <Input
+                        type="text"
+                        value={nomineeName}
+                        onChange={(e) => setNomineeName(e.target.value)}
+                      />
                     </div>
 
                     {/* Relationship with Applicant */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={relationshipDropdownRef}>
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                        <p className="text-[#231f20]">Relationship with Applicant</p>
-                        <p className="text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Relationship with Applicant</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
                       <button
                         onClick={() => setShowRelationshipDropdown(!showRelationshipDropdown)}
@@ -704,9 +605,9 @@ export function NomineeDetailsScreen({
 
                     {/* Proof of Identity */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={proofDropdownRef}>
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                        <p className="text-[#231f20]">Proof of Identity</p>
-                        <p className="text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Proof of Identity</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
                       <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex items-center">
                         <button
@@ -718,12 +619,12 @@ export function NomineeDetailsScreen({
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </button>
-                        <input
+                        <Input
                           type="text"
                           value={nomineeProofNumber}
                           onChange={(e) => setNomineeProofNumber(e.target.value)}
                           placeholder="Enter Proof Number"
-                          className="flex-1 px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                          className="h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0"
                         />
                       </div>
 
@@ -755,7 +656,7 @@ export function NomineeDetailsScreen({
 
                     {/* Mobile Number */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Mobile Number</p>
+                      <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Mobile Number</p>
                       <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex">
                         <div className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px]">
                           <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b] w-[59px]">{nomineeMobileCountry}</p>
@@ -763,50 +664,52 @@ export function NomineeDetailsScreen({
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </div>
-                        <input
+                        <Input
                           type="text"
                           value={nomineeMobile}
                           onChange={(e) => setNomineeMobile(e.target.value)}
                           placeholder="Enter Mobile Number"
-                          className="flex-1 px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                          className="h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0"
                         />
                       </div>
                     </div>
 
                     {/* Email ID */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Email ID</p>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative">
-                        <input
-                          type="email"
-                          value={nomineeEmail}
-                          onChange={(e) => setNomineeEmail(e.target.value)}
-                          placeholder="Enter Email ID"
-                          className="w-full h-full px-[14px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
-                        />
-                      </div>
+                      <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Email ID</p>
+                      <Input
+                        type="email"
+                        value={nomineeEmail}
+                        onChange={(e) => setNomineeEmail(e.target.value)}
+                        placeholder="Enter Email ID"
+                      />
                     </div>
 
                     {/* Is nominee a minor */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                      <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal text-[12px]">
-                        <p className="leading-[18px] text-[#231f20]">Is nominee a minor?</p>
-                        <p className="leading-[18px] text-[#e8402f]">*</p>
+                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                        <p className="text-[#231F20]">Is nominee a minor?</p>
+                        <p className="text-[#E8402F]">*</p>
                       </div>
                       <div className="flex gap-[30px] items-center">
                         {/* Yes/No Switcher */}
-                        <div className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px]">
+                        <div
+                          className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px] cursor-not-allowed"
+                          title="This is set automatically from the nominee date of birth"
+                        >
                           <button
-                            onClick={() => setNomineeIsMinor('yes')}
-                            className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                            type="button"
+                            disabled
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
                               nomineeIsMinor === 'yes' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                             }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Yes</p>
                           </button>
                           <button
-                            onClick={() => setNomineeIsMinor('no')}
-                            className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                            type="button"
+                            disabled
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
                               nomineeIsMinor === 'no' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                             }`}
                           >
@@ -835,11 +738,11 @@ export function NomineeDetailsScreen({
                     </div>
 
                     {/* Address */}
-                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
+                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
                       <div className="flex items-center justify-between w-full">
-                        <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                          <p className="text-[#231f20]">Address</p>
-                          <p className="text-[#e8402f]">*</p>
+                        <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                          <p className="text-[#231F20]">Address</p>
+                          <p className="text-[#E8402F]">*</p>
                         </div>
                         <button onClick={handleOpenNomineeAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
                           <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
@@ -878,26 +781,23 @@ export function NomineeDetailsScreen({
 
                         {/* Guardian Name */}
                         <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                          <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                            <p className="text-[#231f20]">Guardian Name</p>
-                            <p className="text-[#e8402f]">*</p>
+                          <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                            <p className="text-[#231F20]">Guardian Name</p>
+                            <p className="text-[#E8402F]">*</p>
                           </div>
-                          <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative">
-                            <input
-                              type="text"
-                              value={guardianName}
-                              onChange={(e) => setGuardianName(e.target.value)}
-                              className="w-full h-full px-[14px] rounded-[8px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none"
-                            />
-                          </div>
+                          <Input
+                            type="text"
+                            value={guardianName}
+                            onChange={(e) => setGuardianName(e.target.value)}
+                          />
                         </div>
 
                         {/* Guardian Address */}
                         <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
                           <div className="flex items-center justify-between w-full">
-                            <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                              <p className="text-[#231f20]">Address</p>
-                              <p className="text-[#e8402f]">*</p>
+                            <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                              <p className="text-[#231F20]">Address</p>
+                              <p className="text-[#E8402F]">*</p>
                             </div>
                             <button onClick={handleOpenGuardianAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
                               <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
@@ -923,95 +823,50 @@ export function NomineeDetailsScreen({
             </div>
           </div>
         </div>
-
-        {/* Bottom Navigation - Mobile/Tablet */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)] flex flex-col gap-[12px] p-[16px] md:p-[20px] z-30 lg:hidden">
-          {isEditMode ? (
-            <>
-              <p
-                onClick={() => {
-                  if (!canProceed) {
-                    return;
-                  }
-                  setIsTransitioning(true);
-                  setTimeout(() => {
-                    setCurrentStep('upload-documents');
-                    setTimeout(() => setIsTransitioning(false), 50);
-                  }, 300);
-                }}
-                className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] text-left ${canProceed ? 'text-[#e8402f] cursor-pointer hover:underline' : 'text-[#b7b7b8] cursor-not-allowed'}`}
-              >
-                Next: Upload Documents
-              </p>
-              <div className="flex gap-[12px] items-center w-full">
-                <button
-                  onClick={() => {
-                    if (!canProceed || isTransitioning) {
-                      return;
-                    }
-                    setIsTransitioning(true);
-                    setTimeout(() => {
-                      setCurrentStep('review-confirm');
-                      setIsEditMode(false);
-                      setTimeout(() => setIsTransitioning(false), 50);
-                    }, 300);
-                  }}
-                  disabled={!canProceed || isTransitioning}
-                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
-                    isTransitioning
-                      ? 'bg-[#93161e] cursor-not-allowed'
-                      : 'bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed'
-                  }`}
-                >
-                  {continueButtonContent('Go to Review')}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#5a6b7d] text-[13px] text-left">Next: Upload Documents</p>
-              <div className="flex gap-[12px] items-center w-full">
-                <button
-                  onClick={() => {
-                    if (isTransitioning) {
-                      return;
-                    }
-                    setIsTransitioning(true);
-                    setTimeout(() => {
-                      setCurrentStep('bank-details');
-                      setTimeout(() => setIsTransitioning(false), 50);
-                    }, 300);
-                  }}
-                  disabled={isTransitioning}
-                  className="flex-1 h-[44px] md:h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors disabled:opacity-60"
-                >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Previous</p>
-                </button>
-                <button
-                  onClick={() => {
-                    if (!canProceed || isTransitioning) {
-                      return;
-                    }
-                    setIsTransitioning(true);
-                    setTimeout(() => {
-                      setCurrentStep('upload-documents');
-                      setTimeout(() => setIsTransitioning(false), 50);
-                    }, 300);
-                  }}
-                  disabled={!canProceed || isTransitioning}
-                  className={`flex-1 h-[44px] md:h-[36px] rounded-[8px] flex items-center justify-center gap-[8px] transition-colors ${
-                    isTransitioning
-                      ? 'bg-[#93161e] cursor-not-allowed'
-                      : 'bg-[#93161e] hover:bg-[#7a1319] disabled:bg-[#e5e5e6] disabled:hover:bg-[#e5e5e6] disabled:cursor-not-allowed'
-                  }`}
-                >
-                  {continueButtonContent('Continue')}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
       </div>
+
+      <OnboardingStepFooter
+        nextLabel="Upload Documents"
+        nextClickable={isEditMode}
+        onNextClick={() => {
+          if (!canProceed) {
+            return;
+          }
+          setIsTransitioning(true);
+          setTimeout(() => {
+            setCurrentStep('upload-documents');
+            setTimeout(() => setIsTransitioning(false), 50);
+          }, 300);
+        }}
+        showPrevious={!isEditMode}
+        onPrevious={() => {
+          setIsTransitioning(true);
+          setTimeout(() => {
+            setCurrentStep('bank-details');
+            setTimeout(() => setIsTransitioning(false), 50);
+          }, 300);
+        }}
+        continueLabel={isEditMode ? 'Go to Review' : 'Continue'}
+        continueDisabled={!canProceed}
+        isLoading={isTransitioning}
+        loadingLabel="Saving..."
+        hideContinueArrow={isEditMode}
+        onContinue={() => {
+          if (!canProceed || isTransitioning) {
+            return;
+          }
+          setIsTransitioning(true);
+          setTimeout(() => {
+            if (isEditMode) {
+              setCurrentStep('review-confirm');
+              setIsEditMode(false);
+            } else {
+              setCurrentStep('upload-documents');
+            }
+            setTimeout(() => setIsTransitioning(false), 50);
+          }, 300);
+        }}
+      />
 
       {/* DOB Picker Modal */}
       {showDobPicker && (
@@ -1046,7 +901,7 @@ export function NomineeDetailsScreen({
               <div className="flex gap-[12px]">
                 {/* Day */}
                 <div className="flex-1 flex flex-col gap-[8px]">
-                  <label className="font-['Mulish',sans-serif] font-normal text-[12px] text-[#231f20]">Day</label>
+                  <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Day</label>
                   <select
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(e.target.value)}
@@ -1062,7 +917,7 @@ export function NomineeDetailsScreen({
 
                 {/* Month */}
                 <div className="flex-1 flex flex-col gap-[8px]">
-                  <label className="font-['Mulish',sans-serif] font-normal text-[12px] text-[#231f20]">Month</label>
+                  <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Month</label>
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
@@ -1078,7 +933,7 @@ export function NomineeDetailsScreen({
 
                 {/* Year */}
                 <div className="flex-1 flex flex-col gap-[8px]">
-                  <label className="font-['Mulish',sans-serif] font-normal text-[12px] text-[#231f20]">Year</label>
+                  <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Year</label>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
@@ -1174,12 +1029,12 @@ export function NomineeDetailsScreen({
                       <svg className="size-[14px]" fill="none" viewBox="0 0 11.3873 11.3873">
                         <path d={nomineeAddressSvgPaths.p1210c800} fill="#231F20" />
                       </svg>
-                      <input
+                      <Input
                         type="text"
                         value={nomineeAddressSearch}
                         onChange={(e) => setNomineeAddressSearch(e.target.value)}
                         placeholder="Search on google map"
-                        className="flex-1 font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                        className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
                       />
                     </div>
                   </div>
@@ -1195,17 +1050,17 @@ export function NomineeDetailsScreen({
 
                   {/* Address Details Input */}
                   <div className="flex flex-col gap-[4px] w-full">
-                    <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                      <p className="text-[#231f20]">Address Details</p>
-                      <p className="text-[#e8402f]">*</p>
+                    <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                      <p className="text-[#231F20]">Address Details</p>
+                      <p className="text-[#E8402F]">*</p>
                     </div>
                     <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] w-full">
                       <div className="flex items-center gap-[8px] p-[14px] size-full">
-                        <input
+                        <Input
                           type="text"
                           value={nomineeAddressDetails}
                           onChange={(e) => setNomineeAddressDetails(e.target.value)}
-                          className="flex-1 font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none"
+                          className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
                         />
                       </div>
                     </div>
@@ -1315,12 +1170,12 @@ export function NomineeDetailsScreen({
                       <svg className="size-[14px]" fill="none" viewBox="0 0 11.3873 11.3873">
                         <path d={guardianAddressSvgPaths.p1210c800} fill="#231F20" />
                       </svg>
-                      <input
+                      <Input
                         type="text"
                         value={guardianAddressSearch}
                         onChange={(e) => setGuardianAddressSearch(e.target.value)}
                         placeholder="Search on google map"
-                        className="flex-1 font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] placeholder:text-[#71859b] outline-none"
+                        className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
                       />
                     </div>
                   </div>
@@ -1336,17 +1191,17 @@ export function NomineeDetailsScreen({
 
                   {/* Address Details Input */}
                   <div className="flex flex-col gap-[4px] w-full">
-                    <div className="flex gap-[2px] font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">
-                      <p className="text-[#231f20]">Address Details</p>
-                      <p className="text-[#e8402f]">*</p>
+                    <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                      <p className="text-[#231F20]">Address Details</p>
+                      <p className="text-[#E8402F]">*</p>
                     </div>
                     <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] w-full">
                       <div className="flex items-center gap-[8px] p-[14px] size-full">
-                        <input
+                        <Input
                           type="text"
                           value={guardianAddressDetails}
                           onChange={(e) => setGuardianAddressDetails(e.target.value)}
-                          className="flex-1 font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none"
+                          className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
                         />
                       </div>
                     </div>

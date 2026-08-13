@@ -17,15 +17,20 @@ const BranchSelectionSection = ({
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-[16px] font-medium leading-[24px] text-[#231f20]">Branch Details</h2>
-        <p className="mt-1 text-[14px] leading-[21px] text-[#435160]">
+        <h2 className="text-[16px] font-medium leading-[24px] tracking-normal text-[#231f20]">
+          Branch Details
+        </h2>
+        <p className="mt-1 text-[12px] font-medium leading-none tracking-normal text-[#435160]">
           Select your nearest branch for onboarding assistance and future support.
         </p>
       </div>
 
       <div className="max-w-[332px] space-y-1">
-        <label className="block text-[14px] leading-[21px] text-[#231f20]" htmlFor="business-branch">
-          Select Branch <span className="text-[#e2585f]">*</span>
+        <label
+          className="block text-[12px] font-normal leading-none tracking-normal text-[#231f20]"
+          htmlFor="business-branch"
+        >
+          Select Branch <span className="text-[#e8402f]">*</span>
         </label>
 
         <div className="relative">

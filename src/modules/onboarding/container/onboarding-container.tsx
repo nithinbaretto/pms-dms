@@ -476,16 +476,22 @@ const OnboardingContainer = (): ReactElement => {
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-8 lg:px-[120px] lg:py-16">
-        <img alt="ICICI Prudential" className="h-14 w-[115px]" src={logoImage} />
+        <img
+          alt="ICICI Prudential Alternate Investments"
+          className="h-[56px] w-[115px] object-contain object-left"
+          src={logoImage}
+        />
 
         {currentStep === "personal-details" || currentStep === "business-details" || currentStep === "bank-details" || currentStep === "nominee-details" || currentStep === "upload-documents" || currentStep === "review-confirm" ? (
           <div className="mt-6 pb-28 lg:mt-10 lg:pb-24">{renderStep()}</div>
         ) : (
-          <div className="mt-6 grid min-w-0 items-center gap-10 lg:mt-16 lg:grid-cols-[minmax(0,610px)_minmax(0,488px)] lg:justify-between">
-            <div className="min-w-0">
+          <div className="relative mt-0 min-w-0">
+            <div className="mt-10 min-w-0 max-w-[610px] lg:mt-34">
               <OnboardingHero />
             </div>
-            <div className="w-full min-w-0 max-w-[488px] justify-self-center lg:justify-self-end">{renderStep()}</div>
+            <div className="mt-10 w-full min-w-0 max-w-[488px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[488px] lg:-translate-y-1/2 lg:translate-x-6">
+              {renderStep()}
+            </div>
           </div>
         )}
       </div>

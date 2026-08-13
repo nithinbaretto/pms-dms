@@ -5,10 +5,10 @@ export const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 export const DOCUMENT_META = {
   photo: {
     documentName: "photo",
-    documentType: "photo",
+    documentType: "Photo",
   },
   signature: {
     documentName: "signature",
-    documentType: "signature",
+    documentType: "Signature",
   },
 } as const;

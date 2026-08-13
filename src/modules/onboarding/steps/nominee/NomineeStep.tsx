@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import { NomineeDetailsScreen } from "./NomineeDetailsScreen";
-import { formatDate, getAge, getSafeDobParts } from "./helpers";
+import { getSafeDobParts } from "./helpers";
 import { useNomineeFlow } from "./useNomineeFlow";
 
 type NomineeStepProps = {
@@ -101,31 +101,6 @@ const NomineeStep = ({
 
   const handleSetNomineeOption = (next: "later" | "now") => {
     setOption(next);
-  };
-
-  const handleSetNomineeIsMinor = (value: "yes" | "no") => {
-    const now = new Date();
-
-    if (value === "yes") {
-      const currentAge = getAge(form.dateOfBirth);
-      if (currentAge === null || currentAge >= 18) {
-        const forcedMinorDate = new Date(now.getFullYear() - 17, 0, 1);
-        updateField("dateOfBirth", formatDate(forcedMinorDate));
-        setSelectedDay("01");
-        setSelectedMonth("01");
-        setSelectedYear((now.getFullYear() - 17).toString());
-      }
-      return;
-    }
-
-    const currentAge = getAge(form.dateOfBirth);
-    if (currentAge === null || currentAge < 18) {
-      const forcedAdultDate = new Date(now.getFullYear() - 18, 0, 1);
-      updateField("dateOfBirth", formatDate(forcedAdultDate));
-      setSelectedDay("01");
-      setSelectedMonth("01");
-      setSelectedYear((now.getFullYear() - 18).toString());
-    }
   };
 
   const handleOpenDobPicker = () => {
@@ -280,7 +255,6 @@ const NomineeStep = ({
         nomineeEmail={form.emailId}
         setNomineeEmail={(value) => updateField("emailId", value.trimStart())}
         nomineeIsMinor={isMinor ? "yes" : "no"}
-        setNomineeIsMinor={handleSetNomineeIsMinor}
         nomineeDob={form.dateOfBirth}
         nomineeAddress={form.nomineeAddress}
         guardianName={form.guardianName}

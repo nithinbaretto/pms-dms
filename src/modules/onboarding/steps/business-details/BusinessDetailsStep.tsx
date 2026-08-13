@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
 
-import { Button } from "../../../../shared/ui/button";
+import OnboardingStepFooter from "../../components/OnboardingStepFooter";
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import AddGstModal from "./modals/AddGstModal";
 import BranchSelectionSection from "./sections/BranchSelectionSection";
@@ -45,7 +44,7 @@ const BusinessDetailsStep = ({
     return (
       <OnboardingStepSkeleton
         nextLabel="Bank Details"
-        progressPercent={35}
+        progressPercent={20}
         stepLabel="Step 2 of 6"
         subtitle="Your details have been fetched from APMI. Fields shown in grey cannot be changed"
         title="Business Details"
@@ -74,9 +73,9 @@ const BusinessDetailsStep = ({
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-[#f0f0f0] bg-[#f9f9f9] shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
-          <div className="h-2 w-full rounded-full bg-[#e6e7e8]">
-            <div className="h-full w-[35.5%] rounded-r-full bg-[#37b400]" />
+        <section className="overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+          <div className="h-2 w-full bg-[#e6e7e8]">
+            <div className="h-full w-[20%] rounded-r-full bg-[#37b400]" />
           </div>
 
           <div className="space-y-5 px-4 pb-4 pt-6 md:px-6 md:pb-6">
@@ -105,52 +104,23 @@ const BusinessDetailsStep = ({
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)]">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-2 px-6 py-2 sm:items-end lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:px-[120px]">
-          <Button
-            className="h-9 w-full rounded-[8px] border border-[#eeeeee] bg-white px-[21px] py-[7px] text-[14px] font-normal text-[#435160] hover:bg-white sm:w-[180px]"
-            disabled={isSaving}
-            onClick={onBack}
-            type="button"
-            variant="outline"
-          >
-            Previous
-          </Button>
-
-          <div className="flex w-full flex-col items-start gap-2 sm:items-end lg:w-auto lg:flex-row lg:items-center lg:gap-6">
-            <p className="text-[13px] leading-[19.5px] text-[#5a6b7d]">Next: Bank Details</p>
-            <Button
-              className={`h-9 w-full rounded-[8.75px] px-[21px] py-2 text-[14px] font-normal text-white sm:w-[180px] ${
-                isSaving
-                  ? "bg-[#93161e] hover:bg-[#93161e]"
-                  : "bg-[#93161e] hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
-              }`}
-              disabled={!canContinue || isSaving}
-              onClick={() => {
-                void (async () => {
-                  const result = await saveBusinessDetails();
-                  if (!result) {
-                    return;
-                  }
-                  onContinue(result.nextStep);
-                })();
-              }}
-              type="button"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  Continue <ArrowRight className="size-4" />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <OnboardingStepFooter
+        nextLabel="Bank Details"
+        onPrevious={onBack}
+        previousDisabled={isSaving}
+        continueDisabled={!canContinue}
+        isLoading={isSaving}
+        loadingLabel="Saving..."
+        onContinue={() => {
+          void (async () => {
+            const result = await saveBusinessDetails();
+            if (!result) {
+              return;
+            }
+            onContinue(result.nextStep);
+          })();
+        }}
+      />
 
       <AddGstModal
         isUploading={isUploading}

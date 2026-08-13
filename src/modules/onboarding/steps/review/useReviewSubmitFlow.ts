@@ -10,6 +10,7 @@ type UseReviewSubmitFlowResult = {
   isLoading: boolean;
   isSubmitting: boolean;
   isSubmitted: boolean;
+  submissionResult: CreateApplicationResponse | null;
   error: string | null;
   submitMessage: string | null;
   loadReview: () => Promise<void>;
@@ -30,6 +31,7 @@ export const useReviewSubmitFlow = (
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<CreateApplicationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
@@ -90,10 +92,12 @@ export const useReviewSubmitFlow = (
     try {
       const response = await onboardingApi.createApplication(leadId);
       setSubmitMessage(response.message || "Application submitted successfully");
+      setSubmissionResult(response);
       setIsSubmitted(true);
       return response;
     } catch {
       setError("Unable to submit application. Please try again.");
+      setSubmissionResult(null);
       return null;
     } finally {
       setIsSubmitting(false);
@@ -109,6 +113,7 @@ export const useReviewSubmitFlow = (
     isLoading,
     isSubmitting,
     isSubmitted,
+    submissionResult,
     error,
     submitMessage,
     loadReview,

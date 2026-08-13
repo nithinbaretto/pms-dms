@@ -276,9 +276,10 @@ const CorrespondenceAddressModal = ({
                 ) : null}
 
                 <div className="space-y-1">
-                  <label className="text-[12px] leading-[18px] text-[#231f20]">Address Line *</label>
+                  <label className="text-[12px] leading-[18px] text-[#231f20]">
+                    Address Line <span className="text-[#E8402F]">*</span>
+                  </label>
                   <Input
-                    className="h-9 rounded-[8px] border-[#eeeeee] text-[13px]"
                     onChange={(event) => {
                       setDraft((current) => ({
                         ...current,

@@ -79,7 +79,7 @@ const OtpVerificationModal = ({
 
   const handleVerify = async (): Promise<void> => {
     if (otpValue.length !== OTP_LENGTH) {
-      setLocalError("Please enter the 6-digit OTP.");
+      setLocalError("Please enter a valid OTP.");
       return;
     }
 
@@ -99,71 +99,93 @@ const OtpVerificationModal = ({
       }}
       open={open}
     >
-      <DialogContent className="max-w-[505px] gap-0 rounded-2xl border border-[#eeeeee] !bg-white opacity-100 p-6 sm:max-w-[505px] sm:p-6">
+      <DialogContent className="max-w-[505px] gap-0 rounded-2xl border border-[#eeeeee] !bg-white opacity-100 p-12 sm:max-w-[505px] sm:p-8">
         <DialogHeader className="space-y-1 text-left">
           <DialogTitle className="text-[22px] leading-none font-medium text-[var(--color-onboarding-heading)]">
             Verify OTP
           </DialogTitle>
-          <DialogDescription className="text-[15px] leading-[22.5px] text-[var(--color-onboarding-heading)]">
-            <p className="inline-flex flex-wrap items-center gap-1">
-              <span>A verification code has been sent to</span>
-              <span className="inline-flex items-center gap-1 text-[var(--color-onboarding-primary)]">
-                {isMobileChannel ? <Smartphone className="size-3.5" /> : <Mail className="size-3.5" />} {maskedValue}
-              </span>
-            </p>
+          <DialogDescription asChild>
+            <div className="text-[15px] leading-[22.5px] text-[var(--color-onboarding-heading)]">
+              <p className="inline-flex min-w-0 flex-wrap items-center gap-1">
+                <span>A verification code has been sent to</span>
+                <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
+                  {isMobileChannel ? (
+                    <Smartphone className="size-3.5 shrink-0" />
+                  ) : (
+                    <Mail className="size-3.5 shrink-0" />
+                  )}{" "}
+                  {maskedValue}
+                </span>
+              </p>
+            </div>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-5 flex flex-col">
+        <div className="mt-5 flex flex-col gap-6">
           <p className="text-[15px] leading-[22.5px] text-[var(--color-onboarding-heading)]">
             Please enter the 6-digit code below to verify.
           </p>
 
-          <div className="mt-6">
-            <OtpInput
-              containerClassName="justify-center gap-3"
-              inputClassName="h-10 w-10 rounded-[8px] border-[#e5e5e6] text-lg font-normal"
-              onChange={(next) => {
-                setOtpValue(next);
+          <div className="flex flex-col items-center gap-10">
+            <div className="flex w-full flex-col items-center gap-3">
+              <OtpInput
+                containerClassName="justify-center gap-3"
+                hasError={Boolean(displayError)}
+                inputClassName="h-10 w-10 rounded-[8px] text-lg font-normal"
+                onChange={(next) => {
+                  setOtpValue(next);
 
-                if (localError) {
-                  setLocalError(null);
-                }
-              }}
-              value={otpValue}
-            />
+                  if (localError) {
+                    setLocalError(null);
+                  }
+                }}
+                value={otpValue}
+              />
+
+              {displayError ? (
+                <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#E8402F]">
+                  {displayError}
+                </p>
+              ) : null}
+            </div>
+
+            <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#5a6b7d]">
+              {timer > 0 ? (
+                <>
+                  Resend OTP in{" "}
+                  <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#93161E]">
+                    {timer} Sec
+                  </span>
+                </>
+              ) : (
+                <button
+                  className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#5a6b7d] disabled:opacity-70"
+                  disabled={isSendingOtp}
+                  onClick={() => {
+                    void (async () => {
+                      setOtpValue("");
+                      setLocalError(null);
+                      await onResend();
+                      setTimer(OTP_RESEND_TIMER_SECONDS);
+                    })();
+                  }}
+                  type="button"
+                >
+                  {isSendingOtp ? (
+                    "Sending..."
+                  ) : (
+                    <>
+                      Didn&apos;t get it?{" "}
+                      <span className="text-[#93161E]">Resend OTP</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </p>
           </div>
 
-          {displayError ? (
-            <p className="mt-6 pt-1 text-center text-xs text-[var(--color-onboarding-danger)]">{displayError}</p>
-          ) : null}
-
-          <p className="mt-4 text-center text-[13px] text-[#5a6b7d]">
-            {timer > 0 ? (
-              <>
-                Resend OTP in <span className="text-[var(--color-onboarding-primary)]">{timer} Sec</span>
-              </>
-            ) : (
-              <button
-                className="text-[var(--color-onboarding-primary)] disabled:text-[#5a6b7d]"
-                disabled={isSendingOtp}
-                onClick={() => {
-                  void (async () => {
-                    setOtpValue("");
-                    setLocalError(null);
-                    await onResend();
-                    setTimer(OTP_RESEND_TIMER_SECONDS);
-                  })();
-                }}
-                type="button"
-              >
-                {isSendingOtp ? "Sending..." : "Didn't get it? Resend OTP"}
-              </button>
-            )}
-          </p>
-
           <Button
-            className="mt-4 h-10 w-full rounded-[8px] bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
+            className="h-10 w-full rounded-[8px] bg-[var(--color-onboarding-primary)] font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5A6B7D]"
             disabled={isVerifyingOtp || otpValue.length !== OTP_LENGTH}
             onClick={() => {
               void handleVerify();
@@ -177,7 +199,7 @@ const OtpVerificationModal = ({
               </>
             ) : (
               <>
-                Continue <ArrowRight className="size-4" />
+                Continue <ArrowRight className="size-4 text-current" />
               </>
             )}
           </Button>

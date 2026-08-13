@@ -4,14 +4,14 @@ import { TrendingUp, UserRound, Users } from "lucide-react";
 const heroStats = [
   { label: "27k+ Clients", Icon: Users },
   { label: "5k+ Distributors", Icon: UserRound },
-  { label: "Rs.50,000 Cr AUM", Icon: TrendingUp },
+  { label: "₹50,000 Cr AUM", Icon: TrendingUp },
 ] as const;
 
 const OnboardingHero = (): ReactElement => {
   return (
     <section className="max-w-[610px] space-y-8">
-      <div className="space-y-[22px]">
-        <h1 className="text-[32px] leading-[1.1] font-semibold tracking-[-0.02em] text-[var(--color-onboarding-heading-strong)] sm:text-[40px] lg:text-[52px]">
+      <div className="flex flex-col">
+        <h1 className="font-['Mulish',sans-serif] text-[40px] font-semibold leading-[43.7px] tracking-[-0.95px] text-[var(--color-onboarding-heading-strong)]">
           <span>Grow Your </span>
           <span className="text-[var(--color-onboarding-accent)]">Practice </span>
           <br />
@@ -19,10 +19,11 @@ const OnboardingHero = (): ReactElement => {
           <span>with us</span>
         </h1>
 
-        <div className="h-[2px] w-10 rounded-full bg-[var(--color-onboarding-accent)]" />
+        <div className="mt-4 h-[2px] w-10 shrink-0 rounded-full bg-[var(--color-onboarding-accent)]" />
 
-        <p className="max-w-[600px] text-[15px] leading-[22px] text-[var(--color-onboarding-heading)]">
+        <p className="max-w-[600px] pt-5 font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
           Join thousands of distributors earning more with a trusted fund house.
+          <br />
           Empanel in minutes - go live in days.
         </p>
       </div>

@@ -12,3 +12,12 @@ export const PENNY_DROP_DEFAULTS = {
 
 export const QR_POLL_INTERVAL_MS = 4000;
 export const QR_DEFAULT_EXPIRY_SECONDS = 600;
+
+/** Backend metadata for cancelled-cheque upload-document. */
+export const CANCELLED_CHEQUE_DOC_META = {
+  documentName: "cancelledCheque",
+  documentType: "cancelledCheque",
+} as const;
+
+export const CHEQUE_ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "application/pdf"] as const;
+export const CHEQUE_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;

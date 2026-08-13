@@ -49,7 +49,7 @@ const EntityDetailsStep = ({
     <section className="w-full rounded-2xl bg-[var(--color-onboarding-surface)] p-6 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)] lg:p-8">
       <div className="space-y-5">
         <header className="space-y-2">
-          <h2 className="text-[22px] font-medium leading-[33px] text-[var(--color-onboarding-heading)] lg:text-[32px] lg:leading-[1.2]">
+          <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
             Welcome back
           </h2>
 
@@ -64,7 +64,7 @@ const EntityDetailsStep = ({
           </label>
 
           <Input
-            className="h-9 rounded-lg border-[#eeeeee] px-3 text-[13px]"
+            autoComplete="off"
             disabled={isSubmitting}
             id="pan-number"
             maxLength={10}
@@ -84,8 +84,8 @@ const EntityDetailsStep = ({
         </div>
 
         <Button
-          className="h-9 w-full rounded-lg bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a]"
-          disabled={!normalizedPan || isSubmitting}
+          className="h-9 w-full rounded-lg bg-[var(--color-onboarding-primary)] text-sm text-white hover:bg-[#7f141a] disabled:bg-[#E5E5E6] disabled:text-[#5A6B7D] disabled:opacity-100 disabled:[&_svg]:text-[#5A6B7D] hover:disabled:bg-[#E5E5E6]"
+          disabled={normalizedPan.length < 10 || isSubmitting}
           onClick={handleContinue}
           type="button"
         >
@@ -96,7 +96,7 @@ const EntityDetailsStep = ({
             </>
           ) : (
             <>
-              Continue <ArrowRight className="size-4" />
+              Continue <ArrowRight className="size-4 text-current" />
             </>
           )}
         </Button>

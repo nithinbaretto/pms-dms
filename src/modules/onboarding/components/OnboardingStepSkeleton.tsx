@@ -61,7 +61,7 @@ const OnboardingStepSkeleton = ({
     <>
       <div className="mx-auto w-full max-w-[1240px] space-y-3 pb-28 lg:pb-24">
         <section className="space-y-3">
-          <header className="space-y-1">
+          <header className="flex flex-col gap-2">
             <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">{title}</h1>
             {subtitle ? (
               <p className="text-[15px] leading-[22.5px] text-[#435160]">{subtitle}</p>
@@ -76,7 +76,7 @@ const OnboardingStepSkeleton = ({
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-[#f0f0f0] bg-[#f9f9f9] shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+        <section className="overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
           <div className="h-2 w-full bg-[#e6e7e8]">
             <div
               className="h-full rounded-r-full bg-[#37b400]"
@@ -118,19 +118,37 @@ const OnboardingStepSkeleton = ({
 
       {showFooter ? (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)]">
-          <div className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-2 px-6 py-2 sm:items-end lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:px-[120px]">
-            {showPrevious ? (
-              <Skeleton className="h-9 w-full rounded-[8px] bg-[#e5e5e6] sm:w-[180px]" />
+          {/* Mobile skeleton — stacked */}
+          <div className="mx-auto flex w-full flex-col items-start gap-2 px-4 py-3 sm:px-5 lg:hidden">
+            {nextLabel ? (
+              <p className="text-[13px] leading-[19.5px] text-[#5a6b7d] underline underline-offset-2">
+                Next: {nextLabel}
+              </p>
             ) : (
-              <div className="hidden h-9 w-[180px] lg:block" aria-hidden="true" />
+              <Skeleton className="h-4 w-28 bg-[#e5e5e6]" />
             )}
-            <div className="flex w-full flex-col items-start gap-2 sm:items-end lg:w-auto lg:flex-row lg:items-center lg:gap-6">
+            <div className="flex w-full items-center gap-3">
+              {showPrevious ? (
+                <Skeleton className="h-11 w-full rounded-[8px] bg-[#e5e5e6]" />
+              ) : null}
+              <Skeleton className="h-11 w-full rounded-[8.75px] bg-[#e5e5e6]" />
+            </div>
+          </div>
+
+          {/* Desktop skeleton — horizontal */}
+          <div className="mx-auto hidden h-16 w-full max-w-[1440px] items-center justify-between px-[60px] xl:px-[120px] lg:flex">
+            {showPrevious ? (
+              <Skeleton className="h-9 w-[180px] rounded-[8px] bg-[#e5e5e6]" />
+            ) : (
+              <div className="h-9 w-[180px]" aria-hidden="true" />
+            )}
+            <div className="flex items-center gap-6">
               {nextLabel ? (
                 <p className="text-[13px] leading-[19.5px] text-[#5a6b7d]">Next: {nextLabel}</p>
               ) : (
                 <Skeleton className="h-4 w-28 bg-[#e5e5e6]" />
               )}
-              <Skeleton className="h-9 w-full rounded-[8.75px] bg-[#e5e5e6] sm:w-[180px]" />
+              <Skeleton className="h-9 w-[180px] rounded-[8.75px] bg-[#e5e5e6]" />
             </div>
           </div>
         </div>

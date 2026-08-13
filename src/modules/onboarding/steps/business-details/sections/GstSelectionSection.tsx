@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
-import { PackageOpen, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
+import noGstFoundImg from "../../../../../assets/images/no_gst_found.png";
 import {
   GST_DESCRIPTION,
   GST_EMPTY_DESCRIPTION,
@@ -32,18 +33,22 @@ const GstSelectionSection = ({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-[860px]">
-          <h2 className="text-[16px] font-medium leading-[24px] text-[#231f20]">GST Details</h2>
-          <p className="mt-1 text-[14px] leading-[21px] text-[#435160]">{GST_DESCRIPTION}</p>
+          <h2 className="text-[16px] font-medium leading-[24px] tracking-normal text-[#231f20]">
+            GST Details
+          </h2>
+          <p className="mt-1 text-[12px] font-medium leading-none tracking-normal text-[#435160]">
+            {GST_DESCRIPTION}
+          </p>
         </div>
 
         <button
-          className="inline-flex h-9 items-center gap-2 rounded-[8px] border border-[#93161e] px-[21px] py-[7px] text-[14px] leading-[21px] text-[#93161e]"
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[8px] border border-[#93161e] px-[21px] py-[7px] text-[14px] leading-[21px] text-[#93161e]"
           onClick={onOpenAddGst}
           type="button"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" strokeWidth={2.25} />
           Add New GST
         </button>
       </div>
@@ -71,12 +76,22 @@ const GstSelectionSection = ({
           />
         </>
       ) : (
-        <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[8px] bg-transparent py-6 text-center">
-          <span className="mb-2 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#fff5ed] text-[#b55a40]">
-            <PackageOpen className="h-7 w-7" />
-          </span>
-          <p className="text-[36px] font-medium leading-[45px] text-[#5a6b7d]">{GST_EMPTY_TITLE}</p>
-          <p className="text-[18px] leading-[30px] text-[#8ea2b8]">{GST_EMPTY_DESCRIPTION}</p>
+        <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 py-12 text-center">
+          <img
+            alt=""
+            className="h-[66px] w-[108px] object-contain"
+            height={66}
+            src={noGstFoundImg}
+            width={108}
+          />
+          <div className="space-y-1.5">
+            <p className="text-[16px] font-medium leading-[24px] text-[#231f20]">
+              {GST_EMPTY_TITLE}
+            </p>
+            <p className="max-w-[440px] text-[13px] leading-[19.5px] text-[#71859b]">
+              {GST_EMPTY_DESCRIPTION}
+            </p>
+          </div>
         </div>
       )}
     </section>

@@ -123,6 +123,39 @@ export const formatStateLabel = (state: string): string => {
     .join(" ");
 };
 
+/** Compact state label for GST cards: known codes, else 2 letters / initials. */
+export const abbreviateStateName = (state: string): string => {
+  const trimmed = state.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^[A-Za-z]{2}$/.test(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+
+  const byLabel = GST_STATE_OPTIONS.find(
+    (option) => option.label.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (byLabel) {
+    return byLabel.code;
+  }
+
+  const byCode = GST_STATE_OPTIONS.find(
+    (option) => option.code.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (byCode) {
+    return byCode.code;
+  }
+
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return `${words[0].charAt(0)}${words[1].charAt(0)}`.toUpperCase();
+  }
+
+  return trimmed.slice(0, 2).toUpperCase();
+};
+
 export const getFallbackStateOptions = (): string[] => {
   return GST_STATE_OPTIONS.map((option) => option.label);
 };

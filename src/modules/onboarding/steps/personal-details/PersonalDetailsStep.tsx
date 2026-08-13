@@ -1,8 +1,7 @@
 import type { ReactElement } from "react";
 import { useState } from "react";
-import { ArrowRight, Loader2 } from "lucide-react";
 
-import { Button } from "../../../../shared/ui/button";
+import OnboardingStepFooter from "../../components/OnboardingStepFooter";
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import { ENTITY_TYPE_OPTIONS } from "./constants";
 import CorrespondenceAddressModal from "./modals/CorrespondenceAddressModal";
@@ -71,15 +70,18 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
   }
 
   const nextLabel = data.nextInfoSection?.trim() || "Business Details";
+  const canEditAddress = data.email.verified && data.mobile.verified;
 
   return (
     <>
       <div className="mx-auto w-full max-w-[1240px] space-y-3">
         <section className="space-y-3">
-          <header className="space-y-1">
-            <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">Personal Information</h1>
-            <p className="text-[15px] leading-[22.5px] text-[var(--color-onboarding-heading)]">
-              Your details have been fetched from APMI. Fields shown in grey cannot be changed.
+          <header className="flex flex-col gap-2">
+            <h1 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#231F20]">
+              Personal Information
+            </h1>
+            <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
+              Your details have been fetched from APMI. Fields shown in grey cannot be changed
             </p>
           </header>
 
@@ -91,12 +93,12 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-[#f0f0f0] bg-[#f9f9f9] shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)]">
+        <section className="overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
           <div className="h-2 w-full bg-[#e6e7e8]">
             <div className="h-full w-[20%] rounded-r-full bg-[#37b400]" />
           </div>
 
-          <div className="space-y-4 p-4 md:p-6">
+          <div className="space-y-6 p-4 md:p-6">
             <EntitySummarySection
               entityTypeOptions={ENTITY_TYPE_OPTIONS}
               onEntityTypeSelect={handleEntityTypeSelect}
@@ -117,8 +119,13 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
             />
 
             <AddressSection
+              canEditCorrespondenceAddress={canEditAddress}
               correspondenceAddress={data.correspondenceAddress}
               onEditCorrespondenceAddress={() => {
+                if (!canEditAddress) {
+                  return;
+                }
+
                 setShowAddressModal(true);
               }}
               permanentAddress={data.permanentAddress}
@@ -131,44 +138,23 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)]">
-        <div className="mx-auto flex w-full max-w-[1440px] flex-col items-start gap-2 px-6 py-2 sm:items-end lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:px-[120px]">
-          <div className="hidden h-9 w-[180px] opacity-0 lg:block" aria-hidden="true" />
-          <div className="flex w-full flex-col items-start gap-2 sm:items-end lg:w-auto lg:flex-row lg:items-center lg:gap-6">
-            <p className="text-[13px] leading-[19.5px] text-[#5a6b7d]">Next: {nextLabel}</p>
-            <Button
-              className={`h-10 w-full rounded-[8.75px] px-[21px] py-2 text-sm text-white sm:w-[180px] ${
-                isSaving
-                  ? "bg-[var(--color-onboarding-primary)] hover:bg-[var(--color-onboarding-primary)]"
-                  : "bg-[var(--color-onboarding-primary)] hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
-              }`}
-              disabled={!canSave || isSaving}
-              onClick={() => {
-                void (async () => {
-                  const result = await saveDetails();
-                  if (!result) {
-                    return;
-                  }
+      <OnboardingStepFooter
+        nextLabel={nextLabel}
+        showPrevious={false}
+        continueDisabled={!canSave}
+        isLoading={isSaving}
+        loadingLabel="Saving..."
+        onContinue={() => {
+          void (async () => {
+            const result = await saveDetails();
+            if (!result) {
+              return;
+            }
 
-                  onContinue(result.data, result.nextStep);
-                })();
-              }}
-              type="button"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  Continue <ArrowRight className="size-4" />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
+            onContinue(result.data, result.nextStep);
+          })();
+        }}
+      />
 
       {otpChannel ? (
         <OtpVerificationModal
@@ -191,10 +177,14 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
           setShowAddressModal(false);
         }}
         onSave={(address, sameAsPermanent) => {
+          if (!canEditAddress) {
+            return;
+          }
+
           saveCorrespondenceAddress(address, sameAsPermanent);
           setShowAddressModal(false);
         }}
-        open={showAddressModal}
+        open={showAddressModal && canEditAddress}
         permanentAddress={data.permanentAddress}
       />
     </>

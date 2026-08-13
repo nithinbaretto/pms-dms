@@ -41,15 +41,17 @@ const ProductCategoryCard = ({
             {selected ? <Check className="size-2.5 text-white" /> : null}
           </span>
           <span className="space-y-0.5">
-            <span className="block text-xs font-medium text-[var(--color-onboarding-heading)]">
+            <span className="block font-['Mulish',sans-serif] text-[12px] font-medium leading-[18px] tracking-normal text-[#435160]">
               {title}
             </span>
-            <span className="block text-[11px] text-[#5a6b7d]">{description}</span>
+            <span className="block font-['Mulish',sans-serif] text-[11px] font-normal leading-[16.5px] tracking-normal text-[#5A6B7D]">
+              {description}
+            </span>
           </span>
         </span>
 
-        <span className="flex size-7 items-center justify-center rounded-[8px] bg-[rgba(147,22,30,0.1)]">
-          <TrendingUp className="size-[14px] text-[var(--color-onboarding-primary)]" />
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-[8.75px] bg-[rgba(147,22,30,0.1)] px-[7px]">
+          <TrendingUp className="size-[14px] text-[#93161E]" />
         </span>
       </span>
     </button>

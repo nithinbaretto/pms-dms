@@ -3,6 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import {
+  CANCELLED_CHEQUE_DOC_META,
+  CHEQUE_ALLOWED_FILE_TYPES,
+  CHEQUE_MAX_FILE_SIZE_BYTES,
   DEFAULT_RPD_VENDOR,
   PENNY_DROP_DEFAULTS,
   QR_DEFAULT_EXPIRY_SECONDS,
@@ -39,22 +42,27 @@ type UseBankDetailsFlowResult = {
   qrPolling: boolean;
   /** Increments when reverse-penny-drop QR flow successfully applies bank details. */
   qrCaptureToken: number;
+  /** True while fetchBankDetails runs after a successful reverse-penny-drop payment. */
+  isFetchingQrBankDetails: boolean;
   loadBankDetails: () => Promise<void>;
   validateApmiBankDetails: () => Promise<void>;
   validateManualPennyDrop: (accountNumber: string, ifscCode: string) => Promise<ManualPennyDropResult>;
   initiateQrPayment: () => Promise<QrSessionState | null>;
   checkQrPaymentStatus: () => Promise<"pending" | "success" | "failed" | "expired">;
   stopQrPolling: () => void;
+  isUploadingCheque: boolean;
+  uploadCancelledCheque: (file: File) => Promise<string | null>;
   saveBankDetails: (options?: {
     cancelledCheque?: string;
     isBankVerifiedOverride?: boolean;
+    details?: BankDetailsModel;
   }) => Promise<SaveBankResult | null>;
   setBankValidationStatus: (status: BankValidationStatus) => void;
   applyLocalBankUpdate: (model: BankDetailsModel, verificationType: BankVerificationType) => void;
 };
 
 export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
-  const { leadId, pan, panNumber, personalDetails } = useOnboardingStore();
+  const { leadId, pan, panNumber, applicationIds, personalDetails } = useOnboardingStore();
   const resolvedPan = (pan || panNumber || personalDetails?.personalDetails.pan || "").trim().toUpperCase();
   const investorName = (personalDetails?.personalDetails.name || "").trim();
 
@@ -63,6 +71,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
   const [isLoading, setIsLoading] = useState(true);
   const [isValidating, setIsValidating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingCheque, setIsUploadingCheque] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bankValidationStatus, setBankValidationStatus] = useState<BankValidationStatus>("pending");
   const [verificationType, setVerificationType] = useState<BankVerificationType>("");
@@ -70,6 +79,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
   const [qrSession, setQrSession] = useState<QrSessionState | null>(null);
   const [qrPolling, setQrPolling] = useState(false);
   const [qrCaptureToken, setQrCaptureToken] = useState(0);
+  const [isFetchingQrBankDetails, setIsFetchingQrBankDetails] = useState(false);
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const qrSessionRef = useRef<QrSessionState | null>(null);
@@ -364,8 +374,13 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
 
       if (statusResponse.status === "SUCCESS") {
         stopQrPolling();
-        const ok = await completeQrSuccess(qrSessionRef.current ?? session);
-        return ok ? "success" : "failed";
+        setIsFetchingQrBankDetails(true);
+        try {
+          const ok = await completeQrSuccess(qrSessionRef.current ?? session);
+          return ok ? "success" : "failed";
+        } finally {
+          setIsFetchingQrBankDetails(false);
+        }
       }
 
       if (statusResponse.status === "FAILURE") {
@@ -459,13 +474,16 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
     async (options?: {
       cancelledCheque?: string;
       isBankVerifiedOverride?: boolean;
+      details?: BankDetailsModel;
     }): Promise<SaveBankResult | null> => {
       if (!leadId) {
         setError("Unable to save bank details. Missing lead information.");
         return null;
       }
 
-      if (!data.hasBankData && options?.isBankVerifiedOverride !== true) {
+      const sourceModel = options?.details ?? data;
+
+      if (!sourceModel.hasBankData && options?.isBankVerifiedOverride !== true) {
         setError("Please validate bank details before continuing.");
         return null;
       }
@@ -476,7 +494,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
       try {
         const isVerified =
           options?.isBankVerifiedOverride ??
-          (data.isBankVerified || bankValidationStatus === "success");
+          (sourceModel.isBankVerified || bankValidationStatus === "success");
 
         // Only pass method when actually verified via that path; else "".
         const saveVerificationType: BankVerificationType =
@@ -486,10 +504,17 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
               ? "Reverse Penny Drop"
               : "";
 
-        const saveModel = enrichBankDetailsFromIfsc(data);
-        if (saveModel.bankName !== data.bankName) {
+        const saveModel = enrichBankDetailsFromIfsc(sourceModel);
+        if (saveModel.bankName !== data.bankName || options?.details) {
           setData(saveModel);
         }
+
+        const effectiveIsBankModified =
+          saveModel.accountNumber !== initialSnapshot.accountNumber ||
+          saveModel.ifscCode !== initialSnapshot.ifscCode ||
+          saveModel.accountHolderName !== initialSnapshot.accountHolderName ||
+          saveModel.bankName !== initialSnapshot.bankName ||
+          verificationType !== initialVerificationType;
 
         const response = await onboardingApi.saveBankDetails({
           leadId,
@@ -505,7 +530,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
             name: saveModel.accountHolderName,
           },
           cancelledCheque: options?.cancelledCheque ?? "",
-          isBankModified,
+          isBankModified: effectiveIsBankModified,
           isBankVerified: isVerified,
           verificationType: saveVerificationType,
         });
@@ -523,7 +548,56 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         setIsSaving(false);
       }
     },
-    [bankValidationStatus, data, initialVerificationType, isBankModified, leadId, verificationType],
+    [bankValidationStatus, data, initialSnapshot, initialVerificationType, leadId, verificationType],
+  );
+
+  const uploadCancelledCheque = useCallback(
+    async (file: File): Promise<string | null> => {
+      if (!leadId || !resolvedPan) {
+        setError("Unable to upload cancelled cheque. Missing lead or PAN information.");
+        return null;
+      }
+
+      const mime = (file.type || "").trim().toLowerCase();
+      const allowed = (CHEQUE_ALLOWED_FILE_TYPES as readonly string[]).includes(mime);
+      if (!allowed) {
+        setError("Cancelled cheque must be PNG, JPEG, or PDF.");
+        return null;
+      }
+      if (file.size > CHEQUE_MAX_FILE_SIZE_BYTES) {
+        setError("Cancelled cheque must be 2MB or smaller.");
+        return null;
+      }
+
+      setIsUploadingCheque(true);
+      setError(null);
+
+      try {
+        const response = await onboardingApi.uploadDocument({
+          file,
+          payload: {
+            leadId,
+            panNumber: resolvedPan,
+            applicationId: applicationIds,
+            documentName: CANCELLED_CHEQUE_DOC_META.documentName,
+            documentType: CANCELLED_CHEQUE_DOC_META.documentType,
+            metadata: {},
+          },
+        });
+        const storageUrl = response.fileURL.trim();
+        if (!storageUrl) {
+          setError("Cancelled cheque upload failed. Empty file URL returned.");
+          return null;
+        }
+        return storageUrl;
+      } catch {
+        setError("Unable to upload cancelled cheque. Please try again.");
+        return null;
+      } finally {
+        setIsUploadingCheque(false);
+      }
+    },
+    [applicationIds, leadId, resolvedPan],
   );
 
   useEffect(() => {
@@ -535,6 +609,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
     isLoading,
     isValidating,
     isSaving,
+    isUploadingCheque,
     error,
     bankValidationStatus,
     verificationType,
@@ -542,12 +617,14 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
     qrSession,
     qrPolling,
     qrCaptureToken,
+    isFetchingQrBankDetails,
     loadBankDetails,
     validateApmiBankDetails,
     validateManualPennyDrop,
     initiateQrPayment,
     checkQrPaymentStatus,
     stopQrPolling,
+    uploadCancelledCheque,
     saveBankDetails,
     setBankValidationStatus,
     applyLocalBankUpdate,

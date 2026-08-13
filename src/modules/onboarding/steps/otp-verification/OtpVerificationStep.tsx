@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Check, Loader2, Mail, Smartphone } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
 import { useOnboardingStore } from "../../state/onboarding-store";
@@ -136,14 +136,6 @@ const OtpVerificationStep = ({
       window.clearTimeout(timeoutId);
     };
   }, [aifArnFlow, setOtpTimerSeconds, status, timer]);
-
-  const resendLabel = useMemo(() => {
-    if (timer === 0) {
-      return "Resend OTP";
-    }
-
-    return `Resend OTP in ${timer} Sec`;
-  }, [timer]);
 
   const handleContinue = async (): Promise<void> => {
     if (isSubmitting) {
@@ -346,27 +338,27 @@ const OtpVerificationStep = ({
   return (
     <section className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl bg-[var(--color-onboarding-surface)] p-6 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)] lg:p-8">
       <div className="min-w-0 space-y-5">
-        <header className="space-y-2">
+        <header className="space-y-8">
           <h2 className="text-[22px] font-medium text-[var(--color-onboarding-heading)] lg:text-[32px]">Verify OTP</h2>
 
-          <p className="text-[15px] text-[var(--color-onboarding-heading)]">
-            OTP has been sent to your AMFI registered contact details
+          <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
+            OTP has been sent to your APMI registered contact details
           </p>
 
-          <div className="flex min-w-0 flex-col gap-2 text-sm text-[var(--color-onboarding-primary)] sm:flex-row sm:flex-wrap sm:gap-4">
+          <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
             {visibleMobile ? (
-              <span className="inline-flex min-w-0 items-center gap-1 break-all">
+              <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
                 <Smartphone className="size-3.5 shrink-0" /> +91 {visibleMobile}
               </span>
             ) : null}
             {visibleEmail ? (
-              <span className="inline-flex min-w-0 items-center gap-1 break-all">
+              <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
                 <Mail className="size-3.5 shrink-0" /> {visibleEmail}
               </span>
             ) : null}
           </div>
 
-          <p className="text-[15px] text-[var(--color-onboarding-heading)]">
+          <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
             Please enter the 6-digit code below to proceed.
           </p>
         </header>
@@ -381,17 +373,26 @@ const OtpVerificationStep = ({
           value={otpValue}
         />
 
-        <p className="text-center text-sm text-[var(--color-onboarding-muted)]">
-          <button
-            className="disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={timer > 0 || accountRestricted}
-            onClick={() => {
-              void handleResend();
-            }}
-            type="button"
-          >
-            {resendLabel}
-          </button>
+        <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[var(--color-onboarding-muted)]">
+          {timer > 0 ? (
+            <>
+              Resend OTP in{" "}
+              <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal">
+                {timer} Sec
+              </span>
+            </>
+          ) : (
+            <button
+              className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={accountRestricted}
+              onClick={() => {
+                void handleResend();
+              }}
+              type="button"
+            >
+              Resend OTP
+            </button>
+          )}
         </p>
 
         {errorMessage ? (

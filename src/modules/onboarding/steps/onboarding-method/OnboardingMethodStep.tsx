@@ -64,7 +64,7 @@ const OnboardingMethodStep = ({
       <div className="space-y-5">
         <header className="space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[22px] font-medium leading-[33px] text-[var(--color-onboarding-heading)] lg:text-[32px] lg:leading-[1.2]">
+            <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
               Get Started
             </h2>
 

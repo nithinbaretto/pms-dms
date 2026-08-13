@@ -9,6 +9,7 @@ type OtpInputProps = {
   onChange: (nextValue: string) => void;
   containerClassName?: string;
   inputClassName?: string;
+  hasError?: boolean;
 };
 
 const OtpInput = ({
@@ -17,6 +18,7 @@ const OtpInput = ({
   onChange,
   containerClassName,
   inputClassName,
+  hasError = false,
 }: OtpInputProps): ReactElement => {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
@@ -66,12 +68,14 @@ const OtpInput = ({
   };
 
   return (
-    <div className={cn("flex w-full max-w-full items-center justify-center gap-2 sm:gap-3 lg:gap-4", containerClassName)}>
+    <div className={cn("flex w-full max-w-full items-center justify-center gap-3 sm:gap-5", containerClassName)}>
       {characters.map((character, index) => (
         <input
           className={cn(
-            "h-9 w-9 shrink-0 rounded-lg border border-[#eeeeee] px-0 text-center text-xl text-[var(--color-onboarding-heading)] outline-none sm:h-10 sm:w-10 sm:text-2xl",
-            "focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]",
+            "size-10 shrink-0 rounded-lg border bg-white px-0 text-center font-['Mulish',sans-serif] text-[20px] font-semibold leading-none text-[#231f20] outline-none",
+            hasError
+              ? "border-[#E8402F] focus-visible:border-[#E8402F] focus-visible:ring-2 focus-visible:ring-[rgba(232,64,47,0.2)]"
+              : "border-[#EEEEEE] focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]",
             inputClassName,
           )}
           inputMode="numeric"

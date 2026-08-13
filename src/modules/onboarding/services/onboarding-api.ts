@@ -1,5 +1,5 @@
 import type { ProductCategory } from "../types/onboarding-types";
-import { apiGet, apiPost, apiPostFormData } from "../../../services/http/apiClient";
+import { apiGet, apiPost, apiPostBlob, apiPostFormData } from "../../../services/http/apiClient";
 
 export type VerifyAprnRequest = {
   panNumber: string;
@@ -16,8 +16,8 @@ export type VerifyAprnResponse = {
   leadId?: string | null;
 };
 
-/** OTP APIs always use Partner Integration; channel is selected via empty email/mobile. */
-export type PartnerOtpType = "Partner Integration";
+/** Entry / first personal-details verify uses Partner Integration; re-verify uses Primary. */
+export type PartnerOtpType = "Partner Integration" | "Primary";
 
 export type SendOtpRequest = {
   email: string;
@@ -192,6 +192,15 @@ export type DownloadFileRequest = {
 
 export type DownloadFileResponse = {
   fileURL: string;
+};
+
+export type GeneratePdfRequest = {
+  leadId: string;
+};
+
+export type GeneratePdfResponse = {
+  fileURL: string;
+  fileName: string;
 };
 
 export type SaveGstDetailsRequest = {
@@ -427,6 +436,7 @@ export type ReviewNomineeSection = {
   nomineeAddress: string;
   proofOfIdentityType: string;
   proofOfIdentityNumber: string;
+  isMinor: boolean;
 };
 
 export type ReviewDocumentSection = {
@@ -451,6 +461,11 @@ export type ReviewDetailsResponse = {
 export type CreateApplicationResponse = {
   message: string;
   applicationStatus: string;
+  applicationId: string[];
+  expectedReviewTimeline: string;
+  name: string;
+  primaryContactNumber: string;
+  primaryEmail: string;
 };
 
 type PanValidationApiResponse = {
@@ -659,14 +674,6 @@ type SaveUploadedDocumentsApiResponse = {
   application_status?: string;
 };
 
-type CreateApplicationApiResponse = {
-  message?: string;
-  Message?: string;
-  applicationStatus?: string;
-  Application_status?: string;
-  application_status?: string;
-};
-
 const API_BASE_URL = (import.meta.env.VITE_PMS_API_BASE_URL ?? "").replace(/\/$/, "");
 
 const withBase = (path: string): string => {
@@ -746,6 +753,8 @@ const API_ENDPOINTS = {
     withBase("/dms-api/application/getApplicationReviewDetails"),
   createApplication:
     import.meta.env.VITE_PMS_CREATE_APPLICATION_URL ?? withBase("/dms-api/application/createApplication"),
+  generatePdf:
+    import.meta.env.VITE_PMS_GENERATE_PDF_URL ?? withBase("/dms-api/pdf/generate"),
   getBankDetails:
     import.meta.env.VITE_PMS_GET_BANK_DETAILS_URL ?? withBase("/dms-api/applicant/getBankDetails"),
   pennyDropCall:
@@ -1064,6 +1073,9 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
         pickString(nomineeSource, ["proofOfIdentityType"]) || parsedProof.proofOfIdentityType,
       proofOfIdentityNumber:
         pickString(nomineeSource, ["proofOfIdentityNumber"]) || parsedProof.proofOfIdentityNumber,
+      isMinor:
+        pickBoolean(nomineeSource, ["isMinor", "isNomineeMinor"]) ||
+        Boolean(nomineeMinorParsed.isNomineeMinor),
     },
     documents: {
       uploadedPhoto,
@@ -1654,19 +1666,69 @@ export const onboardingApi = {
   },
 
   async createApplication(leadId: string): Promise<CreateApplicationResponse> {
-    const response = await apiPost<CreateApplicationApiResponse>(API_ENDPOINTS.createApplication, {
+    const response = await apiPost<Record<string, unknown>>(API_ENDPOINTS.createApplication, {
       leadId,
     });
-    const data = extractPayload(response) as CreateApplicationApiResponse;
+    const root = isRecord(response) ? response : {};
+    const data = extractPayload(response);
+
+    const applicationIdRaw = data.applicationId;
+    const applicationId = Array.isArray(applicationIdRaw)
+      ? applicationIdRaw.filter((id): id is string => typeof id === "string" && id.trim().length > 0).map((id) => id.trim())
+      : (() => {
+          const single = asStringOrNull(applicationIdRaw);
+          return single ? [single] : [];
+        })();
 
     return {
-      message: asStringOrNull(data.message) ?? asStringOrNull(data.Message) ?? "",
+      message:
+        asStringOrNull(root.message) ??
+        asStringOrNull(data.message) ??
+        asStringOrNull(data.Message) ??
+        "",
       applicationStatus:
         asStringOrNull(data.applicationStatus) ??
         asStringOrNull(data.Application_status) ??
         asStringOrNull(data.application_status) ??
         "",
+      applicationId,
+      expectedReviewTimeline: asStringOrNull(data.expectedReviewTimeline) ?? "",
+      name: asStringOrNull(data.name) ?? "",
+      primaryContactNumber: asStringOrNull(data.primaryContactNumber) ?? "",
+      primaryEmail: asStringOrNull(data.primaryEmail) ?? "",
     };
+  },
+
+  async generatePdf(request: GeneratePdfRequest): Promise<GeneratePdfResponse> {
+    const blob = await apiPostBlob(API_ENDPOINTS.generatePdf, {
+      leadId: request.leadId,
+    });
+
+    if (!(blob instanceof Blob) || blob.size === 0) {
+      throw new Error("PDF generate returned an empty file.");
+    }
+
+    // Some gateways return JSON errors with a 200 + blob body.
+    const contentType = (blob.type || "").toLowerCase();
+    if (contentType.includes("application/json") || contentType.includes("text/")) {
+      const text = (await blob.text()).trim();
+      throw new Error(text || "PDF generate failed.");
+    }
+
+    const pdfBlob =
+      contentType.includes("application/pdf") || contentType.includes("octet-stream") || !contentType
+        ? new Blob([blob], { type: "application/pdf" })
+        : blob;
+
+    // Sanity-check PDF magic header when possible.
+    const header = await pdfBlob.slice(0, 5).text();
+    if (!header.startsWith("%PDF-")) {
+      const text = (await pdfBlob.text()).trim();
+      throw new Error(text || "PDF generate returned an invalid file.");
+    }
+
+    const fileURL = URL.createObjectURL(pdfBlob);
+    return { fileURL, fileName: "application-form.pdf" };
   },
 
   async getBankDetails(leadId: string): Promise<GetBankDetailsResponse> {

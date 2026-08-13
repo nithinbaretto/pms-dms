@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { onboardingApi } from "../../services/onboarding-api";
+import { onboardingApi, type PartnerOtpType } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import {
   buildSavePayload,
@@ -68,6 +68,15 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   /** Last successfully verified values — editing away from these requires re-verify. */
   const verifiedEmailBaselineRef = useRef<string | null>(null);
   const verifiedMobileBaselineRef = useRef<string | null>(null);
+  /** True after channel was verified on this step (not entry) — next OTP uses type Primary. */
+  const emailVerifiedOnceOnPdRef = useRef(false);
+  const mobileVerifiedOnceOnPdRef = useRef(false);
+
+  const resolveOtpType = useCallback((channel: VerificationChannel): PartnerOtpType => {
+    const verifiedOnceOnPd =
+      channel === "email" ? emailVerifiedOnceOnPdRef.current : mobileVerifiedOnceOnPdRef.current;
+    return verifiedOnceOnPd ? "Primary" : "Partner Integration";
+  }, []);
 
   const fetchDetails = useCallback(async (): Promise<void> => {
     if (!leadId) {
@@ -81,7 +90,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
 
     try {
       // Read verification flags at fetch time so later OTP updates do not re-trigger load.
-      const { emailVerified, mobileVerified } = useOnboardingStore.getState();
+      const { emailVerified, mobileVerified, emailVerifiedFromEntry, mobileVerifiedFromEntry } =
+        useOnboardingStore.getState();
       const response = await onboardingApi.getPersonalDetails(leadId);
       const mapped = mapGetPersonalDetailsToModel(response, {
         emailVerified,
@@ -93,6 +103,9 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       verifiedMobileBaselineRef.current = mapped.mobile.verified
         ? normalizeMobileForCompare(mapped.mobile.value)
         : null;
+      // Entry-verified channels stay Partner Integration if ever re-opened; PD-verified use Primary.
+      emailVerifiedOnceOnPdRef.current = emailVerified && !emailVerifiedFromEntry;
+      mobileVerifiedOnceOnPdRef.current = mobileVerified && !mobileVerifiedFromEntry;
       setData(mapped);
       setPersonalDetails(mapped);
       setInputEmail(mapped.email.value);
@@ -205,7 +218,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
           mobile: channel === "mobile" ? mobile : "",
           leadId,
           panNumber: panNumber.trim().toUpperCase(),
-          type: "Partner Integration",
+          type: resolveOtpType(channel),
         });
 
         if (!response.success) {
@@ -221,7 +234,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         setIsSendingOtp(false);
       }
     },
-    [leadId, panNumber],
+    [leadId, panNumber, resolveOtpType],
   );
 
   const startOtpForChannel = useCallback(
@@ -278,11 +291,11 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
           leadId,
           otp: otpNumber,
           panNumber: panNumber.trim().toUpperCase(),
-          type: "Partner Integration",
+          type: resolveOtpType(otpChannel),
         });
 
         if (!response.verified) {
-          setError(response.message || "Invalid OTP. Please try again.");
+          setError("Please enter a valid OTP.");
           return false;
         }
 
@@ -296,6 +309,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
 
           if (source === "mobile") {
             verifiedMobileBaselineRef.current = normalizeMobileForCompare(current.mobile.value);
+            mobileVerifiedOnceOnPdRef.current = true;
             return {
               ...current,
               mobile: {
@@ -306,6 +320,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
           }
 
           verifiedEmailBaselineRef.current = normalizeEmailForCompare(current.email.value);
+          emailVerifiedOnceOnPdRef.current = true;
           return {
             ...current,
             email: {
@@ -338,6 +353,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       leadId,
       otpChannel,
       panNumber,
+      resolveOtpType,
       setEmailVerified,
       setEmailVerifiedAt,
       setMobileVerified,
@@ -353,6 +369,10 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   const saveCorrespondenceAddress = useCallback((address: Address, sameAsPermanent: boolean): void => {
     setData((current) => {
       if (!current) {
+        return current;
+      }
+
+      if (!current.email.verified || !current.mobile.verified) {
         return current;
       }
 

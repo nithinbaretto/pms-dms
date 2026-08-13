@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
+import verifiedIcon from "../../../../../assets/icons/svg/verified_icon.svg";
 import { Button } from "../../../../../shared/ui/button";
 import { Input } from "../../../../../shared/ui/input";
 import type { VerificationStatus } from "../types";
@@ -17,22 +18,6 @@ type ContactDetailsSectionProps = {
   onStartVerify: (channel: "mobile" | "email") => void;
 };
 
-const VerificationPill = ({ verified }: { verified: boolean }): ReactElement => {
-  if (verified) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#e9f8e7] px-2 py-1 text-xs font-semibold text-[#37b400]">
-        <CheckCircle2 className="h-3.5 w-3.5" /> Verified
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[#fff5ea] px-2 py-1 text-xs font-semibold text-[#d97706]">
-      <AlertTriangle className="h-3.5 w-3.5" /> Not Verified
-    </span>
-  );
-};
-
 const ContactDetailsSection = ({
   mobile,
   email,
@@ -46,22 +31,22 @@ const ContactDetailsSection = ({
   const isEmailInvalid = !email.verified;
 
   return (
-    <section className="space-y-3 border-t border-[#e6e7e8] pt-4">
-      <h2 className="text-sm font-semibold text-[#231f20]">Contact details</h2>
+    <section className="flex flex-col gap-4">
+      <h2 className="font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal text-[#231F20]">
+        Contact details
+      </h2>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3">
+      <div className="grid w-full max-w-[860px] grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
         <div className="space-y-1">
-          <label className="text-xs text-[#231f20]">Mobile Number *</label>
-          <div
-            className={`flex h-9 items-center rounded-[8px] border pr-2 ${
-              mobileLocked ? "border-[#eeeeee] bg-[#f5f5f5]" : "border-[#eeeeee] bg-white"
-            }`}
-          >
-            <div className="flex h-full items-center gap-1 bg-[#f5f5f5] px-2 text-[13px] text-[#71859b]">
+          <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
+            Mobile Number <span className="text-[#E8402F]">*</span>
+          </label>
+          <div className="flex h-9 items-center rounded-[8px] border border-[#eeeeee] bg-white pr-2">
+            <div className="flex h-full items-center gap-1 bg-[#f5f5f5] px-2 text-right font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#71859B]">
               <span>+91 (IND)</span>
             </div>
             <Input
-              className="h-full flex-1 border-0 bg-transparent px-3 text-[13px] shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-100"
+              className="h-full flex-1 border-0 bg-transparent px-3 shadow-none focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
               disabled={mobileLocked}
               maxLength={10}
               onChange={(event) => {
@@ -71,7 +56,7 @@ const ContactDetailsSection = ({
               value={mobile.value}
             />
             {mobile.verified ? (
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#37b400]" />
+              <img alt="" className="size-[13px]" src={verifiedIcon} />
             ) : (
               <Button
                 className="h-6 rounded-[4px] bg-[var(--color-onboarding-primary)] px-3 text-[11px] text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
@@ -85,22 +70,19 @@ const ContactDetailsSection = ({
               </Button>
             )}
           </div>
-          {mobile.verified ? <VerificationPill verified /> : null}
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-[#231f20]">Email *</label>
+          <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
+            Email <span className="text-[#E8402F]">*</span>
+          </label>
           <div
-            className={`flex h-9 items-center rounded-[8px] border pr-1 ${
-              emailLocked
-                ? "border-[#eeeeee] bg-[#f5f5f5]"
-                : isEmailInvalid
-                  ? "border-[var(--color-onboarding-danger)] bg-white"
-                  : "border-[#eeeeee] bg-white"
+            className={`flex h-9 items-center rounded-[8px] border bg-white pr-1 ${
+              isEmailInvalid ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
             }`}
           >
             <Input
-              className="h-full flex-1 border-0 bg-transparent px-3 text-[13px] shadow-none focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-100"
+              className="h-full flex-1 border-0 bg-transparent px-3 shadow-none focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
               disabled={emailLocked}
               onChange={(event) => {
                 onEmailChange(event.target.value);
@@ -109,7 +91,7 @@ const ContactDetailsSection = ({
               value={email.value}
             />
             {email.verified ? (
-              <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-[#37b400]" />
+              <img alt="" className="mr-2 size-[13px]" src={verifiedIcon} />
             ) : (
               <Button
                 className="h-6 rounded-[4px] bg-[var(--color-onboarding-primary)] px-3 text-[11px] text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
@@ -125,9 +107,7 @@ const ContactDetailsSection = ({
           </div>
           {isEmailInvalid ? (
             <p className="text-xs leading-[18px] text-[var(--color-onboarding-danger)]">Please verify your email.</p>
-          ) : (
-            <VerificationPill verified />
-          )}
+          ) : null}
         </div>
       </div>
     </section>

@@ -1,6 +1,10 @@
 import type { ReactElement } from "react";
-import { Building2, CalendarDays, IdCard, ShieldUser, UserRound } from "lucide-react";
 
+import aprnIcon from "../../../../../assets/icons/aprn_icon.png";
+import dobIcon from "../../../../../assets/icons/dob_icon.png";
+import entityTypeIcon from "../../../../../assets/icons/entity_type_icon.png";
+import nameIcon from "../../../../../assets/icons/name_icon.png";
+import panIcon from "../../../../../assets/icons/pan_icon.png";
 import {
   Select,
   SelectContent,
@@ -17,10 +21,12 @@ type EntitySummarySectionProps = {
 };
 
 const iconWrapClass =
-  "flex h-8 w-8 items-center justify-center rounded-[9.846px] bg-[var(--color-onboarding-accent)] text-white";
+  "flex size-[32px] shrink-0 items-center justify-center rounded-[9.846px] bg-[#C7AA7B]";
 
-const valueClass = "text-sm font-semibold leading-[21px] text-[#231f20]";
-const labelClass = "text-xs leading-[18px] text-[var(--color-onboarding-heading)]";
+const labelClass =
+  "font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#435160]";
+const valueClass =
+  "font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal text-[#231F20]";
 
 const EntitySummarySection = ({
   summary,
@@ -35,7 +41,7 @@ const EntitySummarySection = ({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
-              <UserRound className="h-4 w-4" />
+              <img alt="" className="size-[18px]" src={nameIcon} />
             </span>
             <div>
               <p className={labelClass}>Name</p>
@@ -45,7 +51,7 @@ const EntitySummarySection = ({
 
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
-              <IdCard className="h-4 w-4" />
+              <img alt="" className="size-[18px]" src={panIcon} />
             </span>
             <div>
               <p className={labelClass}>PAN</p>
@@ -55,7 +61,7 @@ const EntitySummarySection = ({
 
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
-              <CalendarDays className="h-4 w-4" />
+              <img alt="" className="size-[18px]" src={dobIcon} />
             </span>
             <div>
               <p className={labelClass}>Date of Birth</p>
@@ -65,7 +71,7 @@ const EntitySummarySection = ({
 
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
-              <ShieldUser className="h-4 w-4" />
+              <img alt="" className="size-[18px]" src={aprnIcon} />
             </span>
             <div>
               <p className={labelClass}>APRN</p>
@@ -75,7 +81,7 @@ const EntitySummarySection = ({
 
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
-              <Building2 className="h-4 w-4" />
+              <img alt="" className="size-[18px]" src={entityTypeIcon} />
             </span>
             <div className="w-full">
               <p className={labelClass}>Entity Type</p>
@@ -86,7 +92,7 @@ const EntitySummarySection = ({
                   }}
                   value={summary.entityType}
                 >
-                  <SelectTrigger className="h-8 min-w-[168px] border-[#d9d9d9] bg-white text-sm text-[#231f20]">
+                  <SelectTrigger className="h-8 min-w-[168px] border-[#d9d9d9] bg-white font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal text-[#231F20]">
                     <SelectValue placeholder="Select entity type" />
                   </SelectTrigger>
                   <SelectContent>
