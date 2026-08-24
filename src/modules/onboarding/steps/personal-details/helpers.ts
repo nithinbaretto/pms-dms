@@ -95,6 +95,40 @@ const toEntityType = (value: string): EntityType | "" => {
   return match ?? "";
 };
 
+export const createEmptyPersonalDetails = (pan: string): PersonalDetailsModel => {
+  const emptyAddress: Address = {
+    lat: 0,
+    lng: 0,
+    addressLine: "",
+    city: "",
+    state: "",
+    pincode: "",
+  };
+
+  return {
+    personalDetails: {
+      name: "",
+      pan: pan.trim().toUpperCase(),
+      dob: "",
+      aprn: "",
+      arn: "",
+      entityType: "",
+      entityTypeLocked: false,
+    },
+    mobile: {
+      value: "",
+      verified: false,
+    },
+    email: {
+      value: "",
+      verified: false,
+    },
+    permanentAddress: { ...emptyAddress },
+    correspondenceAddress: { ...emptyAddress },
+    isCorrespoingSameAsPermanent: false,
+  };
+};
+
 export const mapGetPersonalDetailsToModel = (
   response: GetPersonalDetailsResponse,
   verification: { emailVerified: boolean; mobileVerified: boolean },
@@ -111,6 +145,7 @@ export const mapGetPersonalDetailsToModel = (
       pan: response.panNumber,
       dob: response.dob,
       aprn: response.aprnNumber,
+      arn: response.arnNumber,
       entityType: toEntityType(response.entityType),
       entityTypeLocked: true,
     },
@@ -133,6 +168,7 @@ export const mapGetPersonalDetailsToModel = (
 export const buildSavePayload = (
   data: PersonalDetailsModel,
   leadId: string,
+  dataSource = "APMI",
 ): SavePersonalDetailsRequest => {
   const correspondenceAddress = data.isCorrespoingSameAsPermanent
     ? formatAddressForApi(data.permanentAddress)
@@ -144,6 +180,10 @@ export const buildSavePayload = (
     leadId,
     primaryEmail: data.email.value.trim(),
     primaryMobile: data.mobile.value.trim(),
+    dob: data.personalDetails.dob,
+    name: data.personalDetails.name.trim(),
+    permanentAddress: formatAddressForApi(data.permanentAddress),
+    dataSource,
   };
 };
 

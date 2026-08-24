@@ -1,4 +1,4 @@
-export type DocumentKind = "photo" | "signature";
+export type DocumentKind = "photo" | "signature" | "identity" | "address";
 
 export type DocumentUploadState = {
   photoUrl: string;

@@ -11,6 +11,8 @@ type OnboardingMethodScreenProps = {
   onMethodChange: (value: OnboardingMethod) => void;
   onBack: () => void;
   onContinue: () => void;
+  isSubmitting?: boolean;
+  errorMessage?: string | null;
 };
 
 const OnboardingMethodScreen = ({
@@ -21,10 +23,14 @@ const OnboardingMethodScreen = ({
   onMethodChange,
   onBack,
   onContinue,
+  isSubmitting,
+  errorMessage,
 }: OnboardingMethodScreenProps): ReactElement => {
   return (
     <OnboardingMethodStep
       empanelmentType={empanelmentType}
+      errorMessage={errorMessage}
+      isSubmitting={isSubmitting}
       onBack={onBack}
       onContinue={onContinue}
       onEmpanelmentTypeChange={onEmpanelmentTypeChange}

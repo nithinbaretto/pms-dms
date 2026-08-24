@@ -36,7 +36,9 @@ const AddressSection = ({
             Permanent Address <span className="text-[#E8402F]">*</span>
           </p>
           <div className="min-h-[76px] rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] p-3 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#231F20]">
-            {formatAddress(permanentAddress)}
+            {formatAddress(permanentAddress) || (
+              <span className="text-[#71859B]">Enter Permanent Address</span>
+            )}
           </div>
         </div>
 
@@ -60,7 +62,9 @@ const AddressSection = ({
             </button>
           </div>
           <div className="min-h-[76px] rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] p-3 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#231F20]">
-            {formatAddress(correspondenceAddress)}
+            {formatAddress(correspondenceAddress) || (
+              <span className="text-[#71859B]">Enter Correspondence Address</span>
+            )}
           </div>
           {!canEditCorrespondenceAddress ? (
             <p className="font-['Mulish',sans-serif] text-[11px] font-normal leading-[16px] tracking-normal text-[#71859B]">

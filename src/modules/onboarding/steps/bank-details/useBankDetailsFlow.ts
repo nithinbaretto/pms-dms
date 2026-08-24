@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { onboardingApi } from "../../services/onboarding-api";
+import { extractErrorMessage, onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import {
   CANCELLED_CHEQUE_DOC_META,
@@ -14,6 +14,7 @@ import {
 import {
   createEmptyBankDetails,
   enrichBankDetailsFromIfsc,
+  isAllowedChequeFile,
   mapGetBankDetailsToModel,
   mapPennyDropResponseToModel,
   normalizeBankVerificationType,
@@ -24,6 +25,8 @@ import type {
   BankDetailsModel,
   BankValidationStatus,
   BankVerificationType,
+  ChequeOcrPrefill,
+  ChequeUploadOutcome,
   ManualPennyDropResult,
   QrSessionState,
   SaveBankResult,
@@ -51,11 +54,12 @@ type UseBankDetailsFlowResult = {
   checkQrPaymentStatus: () => Promise<"pending" | "success" | "failed" | "expired">;
   stopQrPolling: () => void;
   isUploadingCheque: boolean;
-  uploadCancelledCheque: (file: File) => Promise<string | null>;
+  uploadCancelledCheque: (file: File) => Promise<ChequeUploadOutcome>;
   saveBankDetails: (options?: {
     cancelledCheque?: string;
     isBankVerifiedOverride?: boolean;
     details?: BankDetailsModel;
+    verificationTypeOverride?: BankVerificationType;
   }) => Promise<SaveBankResult | null>;
   setBankValidationStatus: (status: BankValidationStatus) => void;
   applyLocalBankUpdate: (model: BankDetailsModel, verificationType: BankVerificationType) => void;
@@ -277,11 +281,10 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         });
 
         setData(mapped.data);
-        setVerificationType(mapped.success ? "Penny drop" : "");
+        setVerificationType(mapped.success ? "Penny drop" : "Manual");
         setBankValidationStatus(mapped.success ? "success" : "failed");
-        if (!mapped.success) {
-          setError(mapped.message);
-        }
+        // Manual failure opens the cheque-upload screen; avoid a duplicate top banner.
+        setError(null);
 
         return mapped;
       } catch {
@@ -294,9 +297,9 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           isBankVerified: false,
         };
         setData(withInput);
-        setVerificationType("");
+        setVerificationType("Manual");
         setBankValidationStatus("failed");
-        setError("Unable to validate bank account. Please try again.");
+        setError(null);
         return {
           success: false,
           data: withInput,
@@ -475,6 +478,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
       cancelledCheque?: string;
       isBankVerifiedOverride?: boolean;
       details?: BankDetailsModel;
+      verificationTypeOverride?: BankVerificationType;
     }): Promise<SaveBankResult | null> => {
       if (!leadId) {
         setError("Unable to save bank details. Missing lead information.");
@@ -496,13 +500,17 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           options?.isBankVerifiedOverride ??
           (sourceModel.isBankVerified || bankValidationStatus === "success");
 
-        // Only pass method when actually verified via that path; else "".
+        const resolvedVerificationType = options?.verificationTypeOverride || verificationType;
+
+        // Only pass method when actually verified via that path; Manual cheque screen always sends "Manual".
         const saveVerificationType: BankVerificationType =
-          isVerified && verificationType === "Penny drop"
-            ? "Penny drop"
-            : isVerified && verificationType === "Reverse Penny Drop"
-              ? "Reverse Penny Drop"
-              : "";
+          resolvedVerificationType === "Manual"
+            ? "Manual"
+            : isVerified && resolvedVerificationType === "Penny drop"
+              ? "Penny drop"
+              : isVerified && resolvedVerificationType === "Reverse Penny Drop"
+                ? "Reverse Penny Drop"
+                : "";
 
         const saveModel = enrichBankDetailsFromIfsc(sourceModel);
         if (saveModel.bankName !== data.bankName || options?.details) {
@@ -514,7 +522,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           saveModel.ifscCode !== initialSnapshot.ifscCode ||
           saveModel.accountHolderName !== initialSnapshot.accountHolderName ||
           saveModel.bankName !== initialSnapshot.bankName ||
-          verificationType !== initialVerificationType;
+          resolvedVerificationType !== initialVerificationType;
 
         const response = await onboardingApi.saveBankDetails({
           leadId,
@@ -552,21 +560,22 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
   );
 
   const uploadCancelledCheque = useCallback(
-    async (file: File): Promise<string | null> => {
+    async (file: File): Promise<ChequeUploadOutcome> => {
       if (!leadId || !resolvedPan) {
-        setError("Unable to upload cancelled cheque. Missing lead or PAN information.");
-        return null;
+        const message = "Unable to upload cancelled cheque. Missing lead or PAN information.";
+        setError(message);
+        return { ok: false, message };
       }
 
-      const mime = (file.type || "").trim().toLowerCase();
-      const allowed = (CHEQUE_ALLOWED_FILE_TYPES as readonly string[]).includes(mime);
-      if (!allowed) {
-        setError("Cancelled cheque must be PNG, JPEG, or PDF.");
-        return null;
+      if (!isAllowedChequeFile(file, CHEQUE_ALLOWED_FILE_TYPES)) {
+        const message = "Cancelled cheque must be PNG, JPEG, or PDF.";
+        setError(message);
+        return { ok: false, message };
       }
       if (file.size > CHEQUE_MAX_FILE_SIZE_BYTES) {
-        setError("Cancelled cheque must be 2MB or smaller.");
-        return null;
+        const message = "Cancelled cheque must be 2MB or smaller.";
+        setError(message);
+        return { ok: false, message };
       }
 
       setIsUploadingCheque(true);
@@ -586,13 +595,24 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         });
         const storageUrl = response.fileURL.trim();
         if (!storageUrl) {
-          setError("Cancelled cheque upload failed. Empty file URL returned.");
-          return null;
+          const message = "Cancelled cheque upload failed. Empty file URL returned.";
+          setError(message);
+          return { ok: false, message };
         }
-        return storageUrl;
-      } catch {
-        setError("Unable to upload cancelled cheque. Please try again.");
-        return null;
+
+        let ocr: ChequeOcrPrefill | null = null;
+        try {
+          ocr = await onboardingApi.documentOcr(file);
+        } catch {
+          ocr = null;
+        }
+
+        return { ok: true, storageUrl, ocr };
+      } catch (error) {
+        const message =
+          extractErrorMessage(error) || "Unable to upload cancelled cheque. Please try again.";
+        setError(message);
+        return { ok: false, message };
       } finally {
         setIsUploadingCheque(false);
       }

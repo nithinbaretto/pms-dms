@@ -13,6 +13,8 @@ type ContactDetailsSectionProps = {
   mobileLocked?: boolean;
   emailLocked?: boolean;
   isSendingOtp?: boolean;
+  /** Manual AIF only — PMS Individual omits this so UI stays unchanged. */
+  showMobileVerifyHint?: boolean;
   onMobileChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onStartVerify: (channel: "mobile" | "email") => void;
@@ -24,11 +26,13 @@ const ContactDetailsSection = ({
   mobileLocked = false,
   emailLocked = false,
   isSendingOtp = false,
+  showMobileVerifyHint = false,
   onMobileChange,
   onEmailChange,
   onStartVerify,
 }: ContactDetailsSectionProps): ReactElement => {
   const isEmailInvalid = !email.verified;
+  const showMobileHint = showMobileVerifyHint && !mobile.verified;
 
   return (
     <section className="flex flex-col gap-4">
@@ -41,7 +45,11 @@ const ContactDetailsSection = ({
           <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
             Mobile Number <span className="text-[#E8402F]">*</span>
           </label>
-          <div className="flex h-9 items-center rounded-[8px] border border-[#eeeeee] bg-white pr-2">
+          <div
+            className={`flex h-9 items-center rounded-[8px] border bg-white pr-2 ${
+              showMobileHint ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
+            }`}
+          >
             <div className="flex h-full items-center gap-1 bg-[#f5f5f5] px-2 text-right font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#71859B]">
               <span>+91 (IND)</span>
             </div>
@@ -70,6 +78,11 @@ const ContactDetailsSection = ({
               </Button>
             )}
           </div>
+          {showMobileHint ? (
+            <p className="text-xs leading-[18px] text-[var(--color-onboarding-danger)]">
+              Please verify your mobile number.
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-1">

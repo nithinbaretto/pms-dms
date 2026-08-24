@@ -29,6 +29,7 @@ export type EntitySummary = {
   pan: string;
   dob: string;
   aprn: string;
+  arn: string;
   entityType: EntityType | "";
   entityTypeLocked: boolean;
 };

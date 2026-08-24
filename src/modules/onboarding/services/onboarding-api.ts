@@ -54,6 +54,7 @@ export type GetPersonalDetailsResponse = {
   panNumber: string;
   dob: string;
   aprnNumber: string;
+  arnNumber: string;
   entityType: string;
   email: string;
   mobile: string;
@@ -70,6 +71,10 @@ export type SavePersonalDetailsRequest = {
   leadId: string;
   primaryEmail: string;
   primaryMobile: string;
+  dob: string;
+  name: string;
+  permanentAddress: string;
+  dataSource: string;
 };
 
 export type SavePersonalDetailsResponse = {
@@ -132,6 +137,62 @@ export type SaveBusinessDetailsResponse = {
   applicationIds: string[];
 };
 
+export type UpdateManualDataRequest = {
+  leadId: string;
+};
+
+export type UpdateManualDataResponse = {
+  success: boolean;
+  message?: string;
+  leadId: string | null;
+};
+
+export type GetPanDetailsByKraRequest = {
+  leadId: string;
+  panNo: string;
+};
+
+export type GetPanDetailsByKraResponse = {
+  leadId: string | null;
+  success: boolean;
+  validationStatus: boolean;
+  arnStatus: string | null;
+  mobile: string | null;
+  email: string | null;
+  dataSource: string | null;
+  message?: string;
+};
+
+export type ValidateInputWithKraRequest = {
+  email: string;
+  leadId: string;
+  mobile: string;
+};
+
+export type ValidateInputWithKraResponse = {
+  isValidated: boolean;
+  errorMsg: string | null;
+  message?: string;
+};
+
+export type ValidateArnRequest = {
+  leadId: string;
+  pan: string;
+  arn: string;
+  email: string;
+  mobile: string;
+};
+
+export type ValidateArnResponse = {
+  leadId: string | null;
+  validateStatus: boolean;
+  arnStatus: string | null;
+  mobile: string | null;
+  email: string | null;
+  message?: string;
+  expiringInDays: boolean | null;
+};
+
 export type GstInItem = {
   gstInId: string;
   gstInName: string;
@@ -179,6 +240,14 @@ export type UploadDocumentRequest = {
 
 export type UploadDocumentResponse = {
   fileURL: string;
+};
+
+export type DocumentOcrResponse = {
+  name: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  accountType: string;
 };
 
 export type DownloadFileRequest = {
@@ -259,6 +328,8 @@ export type GetUploadDocumentsResponse = {
   leadId: string;
   uploadedPhoto: string;
   uploadedSignature: string;
+  uploadedProofOfIdentity: string;
+  uploadedProofOfAddress: string;
   documentUploaded: boolean;
 };
 
@@ -402,6 +473,7 @@ export type ReviewPersonalSection = {
   permanentAddress: string;
   correspondenceAddress: string;
   aprnNumber: string;
+  arnNumber: string;
   entityType: string;
 };
 
@@ -551,6 +623,7 @@ type GetPersonalDetailsApiResponse = {
   panNumber?: string;
   dob?: string;
   aprnNumber?: string;
+  arnNumber?: string;
   entityType?: string;
   email?: string;
   mobile?: string;
@@ -576,6 +649,50 @@ type SaveBusinessDetailsApiResponse = {
   leadId?: string | null;
   message?: string;
   status?: string;
+};
+
+type UpdateManualDataApiResponse = {
+  leadId?: string | null;
+  message?: string;
+  Message?: string;
+  status?: string;
+  success?: boolean;
+};
+
+type GetPanDetailsByKraApiResponse = {
+  leadId?: string | null;
+  validationStatus?: boolean;
+  arnStatus?: string | boolean | null;
+  mobile?: string | number | null;
+  email?: string | null;
+  dataSource?: string | null;
+  message?: string;
+  Message?: string;
+  status?: string;
+  statusCode?: number;
+};
+
+type ValidateInputWithKraApiResponse = {
+  isValidated?: boolean;
+  errorMsg?: string | null;
+  message?: string;
+  Message?: string;
+  status?: string;
+  statusCode?: number;
+};
+
+type ValidateArnApiResponse = {
+  leadId?: string | null;
+  validateStatus?: string | boolean | null;
+  validationStatus?: string | boolean | null;
+  arnStatus?: string | boolean | null;
+  mobile?: string | number | null;
+  email?: string | null;
+  message?: string;
+  Message?: string;
+  expiringInDays?: boolean | string | number | null;
+  status?: string;
+  statusCode?: number;
 };
 
 type GstInItemApi = {
@@ -663,7 +780,12 @@ type GetUploadDocumentsApiResponse = {
   leadId?: string;
   uploadedPhoto?: string;
   uploadedSignature?: string;
+  uploadedProofOfIdentity?: string;
+  uploadedProofOfAddress?: string;
+  proofOfIdentity?: string;
+  proofOfAddress?: string;
   documentUploaded?: boolean;
+  documents?: unknown;
 };
 
 type SaveUploadedDocumentsApiResponse = {
@@ -722,6 +844,13 @@ const API_ENDPOINTS = {
     import.meta.env.VITE_PMS_INDIVIDUAL_VERIFY_AMFI_OTP_URL ?? withBase("/pms/individual/amfi/otp/verify"),
   saveBusinessDetails:
     import.meta.env.VITE_PMS_INDIVIDUAL_SAVE_BUSINESS_DETAILS_URL ?? withBase("/dms-api/businessCategory/saveBusinessDetails"),
+  updateManualData:
+    import.meta.env.VITE_PMS_UPDATE_MANUAL_DATA_URL ?? withBase("/dms-api/applicant/updateManualData"),
+  getPanDetailsByKra:
+    import.meta.env.VITE_PMS_GET_PAN_DETAILS_BY_KRA_URL ?? withBase("/dms-api/kra/getPanDetailsByKRA"),
+  validateInputWithKra:
+    import.meta.env.VITE_PMS_VALIDATE_INPUT_WITH_KRA_URL ?? withBase("/dms-api/kra/validateInputWithKRA"),
+  validateArn: import.meta.env.VITE_PMS_VALIDATE_ARN_URL ?? withBase("/dms-api/api/v1/arn/validate"),
   getPersonalDetails:
     import.meta.env.VITE_PMS_INDIVIDUAL_GET_PERSONAL_DETAILS_URL ?? withBase("/dms-api/applicant/getPersonalDetails"),
   savePersonalDetails:
@@ -737,6 +866,8 @@ const API_ENDPOINTS = {
     import.meta.env.VITE_PMS_UPLOAD_DOCUMENT_URL ?? withBase("/dms-api/api/v1/thirdparty/upload-document"),
   downloadFile:
     import.meta.env.VITE_PMS_DOWNLOAD_FILE_URL ?? withBase("/dms-api/api/v1/thirdparty/download-file"),
+  documentOcr:
+    import.meta.env.VITE_PMS_DOCUMENT_OCR_URL ?? withBase("/dms-api/api/v1/thirdparty/document-ocr"),
   saveGstDetails:
     import.meta.env.VITE_PMS_SAVE_GST_DETAILS_URL ?? withBase("/dms-api/businessDetails/saveGSTDetails"),
   getNomineeDetails:
@@ -784,6 +915,23 @@ const asStringOrNull = (value: unknown): string | null => {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+};
+
+const asTextOrNull = (value: unknown): string | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return asStringOrNull(value);
+};
+
+const toLastTenMobileDigits = (value: unknown): string | null => {
+  const digits = (asTextOrNull(value) ?? "").replace(/\D/g, "");
+  if (digits.length >= 10) {
+    return digits.slice(-10);
+  }
+
+  return asTextOrNull(value);
 };
 
 const asBooleanOrUndefined = (value: unknown): boolean | undefined => {
@@ -939,10 +1087,10 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
 
   const productCategories = normalizeProductTypes(
     businessSource.productCategories ??
-      businessSource.categories ??
-      businessSource.selectedProducts ??
-      payload.productCategories ??
-      payload.categories,
+    businessSource.categories ??
+    businessSource.selectedProducts ??
+    payload.productCategories ??
+    payload.categories,
   );
 
   const gstList = Array.isArray(businessSource.gstDetails)
@@ -1029,6 +1177,9 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
       permanentAddress: pickString(personalSource, ["permanentAddress"]),
       correspondenceAddress: pickString(personalSource, ["correspondenceAddress"]),
       aprnNumber: pickString(personalSource, ["aprnNumber", "aprn"]),
+      arnNumber:
+        pickString(personalSource, ["arnNumber", "arn"]) ||
+        pickString(payload, ["arnNumber", "arn"]),
       entityType: pickString(personalSource, ["entityType"]),
     },
     business: {
@@ -1137,13 +1288,19 @@ const extractErrorMessage = (error: unknown): string | undefined => {
   const errorWithResponse = error as ErrorWithResponse;
   const payload = extractPayload(errorWithResponse.response?.data);
 
-  const messageFromPayload = asStringOrNull(payload.message) ?? asStringOrNull(payload.errorMessage);
+  const messageFromPayload =
+    asStringOrNull(payload.message) ??
+    asStringOrNull(payload.Message) ??
+    asStringOrNull(payload.errorMessage) ??
+    asStringOrNull(payload.error);
   if (messageFromPayload) {
     return messageFromPayload;
   }
 
   return asStringOrNull(errorWithResponse.message) ?? undefined;
 };
+
+export { extractErrorMessage };
 
 export const onboardingApi = {
   async validatePan(pan: string): Promise<ValidatePanResponse> {
@@ -1308,6 +1465,7 @@ export const onboardingApi = {
       panNumber: asStringOrNull(data.panNumber) ?? "",
       dob: asStringOrNull(data.dob) ?? "",
       aprnNumber: asStringOrNull(data.aprnNumber) ?? "",
+      arnNumber: asStringOrNull(data.arnNumber) ?? "",
       entityType: asStringOrNull(data.entityType) ?? "",
       email: asStringOrNull(data.email) ?? "",
       mobile: asStringOrNull(data.mobile) ?? "",
@@ -1330,6 +1488,10 @@ export const onboardingApi = {
       leadId: request.leadId,
       primaryEmail: request.primaryEmail.trim(),
       primaryMobile: request.primaryMobile.trim(),
+      dob: request.dob.trim(),
+      name: request.name.trim(),
+      permanentAddress: request.permanentAddress.trim(),
+      dataSource: request.dataSource,
     };
 
     const response = await apiPost<SavePersonalDetailsApiResponse>(API_ENDPOINTS.savePersonalDetails, payload);
@@ -1340,6 +1502,114 @@ export const onboardingApi = {
       Application_status:
         asStringOrNull(data.Application_status) ?? asStringOrNull(data.application_status) ?? "",
       nextInfoSection: asStringOrNull(data.nextInfoSection) ?? undefined,
+    };
+  },
+
+  async updateManualData(request: UpdateManualDataRequest): Promise<UpdateManualDataResponse> {
+    const response = await apiPost<UpdateManualDataApiResponse>(API_ENDPOINTS.updateManualData, {
+      leadId: request.leadId,
+    });
+    const data = extractPayload(response) as UpdateManualDataApiResponse;
+    const status = (asStringOrNull(data.status) ?? "").toUpperCase();
+    const successFlag = asBooleanOrUndefined(data.success);
+    const failed = successFlag === false || status === "FAILED" || status === "ERROR";
+    const succeeded = successFlag === true || status === "SUCCESS" || !failed;
+
+    return {
+      success: succeeded,
+      message: asStringOrNull(data.message) ?? asStringOrNull(data.Message) ?? undefined,
+      leadId: asStringOrNull(data.leadId),
+    };
+  },
+
+  async getPanDetailsByKra(request: GetPanDetailsByKraRequest): Promise<GetPanDetailsByKraResponse> {
+    const response = await apiPost<GetPanDetailsByKraApiResponse>(API_ENDPOINTS.getPanDetailsByKra, {
+      leadId: request.leadId,
+      panNo: request.panNo.trim().toUpperCase(),
+    });
+    const envelope = isRecord(response) ? response : {};
+    const data = extractPayload(response) as GetPanDetailsByKraApiResponse;
+    const envelopeStatus = (asStringOrNull(envelope.status) ?? "").toLowerCase();
+    const envelopeFailed = envelopeStatus === "failed" || envelopeStatus === "error";
+    const envelopeSuccess =
+      !envelopeFailed && (envelopeStatus === "success" || envelope.statusCode === 200);
+
+    return {
+      leadId: asStringOrNull(data.leadId),
+      success: envelopeSuccess,
+      validationStatus: asBooleanOrUndefined(data.validationStatus) ?? false,
+      arnStatus: asTextOrNull(data.arnStatus),
+      mobile: toLastTenMobileDigits(data.mobile),
+      email: asStringOrNull(data.email),
+      dataSource: asStringOrNull(data.dataSource),
+      message:
+        asStringOrNull(envelope.message) ??
+        asStringOrNull(data.message) ??
+        asStringOrNull(data.Message) ??
+        undefined,
+    };
+  },
+
+  async validateInputWithKra(request: ValidateInputWithKraRequest): Promise<ValidateInputWithKraResponse> {
+    const payload = {
+      email: request.email.trim(),
+      leadId: request.leadId,
+      mobile: request.mobile.trim(),
+    };
+
+    const response = await apiPost<ValidateInputWithKraApiResponse>(
+      API_ENDPOINTS.validateInputWithKra,
+      payload,
+    );
+    const envelope = isRecord(response) ? response : {};
+    const data = extractPayload(response) as ValidateInputWithKraApiResponse;
+    const envelopeStatus = (asStringOrNull(envelope.status) ?? "").toLowerCase();
+    const envelopeFailed = envelopeStatus === "failed" || envelopeStatus === "error";
+    const isValidated = !envelopeFailed && (asBooleanOrUndefined(data.isValidated) ?? false);
+
+    return {
+      isValidated,
+      errorMsg: asStringOrNull(data.errorMsg),
+      message:
+        asStringOrNull(envelope.message) ??
+        asStringOrNull(data.message) ??
+        asStringOrNull(data.Message) ??
+        undefined,
+    };
+  },
+
+  async validateArn(request: ValidateArnRequest): Promise<ValidateArnResponse> {
+    const payload = {
+      leadId: request.leadId,
+      pan: request.pan.trim().toUpperCase(),
+      arn: request.arn.trim().toUpperCase(),
+      email: request.email.trim(),
+      mobile: request.mobile.trim(),
+    };
+
+    const response = await apiPost<ValidateArnApiResponse>(API_ENDPOINTS.validateArn, payload);
+    const envelope = isRecord(response) ? response : {};
+    const data = extractPayload(response) as ValidateArnApiResponse;
+    const envelopeStatus = (asStringOrNull(envelope.status) ?? "").toLowerCase();
+    const envelopeFailed = envelopeStatus === "failed" || envelopeStatus === "error";
+    const rawValidateStatus = data.validateStatus ?? data.validationStatus;
+    const statusText = asTextOrNull(rawValidateStatus)?.toUpperCase();
+    const statusFlag = asBooleanOrUndefined(rawValidateStatus);
+    const validateStatus =
+      !envelopeFailed && (statusFlag === true || statusText === "SUCCESS");
+
+    return {
+      leadId: asStringOrNull(data.leadId),
+      validateStatus,
+      arnStatus: asTextOrNull(data.arnStatus),
+      mobile: toLastTenMobileDigits(data.mobile),
+      email: asStringOrNull(data.email),
+      message:
+        asStringOrNull(envelope.message) ??
+        asStringOrNull(data.message) ??
+        asStringOrNull(data.Message) ??
+        undefined,
+      expiringInDays: asBooleanOrUndefined(data.expiringInDays) ?? null,
     };
   },
 
@@ -1439,26 +1709,55 @@ export const onboardingApi = {
     };
 
     const formData = new FormData();
-    formData.append("file", request.file);
+    formData.append("file", request.file, request.file.name);
     // Backend @RequestPart expects application/json (plain string parts become octet-stream → 415).
     formData.append(
       "payload",
       new Blob([JSON.stringify(payload)], { type: "application/json" }),
     );
 
-    const response = await apiPostFormData<UploadDocumentApiResponse>(
+    const response = await apiPostFormData<Record<string, unknown>>(
       API_ENDPOINTS.uploadDocument,
       formData,
     );
-    const data = extractPayload(response) as UploadDocumentApiResponse;
+    const root = isRecord(response) ? response : {};
+    if (root.success === false) {
+      throw new Error(pickString(root, ["message", "Message", "error"]) || "Document upload failed.");
+    }
+
+    const data = extractPayload(response) as UploadDocumentApiResponse & Record<string, unknown>;
     const nestedData = data.data;
     const fileURL =
-      asStringOrNull(data.fileURL) ??
-      asStringOrNull(data.fileUrl) ??
-      (typeof nestedData === "string" ? asStringOrNull(nestedData) : null) ??
+      pickString(data, ["fileURL", "fileUrl", "url", "blobUrl", "blobURL", "downloadUrl", "documentUrl"]) ||
+      pickString(root, ["fileURL", "fileUrl", "url", "blobUrl", "blobURL", "downloadUrl", "documentUrl"]) ||
+      (typeof nestedData === "string" ? asStringOrNull(nestedData) : null) ||
       "";
 
     return { fileURL };
+  },
+
+  async documentOcr(file: File): Promise<DocumentOcrResponse> {
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    const response = await apiPostFormData<Record<string, unknown>>(
+      API_ENDPOINTS.documentOcr,
+      formData,
+    );
+    const root = isRecord(response) ? response : {};
+    if (root.success === false) {
+      throw new Error(pickString(root, ["message", "Message"]) || "Document OCR failed.");
+    }
+
+    const data = extractPayload(response);
+
+    return {
+      name: pickString(data, ["name", "accountHolderName"]),
+      bankName: pickString(data, ["bankName"]),
+      accountNumber: pickString(data, ["accountNumber"]),
+      ifscCode: pickString(data, ["ifscCode", "ifsc", "IFSCCode"]).toUpperCase(),
+      accountType: pickString(data, ["accountType"]),
+    };
   },
 
   async downloadFile(request: DownloadFileRequest): Promise<DownloadFileResponse> {
@@ -1620,11 +1919,41 @@ export const onboardingApi = {
       leadId,
     });
     const data = extractPayload(response) as GetUploadDocumentsApiResponse;
+    const listedDocs = Array.isArray(data.documents) ? data.documents : [];
+
+    const urlFromListed = (names: string[]): string => {
+      for (const item of listedDocs) {
+        if (!isRecord(item)) {
+          continue;
+        }
+        const name = (asStringOrNull(item.documentName) ?? "").trim().toLowerCase().replace(/\s+/g, "");
+        const type = (asStringOrNull(item.documentType) ?? "").trim().toLowerCase().replace(/\s+/g, "");
+        if (names.some((candidate) => name === candidate || type === candidate)) {
+          return (
+            asStringOrNull(item.documentUrl) ??
+            asStringOrNull(item.fileURL) ??
+            asStringOrNull(item.fileUrl) ??
+            ""
+          );
+        }
+      }
+      return "";
+    };
 
     return {
       leadId: asStringOrNull(data.leadId) ?? leadId,
       uploadedPhoto: asStringOrNull(data.uploadedPhoto) ?? "",
       uploadedSignature: asStringOrNull(data.uploadedSignature) ?? "",
+      uploadedProofOfIdentity:
+        asStringOrNull(data.uploadedProofOfIdentity) ??
+        asStringOrNull(data.proofOfIdentity) ??
+        urlFromListed(["proofofidentity", "identity"]) ??
+        "",
+      uploadedProofOfAddress:
+        asStringOrNull(data.uploadedProofOfAddress) ??
+        asStringOrNull(data.proofOfAddress) ??
+        urlFromListed(["proofofaddress", "address"]) ??
+        "",
       documentUploaded: asBooleanOrUndefined(data.documentUploaded) ?? false,
     };
   },
@@ -1676,9 +2005,9 @@ export const onboardingApi = {
     const applicationId = Array.isArray(applicationIdRaw)
       ? applicationIdRaw.filter((id): id is string => typeof id === "string" && id.trim().length > 0).map((id) => id.trim())
       : (() => {
-          const single = asStringOrNull(applicationIdRaw);
-          return single ? [single] : [];
-        })();
+        const single = asStringOrNull(applicationIdRaw);
+        return single ? [single] : [];
+      })();
 
     return {
       message:
@@ -2026,8 +2355,8 @@ export const onboardingApi = {
     const hasBankIdentity = (source: Record<string, unknown>): boolean => {
       return Boolean(
         pickString(source, ["bankAccount", "accountNumber", "AccountNumber"]) ||
-          (pickString(source, ["ifsc", "ifscCode", "IFSCCode", "IFSC"]) &&
-            pickString(source, ["nameAtBank", "name", "accountHolderName", "AccountHolder"])),
+        (pickString(source, ["ifsc", "ifscCode", "IFSCCode", "IFSC"]) &&
+          pickString(source, ["nameAtBank", "name", "accountHolderName", "AccountHolder"])),
       );
     };
 

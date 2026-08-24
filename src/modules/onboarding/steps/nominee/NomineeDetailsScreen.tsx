@@ -40,9 +40,11 @@ interface NomineeDetailsScreenProps {
   showProofDropdown: boolean;
   setShowProofDropdown: (show: boolean) => void;
   proofDropdownRef: RefObject<HTMLDivElement | null>;
+  proofDropdownMobileRef: RefObject<HTMLDivElement | null>;
   showRelationshipDropdown: boolean;
   setShowRelationshipDropdown: (show: boolean) => void;
   relationshipDropdownRef: RefObject<HTMLDivElement | null>;
+  relationshipDropdownMobileRef: RefObject<HTMLDivElement | null>;
 
   // DOB picker modal
   showDobPicker: boolean;
@@ -118,9 +120,11 @@ export function NomineeDetailsScreen({
   showProofDropdown,
   setShowProofDropdown,
   proofDropdownRef,
+  proofDropdownMobileRef,
   showRelationshipDropdown,
   setShowRelationshipDropdown,
   relationshipDropdownRef,
+  relationshipDropdownMobileRef,
   showDobPicker,
   dobPickerAnimating,
   selectedDay,
@@ -231,6 +235,7 @@ export function NomineeDetailsScreen({
                         type="text"
                         value={nomineeName}
                         onChange={(e) => setNomineeName(e.target.value)}
+                        placeholder="Enter Nominee Name"
                       />
                     </div>
 
@@ -245,7 +250,9 @@ export function NomineeDetailsScreen({
                         className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative hover:border-[#c7aa7b] transition-colors"
                       >
                         <div className="flex items-center justify-between px-[14px] h-full">
-                          <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20]">{nomineeRelationship}</p>
+                          <p className={`font-['Mulish',sans-serif] font-normal text-[13px] ${nomineeRelationship ? 'text-[#231f20]' : 'text-[#71859b]'}`}>
+                            {nomineeRelationship || 'Select Relationship with Applicant'}
+                          </p>
                           <svg className="size-[14px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#231F20" />
                           </svg>
@@ -254,7 +261,10 @@ export function NomineeDetailsScreen({
 
                       {/* Relationship Dropdown */}
                       {showRelationshipDropdown && (
-                        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto">
+                        <div
+                          className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto"
+                          onMouseDown={(event) => event.stopPropagation()}
+                        >
                           {RELATIONSHIP_OPTIONS.map((relationship) => (
                             <button
                               key={relationship}
@@ -298,7 +308,10 @@ export function NomineeDetailsScreen({
 
                       {/* Dropdown Menu */}
                       {showProofDropdown && (
-                        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg">
+                        <div
+                          className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-[60] overflow-hidden shadow-lg"
+                          onMouseDown={(event) => event.stopPropagation()}
+                        >
                           {PROOF_OF_IDENTITY_OPTIONS.map((proofType) => (
                             <button
                               key={proofType}
@@ -394,7 +407,9 @@ export function NomineeDetailsScreen({
                             <div className="flex items-center justify-between px-[14px] h-full gap-[8px]">
                               <div className="flex gap-[8px] flex-1 items-center font-['Mulish',sans-serif] font-normal text-[13px]">
                                 <p className="text-[#71859b]">DOB</p>
-                                <p className="text-[#231f20]">{nomineeDob}</p>
+                                <p className={nomineeDob ? 'text-[#231f20]' : 'text-[#71859b]'}>
+                                  {nomineeDob || '00/00/0000'}
+                                </p>
                               </div>
                               <svg className="size-[14px]" fill="none" viewBox="0 0 10.5 11.375">
                                 <path d={nomineeFormSvgPaths.p3c25e700} fill="#231F20" />
@@ -421,7 +436,9 @@ export function NomineeDetailsScreen({
                       </div>
                       <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
                         <div className="flex items-center px-[14px] py-[14px]">
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] text-[#5a6b7d] flex-1 overflow-hidden text-ellipsis">{nomineeAddress}</p>
+                          <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${nomineeAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
+                            {nomineeAddress || 'Enter Address'}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -563,11 +580,12 @@ export function NomineeDetailsScreen({
                         type="text"
                         value={nomineeName}
                         onChange={(e) => setNomineeName(e.target.value)}
+                        placeholder="Enter Nominee Name"
                       />
                     </div>
 
                     {/* Relationship with Applicant */}
-                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={relationshipDropdownRef}>
+                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={relationshipDropdownMobileRef}>
                       <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
                         <p className="text-[#231F20]">Relationship with Applicant</p>
                         <p className="text-[#E8402F]">*</p>
@@ -577,7 +595,9 @@ export function NomineeDetailsScreen({
                         className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative hover:border-[#c7aa7b] transition-colors"
                       >
                         <div className="flex items-center justify-between px-[14px] h-full">
-                          <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20]">{nomineeRelationship}</p>
+                          <p className={`font-['Mulish',sans-serif] font-normal text-[13px] ${nomineeRelationship ? 'text-[#231f20]' : 'text-[#71859b]'}`}>
+                            {nomineeRelationship || 'Select Relationship with Applicant'}
+                          </p>
                           <svg className="size-[14px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#231F20" />
                           </svg>
@@ -586,7 +606,10 @@ export function NomineeDetailsScreen({
 
                       {/* Relationship Dropdown */}
                       {showRelationshipDropdown && (
-                        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto">
+                        <div
+                          className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto"
+                          onMouseDown={(event) => event.stopPropagation()}
+                        >
                           {RELATIONSHIP_OPTIONS.map((relationship) => (
                             <button
                               key={relationship}
@@ -604,7 +627,7 @@ export function NomineeDetailsScreen({
                     </div>
 
                     {/* Proof of Identity */}
-                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={proofDropdownRef}>
+                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={proofDropdownMobileRef}>
                       <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
                         <p className="text-[#231F20]">Proof of Identity</p>
                         <p className="text-[#E8402F]">*</p>
@@ -630,7 +653,10 @@ export function NomineeDetailsScreen({
 
                       {/* Dropdown Menu */}
                       {showProofDropdown && (
-                        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg">
+                        <div
+                          className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-[60] overflow-hidden shadow-lg"
+                          onMouseDown={(event) => event.stopPropagation()}
+                        >
                           {PROOF_OF_IDENTITY_OPTIONS.map((proofType) => (
                             <button
                               key={proofType}
@@ -726,7 +752,9 @@ export function NomineeDetailsScreen({
                             <div className="flex items-center justify-between px-[14px] h-full gap-[8px]">
                               <div className="flex gap-[8px] flex-1 items-center font-['Mulish',sans-serif] font-normal text-[13px]">
                                 <p className="text-[#71859b]">DOB</p>
-                                <p className="text-[#231f20]">{nomineeDob}</p>
+                                <p className={nomineeDob ? 'text-[#231f20]' : 'text-[#71859b]'}>
+                                  {nomineeDob || '00/00/0000'}
+                                </p>
                               </div>
                               <svg className="size-[14px]" fill="none" viewBox="0 0 10.5 11.375">
                                 <path d={nomineeFormSvgPaths.p3c25e700} fill="#231F20" />
@@ -753,7 +781,9 @@ export function NomineeDetailsScreen({
                       </div>
                       <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
                         <div className="flex items-center px-[14px] py-[14px]">
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] text-[#5a6b7d] flex-1 overflow-hidden text-ellipsis">{nomineeAddress}</p>
+                          <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${nomineeAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
+                            {nomineeAddress || 'Enter Address'}
+                          </p>
                         </div>
                       </div>
                     </div>

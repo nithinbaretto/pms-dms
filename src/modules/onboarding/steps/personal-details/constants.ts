@@ -21,6 +21,7 @@ export const MOCK_PERSONAL_DETAILS: PersonalDetailsModel = {
     pan: "ELDHY6734A",
     dob: "21/02/1990",
     aprn: "APRN098765",
+    arn: "ARN-168778",
     entityType: "Individual",
     entityTypeLocked: true,
   },

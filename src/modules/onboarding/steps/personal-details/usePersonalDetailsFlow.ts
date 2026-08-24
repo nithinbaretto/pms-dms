@@ -4,6 +4,7 @@ import { onboardingApi, type PartnerOtpType } from "../../services/onboarding-ap
 import { useOnboardingStore } from "../../state/onboarding-store";
 import {
   buildSavePayload,
+  createEmptyPersonalDetails,
   mapGetPersonalDetailsToModel,
   mapNextInfoSectionToStep,
   normalizeEmailForCompare,
@@ -28,24 +29,33 @@ type UsePersonalDetailsFlowResult = {
   otpChannel: VerificationChannel | null;
   otpModalOpen: boolean;
   canSave: boolean;
+  isManualFlow: boolean;
+  isArnFlow: boolean;
+  isKraFlow: boolean;
   /** Entry-OTP verified channels stay locked on this step. */
   emailLockedFromEntry: boolean;
   mobileLockedFromEntry: boolean;
   fetchDetails: () => Promise<void>;
+  setNameValue: (value: string) => void;
+  setDobValue: (value: string) => void;
   setEmailValue: (value: string) => void;
   setMobileValue: (value: string) => void;
   startOtpForChannel: (channel: VerificationChannel) => Promise<void>;
   resendOtp: () => Promise<void>;
   verifyOtpForChannel: (otp: string) => Promise<boolean>;
   closeOtpModal: () => void;
+  savePermanentAddress: (address: Address) => void;
   saveCorrespondenceAddress: (address: Address, sameAsPermanent: boolean) => void;
   saveDetails: () => Promise<SaveResult | null>;
 };
 
 export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   const {
+    currentFlow,
     leadId,
     panNumber,
+    onboardingMethod,
+    arn,
     emailVerifiedFromEntry,
     mobileVerifiedFromEntry,
     setEmailVerified,
@@ -56,6 +66,9 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     setInputMobile,
     setPersonalDetails,
   } = useOnboardingStore();
+  const isManualFlow = currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
+  const isArnFlow = currentFlow === "aif-individual" && onboardingMethod === "ARN";
+  const isKraFlow = currentFlow === "aif-individual" && onboardingMethod === "KRA";
 
   const [data, setData] = useState<PersonalDetailsModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,10 +86,14 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   const mobileVerifiedOnceOnPdRef = useRef(false);
 
   const resolveOtpType = useCallback((channel: VerificationChannel): PartnerOtpType => {
+    if (isManualFlow) {
+      return "Primary";
+    }
+
     const verifiedOnceOnPd =
       channel === "email" ? emailVerifiedOnceOnPdRef.current : mobileVerifiedOnceOnPdRef.current;
     return verifiedOnceOnPd ? "Primary" : "Partner Integration";
-  }, []);
+  }, [isManualFlow]);
 
   const fetchDetails = useCallback(async (): Promise<void> => {
     if (!leadId) {
@@ -97,6 +114,23 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         emailVerified,
         mobileVerified,
       });
+
+      if (isManualFlow && !mapped.personalDetails.pan.trim()) {
+        mapped.personalDetails.pan = panNumber.trim().toUpperCase();
+      }
+
+      if (!mapped.personalDetails.arn.trim() && arn?.trim() && !isKraFlow) {
+        mapped.personalDetails.arn = arn.trim().toUpperCase();
+      }
+
+      if (isKraFlow) {
+        mapped.personalDetails.aprn = "";
+        mapped.personalDetails.arn = "";
+        if (!mapped.personalDetails.entityType) {
+          mapped.personalDetails.entityType = "Individual";
+        }
+      }
+
       verifiedEmailBaselineRef.current = mapped.email.verified
         ? normalizeEmailForCompare(mapped.email.value)
         : null;
@@ -111,11 +145,20 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       setInputEmail(mapped.email.value);
       setInputMobile(mapped.mobile.value);
     } catch {
-      setError("Unable to load personal details. Please try again.");
+      if (isManualFlow) {
+        const emptyModel = createEmptyPersonalDetails(panNumber);
+        setData(emptyModel);
+        setPersonalDetails(emptyModel);
+        setInputEmail(emptyModel.email.value);
+        setInputMobile(emptyModel.mobile.value);
+        setError(null);
+      } else {
+        setError("Unable to load personal details. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [leadId, setInputEmail, setInputMobile, setPersonalDetails]);
+  }, [arn, isKraFlow, isManualFlow, leadId, panNumber, setInputEmail, setInputMobile, setPersonalDetails]);
 
   useEffect(() => {
     void fetchDetails();
@@ -126,8 +169,40 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       return false;
     }
 
-    return isPersonalDetailsStepValid(data);
-  }, [data]);
+    return isPersonalDetailsStepValid(data, { isManual: isManualFlow });
+  }, [data, isManualFlow]);
+
+  const setNameValue = useCallback((value: string): void => {
+    setData((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        personalDetails: {
+          ...current.personalDetails,
+          name: value,
+        },
+      };
+    });
+  }, []);
+
+  const setDobValue = useCallback((value: string): void => {
+    setData((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        personalDetails: {
+          ...current.personalDetails,
+          dob: value,
+        },
+      };
+    });
+  }, []);
 
   const setEmailValue = useCallback(
     (value: string): void => {
@@ -366,13 +441,29 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     setOtpChannel(null);
   }, []);
 
+  const savePermanentAddress = useCallback((address: Address): void => {
+    setData((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        permanentAddress: address,
+        correspondenceAddress: current.isCorrespoingSameAsPermanent
+          ? { ...address }
+          : current.correspondenceAddress,
+      };
+    });
+  }, []);
+
   const saveCorrespondenceAddress = useCallback((address: Address, sameAsPermanent: boolean): void => {
     setData((current) => {
       if (!current) {
         return current;
       }
 
-      if (!current.email.verified || !current.mobile.verified) {
+      if (!isManualFlow && (!current.email.verified || !current.mobile.verified)) {
         return current;
       }
 
@@ -382,7 +473,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         correspondenceAddress: sameAsPermanent ? { ...current.permanentAddress } : address,
       };
     });
-  }, []);
+  }, [isManualFlow]);
 
   const saveDetails = useCallback(async (): Promise<SaveResult | null> => {
     if (!data || !leadId || !canSave) {
@@ -394,7 +485,11 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     setError(null);
 
     try {
-      const payload = buildSavePayload(data, leadId);
+      const payload = buildSavePayload(
+        data,
+        leadId,
+        isManualFlow ? "MANUAL" : onboardingMethod === "KRA" ? "KRA" : "APMI",
+      );
       const response = await onboardingApi.savePersonalDetails(payload);
       const nextFromSave = response.nextInfoSection ?? data.nextInfoSection;
       const nextModel: PersonalDetailsModel = {
@@ -418,7 +513,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     } finally {
       setIsSaving(false);
     }
-  }, [canSave, data, leadId, setInputEmail, setInputMobile, setPersonalDetails]);
+  }, [canSave, data, isManualFlow, leadId, onboardingMethod, setInputEmail, setInputMobile, setPersonalDetails]);
 
   return {
     data,
@@ -430,15 +525,21 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     otpChannel,
     otpModalOpen,
     canSave,
-    emailLockedFromEntry: emailVerifiedFromEntry,
-    mobileLockedFromEntry: mobileVerifiedFromEntry,
+    isManualFlow,
+    isArnFlow,
+    isKraFlow,
+    emailLockedFromEntry: isManualFlow ? false : emailVerifiedFromEntry,
+    mobileLockedFromEntry: isManualFlow ? false : mobileVerifiedFromEntry,
     fetchDetails,
+    setNameValue,
+    setDobValue,
     setEmailValue,
     setMobileValue,
     startOtpForChannel,
     resendOtp,
     verifyOtpForChannel,
     closeOtpModal,
+    savePermanentAddress,
     saveCorrespondenceAddress,
     saveDetails,
   };

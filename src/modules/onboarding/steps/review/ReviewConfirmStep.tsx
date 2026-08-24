@@ -338,7 +338,11 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
   const leadId = useOnboardingStore((state) => state.leadId);
   const pan = useOnboardingStore((state) => state.pan);
   const panNumber = useOnboardingStore((state) => state.panNumber);
+  const currentFlow = useOnboardingStore((state) => state.currentFlow);
+  const onboardingMethod = useOnboardingStore((state) => state.onboardingMethod);
   const resolvedPan = (pan || panNumber).trim().toUpperCase();
+  const isArnFlow = currentFlow === "aif-individual" && onboardingMethod === "ARN";
+  const isKraFlow = currentFlow === "aif-individual" && onboardingMethod === "KRA";
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -488,10 +492,14 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                     />
                     <SummaryField label="Email" value={displayValue(review?.personal.email)} />
                     <SummaryField label="Date of Birth" value={displayValue(review?.personal.dob)} />
-                    <SummaryField
-                      label="APRN"
-                      value={displayValue(review?.personal.aprnNumber)}
-                    />
+                    {isKraFlow ? null : (
+                      <SummaryField
+                        label={isArnFlow ? "ARN" : "APRN"}
+                        value={displayValue(
+                          isArnFlow ? review?.personal.arnNumber : review?.personal.aprnNumber,
+                        )}
+                      />
+                    )}
                     <SummaryField
                       label="Entity Type"
                       value={displayValue(review?.personal.entityType)}

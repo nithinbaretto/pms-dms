@@ -32,6 +32,9 @@ type OnboardingStore = OnboardingStateType & {
   setAprnNumber: (value: string | null) => void;
   setAprnStatus: (value: boolean | null) => void;
   setArn: (value: string | null) => void;
+  setKraArnStatus: (value: string | null) => void;
+  setKraDataSource: (value: string | null) => void;
+  setKraRegisteredContact: (contact: { email: string | null; mobile: string | null }) => void;
   setInputEmail: (value: string | null) => void;
   setInputMobile: (value: string | null) => void;
   setAmfiMaskedEmail: (value: string | null) => void;
@@ -72,6 +75,10 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   aprnNumber: null,
   aprnStatus: null,
   arn: null,
+  kraArnStatus: null,
+  kraDataSource: null,
+  kraRegisteredEmail: null,
+  kraRegisteredMobile: null,
   inputEmail: null,
   inputMobile: null,
   amfiMaskedEmail: null,
@@ -126,6 +133,13 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   setAprnNumber: (value) => set({ aprnNumber: value }),
   setAprnStatus: (value) => set({ aprnStatus: value }),
   setArn: (value) => set({ arn: value }),
+  setKraArnStatus: (value) => set({ kraArnStatus: value }),
+  setKraDataSource: (value) => set({ kraDataSource: value }),
+  setKraRegisteredContact: (contact) =>
+    set({
+      kraRegisteredEmail: contact.email,
+      kraRegisteredMobile: contact.mobile,
+    }),
   setInputEmail: (value) => set({ inputEmail: value }),
   setInputMobile: (value) => set({ inputMobile: value }),
   setAmfiMaskedEmail: (value) => set({ amfiMaskedEmail: value }),

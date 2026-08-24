@@ -9,6 +9,8 @@ import OtpVerificationModal from "./modals/OtpVerificationModal";
 import AddressSection from "./sections/AddressSection";
 import ContactDetailsSection from "./sections/ContactDetailsSection";
 import EntitySummarySection from "./sections/EntitySummarySection";
+import ManualAddressSection from "./sections/ManualAddressSection";
+import ManualIdentitySection from "./sections/ManualIdentitySection";
 import type { EntityType, PersonalDetailsModel } from "./types";
 import { usePersonalDetailsFlow } from "./usePersonalDetailsFlow";
 
@@ -27,19 +29,27 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
     otpChannel,
     otpModalOpen,
     canSave,
+    isManualFlow,
+    isArnFlow,
+    isKraFlow,
     emailLockedFromEntry,
     mobileLockedFromEntry,
+    setNameValue,
+    setDobValue,
     setEmailValue,
     setMobileValue,
     startOtpForChannel,
     resendOtp,
     verifyOtpForChannel,
     closeOtpModal,
+    savePermanentAddress,
     saveCorrespondenceAddress,
     saveDetails,
   } = usePersonalDetailsFlow();
 
-  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressEditTarget, setAddressEditTarget] = useState<"permanent" | "correspondence" | null>(
+    null,
+  );
 
   const handleEntityTypeSelect = (value: EntityType): void => {
     // Entity type stays locked for PMS Individual; keep handler for existing section API.
@@ -70,7 +80,7 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
   }
 
   const nextLabel = data.nextInfoSection?.trim() || "Business Details";
-  const canEditAddress = data.email.verified && data.mobile.verified;
+  const canEditAddress = isManualFlow || (data.email.verified && data.mobile.verified);
 
   return (
     <>
@@ -99,11 +109,21 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
           </div>
 
           <div className="space-y-6 p-4 md:p-6">
-            <EntitySummarySection
-              entityTypeOptions={ENTITY_TYPE_OPTIONS}
-              onEntityTypeSelect={handleEntityTypeSelect}
-              summary={data.personalDetails}
-            />
+            {isManualFlow ? (
+              <ManualIdentitySection
+                onDobChange={setDobValue}
+                onNameChange={setNameValue}
+                summary={data.personalDetails}
+              />
+            ) : (
+              <EntitySummarySection
+                entityTypeOptions={ENTITY_TYPE_OPTIONS}
+                onEntityTypeSelect={handleEntityTypeSelect}
+                showArn={isArnFlow}
+                showRegistration={!isKraFlow}
+                summary={data.personalDetails}
+              />
+            )}
 
             <ContactDetailsSection
               email={data.email}
@@ -116,20 +136,34 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
               onStartVerify={(channel) => {
                 void startOtpForChannel(channel);
               }}
+              showMobileVerifyHint={isManualFlow}
             />
 
-            <AddressSection
-              canEditCorrespondenceAddress={canEditAddress}
-              correspondenceAddress={data.correspondenceAddress}
-              onEditCorrespondenceAddress={() => {
-                if (!canEditAddress) {
-                  return;
-                }
+            {isManualFlow ? (
+              <ManualAddressSection
+                correspondenceAddress={data.correspondenceAddress}
+                onEditCorrespondenceAddress={() => {
+                  setAddressEditTarget("correspondence");
+                }}
+                onEditPermanentAddress={() => {
+                  setAddressEditTarget("permanent");
+                }}
+                permanentAddress={data.permanentAddress}
+              />
+            ) : (
+              <AddressSection
+                canEditCorrespondenceAddress={canEditAddress}
+                correspondenceAddress={data.correspondenceAddress}
+                onEditCorrespondenceAddress={() => {
+                  if (!canEditAddress) {
+                    return;
+                  }
 
-                setShowAddressModal(true);
-              }}
-              permanentAddress={data.permanentAddress}
-            />
+                  setAddressEditTarget("correspondence");
+                }}
+                permanentAddress={data.permanentAddress}
+              />
+            )}
 
             {error && !otpModalOpen ? (
               <p className="text-sm text-[var(--color-onboarding-danger)]">{error}</p>
@@ -171,20 +205,29 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
       ) : null}
 
       <CorrespondenceAddressModal
-        initialAddress={data.correspondenceAddress}
+        initialAddress={
+          addressEditTarget === "permanent" ? data.permanentAddress : data.correspondenceAddress
+        }
         initialSameAsPermanent={data.isCorrespoingSameAsPermanent}
+        mode={addressEditTarget === "permanent" ? "permanent" : "correspondence"}
         onCancel={() => {
-          setShowAddressModal(false);
+          setAddressEditTarget(null);
         }}
         onSave={(address, sameAsPermanent) => {
+          if (addressEditTarget === "permanent") {
+            savePermanentAddress(address);
+            setAddressEditTarget(null);
+            return;
+          }
+
           if (!canEditAddress) {
             return;
           }
 
           saveCorrespondenceAddress(address, sameAsPermanent);
-          setShowAddressModal(false);
+          setAddressEditTarget(null);
         }}
-        open={showAddressModal && canEditAddress}
+        open={Boolean(addressEditTarget) && (isManualFlow || canEditAddress)}
         permanentAddress={data.permanentAddress}
       />
     </>

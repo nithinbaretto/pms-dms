@@ -24,7 +24,7 @@ export const createEmptyBankDetails = (): BankDetailsModel => ({
   hasBankData: false,
 });
 
-const normalizeAccountType = (bankType: string): BankAccountType => {
+export const normalizeAccountType = (bankType: string): BankAccountType => {
   const normalized = bankType.trim().toLowerCase();
 
   if (!normalized) {
@@ -76,6 +76,18 @@ export const formatBranchDisplay = (branchName: string, bankAddress: string): st
 
 export const hasBankCoreData = (model: Pick<BankDetailsModel, "accountNumber" | "ifscCode">): boolean => {
   return Boolean(model.accountNumber.trim() || model.ifscCode.trim());
+};
+
+const CHEQUE_FILE_EXTENSIONS = ["png", "jpg", "jpeg", "pdf"] as const;
+
+export const isAllowedChequeFile = (file: File, allowedMimeTypes: readonly string[]): boolean => {
+  const mime = (file.type || "").trim().toLowerCase();
+  if (allowedMimeTypes.includes(mime) || mime === "image/jpg") {
+    return true;
+  }
+
+  const extension = file.name.split(".").pop()?.trim().toLowerCase() ?? "";
+  return (CHEQUE_FILE_EXTENSIONS as readonly string[]).includes(extension);
 };
 
 /**
@@ -212,6 +224,10 @@ export const normalizeBankVerificationType = (value: string): BankVerificationTy
 
   if (normalized.includes("reverse")) {
     return "Reverse Penny Drop";
+  }
+
+  if (normalized.includes("manual")) {
+    return "Manual";
   }
 
   if (normalized.includes("penny")) {

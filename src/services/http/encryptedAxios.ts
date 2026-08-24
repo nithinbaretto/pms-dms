@@ -13,6 +13,7 @@ type EncryptedRequestConfig = InternalAxiosRequestConfig & {
 const SKIP_ENCRYPTION_PATHS = [
   "/dms-api/api/v1/thirdparty/upload-document",
   "/dms-api/api/v1/thirdparty/download-file",
+  "/dms-api/api/v1/thirdparty/document-ocr",
   "/dms-api/pdf/generate",
 ] as const;
 

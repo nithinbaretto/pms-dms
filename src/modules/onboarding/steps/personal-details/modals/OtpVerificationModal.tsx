@@ -101,7 +101,7 @@ const OtpVerificationModal = ({
     >
       <DialogContent className="max-w-[505px] gap-0 rounded-2xl border border-[#eeeeee] !bg-white opacity-100 p-12 sm:max-w-[505px] sm:p-8">
         <DialogHeader className="space-y-1 text-left">
-          <DialogTitle className="text-[22px] leading-none font-medium text-[var(--color-onboarding-heading)]">
+          <DialogTitle className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
             Verify OTP
           </DialogTitle>
           <DialogDescription asChild>

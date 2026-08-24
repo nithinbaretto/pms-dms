@@ -53,7 +53,9 @@ const NomineeStep = ({
   const [showProofDropdown, setShowProofDropdown] = useState(false);
   const [showRelationshipDropdown, setShowRelationshipDropdown] = useState(false);
   const proofDropdownRef = useRef<HTMLDivElement>(null);
+  const proofDropdownMobileRef = useRef<HTMLDivElement>(null);
   const relationshipDropdownRef = useRef<HTMLDivElement>(null);
+  const relationshipDropdownMobileRef = useRef<HTMLDivElement>(null);
 
   const [nomineeAddressSearch, setNomineeAddressSearch] = useState("");
   const [nomineeAddressDetails, setNomineeAddressDetails] = useState("");
@@ -73,29 +75,27 @@ const NomineeStep = ({
   }, [form.guardianAddress]);
 
   useEffect(() => {
+    const isInside = (target: Node, ...refs: Array<{ current: HTMLDivElement | null }>) =>
+      refs.some((ref) => Boolean(ref.current?.contains(target)));
+
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      if (
-        showProofDropdown &&
-        proofDropdownRef.current &&
-        !proofDropdownRef.current.contains(target)
-      ) {
+      if (showProofDropdown && !isInside(target, proofDropdownRef, proofDropdownMobileRef)) {
         setShowProofDropdown(false);
       }
 
       if (
         showRelationshipDropdown &&
-        relationshipDropdownRef.current &&
-        !relationshipDropdownRef.current.contains(target)
+        !isInside(target, relationshipDropdownRef, relationshipDropdownMobileRef)
       ) {
         setShowRelationshipDropdown(false);
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("click", handleOutsideClick);
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("click", handleOutsideClick);
     };
   }, [showProofDropdown, showRelationshipDropdown]);
 
@@ -263,9 +263,11 @@ const NomineeStep = ({
         showProofDropdown={showProofDropdown}
         setShowProofDropdown={setShowProofDropdown}
         proofDropdownRef={proofDropdownRef}
+        proofDropdownMobileRef={proofDropdownMobileRef}
         showRelationshipDropdown={showRelationshipDropdown}
         setShowRelationshipDropdown={setShowRelationshipDropdown}
         relationshipDropdownRef={relationshipDropdownRef}
+        relationshipDropdownMobileRef={relationshipDropdownMobileRef}
         showDobPicker={showDobPicker}
         dobPickerAnimating={dobPickerAnimating}
         selectedDay={selectedDay}

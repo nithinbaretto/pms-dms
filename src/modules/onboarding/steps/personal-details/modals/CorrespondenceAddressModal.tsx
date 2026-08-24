@@ -20,6 +20,8 @@ type CorrespondenceAddressModalProps = {
   permanentAddress: Address;
   initialAddress: Address;
   initialSameAsPermanent?: boolean;
+  /** Defaults to correspondence. Permanent mode hides the same-as checkbox. */
+  mode?: "correspondence" | "permanent";
   onCancel: () => void;
   onSave: (address: Address, sameAsPermanent: boolean) => void;
 };
@@ -55,6 +57,7 @@ const CorrespondenceAddressModal = ({
   permanentAddress,
   initialAddress,
   initialSameAsPermanent,
+  mode = "correspondence",
   onCancel,
   onSave,
 }: CorrespondenceAddressModalProps): ReactElement => {
@@ -80,8 +83,12 @@ const CorrespondenceAddressModal = ({
 
     setDraft(initialAddress);
     setLocationError(null);
-    setSameAsPermanent(initialSameAsPermanent ?? isSameAddress(initialAddress, permanentAddress));
-  }, [initialAddress, initialSameAsPermanent, open, permanentAddress]);
+    setSameAsPermanent(
+      mode === "permanent"
+        ? false
+        : (initialSameAsPermanent ?? isSameAddress(initialAddress, permanentAddress)),
+    );
+  }, [initialAddress, initialSameAsPermanent, mode, open, permanentAddress]);
 
   const mapCenter = useMemo<LatLng>(() => {
     if (draft.lat && draft.lng) {
@@ -143,10 +150,11 @@ const CorrespondenceAddressModal = ({
     );
   };
 
-  const resolvedAddress = sameAsPermanent ? permanentAddress : draft;
+  const isPermanentMode = mode === "permanent";
+  const resolvedAddress = !isPermanentMode && sameAsPermanent ? permanentAddress : draft;
 
   const handleSave = (): void => {
-    onSave(resolvedAddress, sameAsPermanent);
+    onSave(resolvedAddress, isPermanentMode ? false : sameAsPermanent);
   };
 
   return (
@@ -156,13 +164,14 @@ const CorrespondenceAddressModal = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <h2 className="text-[22px] leading-[33px] font-medium text-[#435160]">
-                Correspondence Address
+                {isPermanentMode ? "Permanent Address" : "Correspondence Address"}
               </h2>
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 Update the address details.
               </p>
             </div>
 
+            {!isPermanentMode ? (
             <div
               className={cn(
                 "rounded-[8px] border p-[14px]",
@@ -193,8 +202,9 @@ const CorrespondenceAddressModal = ({
                 </span>
               </label>
             </div>
+            ) : null}
 
-            {!sameAsPermanent ? (
+            {isPermanentMode || !sameAsPermanent ? (
               <div className="space-y-3">
                 {isLoaded ? (
                   <>

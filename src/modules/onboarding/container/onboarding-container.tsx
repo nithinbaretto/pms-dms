@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import backgroundImage from "../../../assets/images/background_img.png";
 import logoImage from "../../../assets/logo.png";
 import OnboardingHero from "../components/OnboardingHero";
-import { getFlowConfig } from "../flow/flow.config";
+import { getFlowConfig, type FlowKey } from "../flow/flow.config";
 import { getScreenForStep } from "../flow/getScreenForStep";
 import { onboardingApi } from "../services/onboarding-api";
 import { useOnboardingStore } from "../state/onboarding-store";
@@ -13,12 +13,19 @@ import { BankDetailsStep } from "../steps/bank-details";
 import { BusinessCategoryStep } from "../steps/business-category";
 import { BusinessDetailsStep } from "../steps/business-details";
 import { UploadDocumentsStep } from "../steps/documents";
+import { EntityDetailsStep } from "../steps/entity-details";
 import { NomineeStep } from "../steps/nominee";
 import { OtpVerificationStep } from "../steps/otp-verification";
 import { PersonalDetailsStep } from "../steps/personal-details";
 import { ReviewConfirmStep } from "../steps/review";
-import { EntityDetailsStep } from "../steps/entity-details";
-import type { Step } from "../types/onboarding-types";
+import { ArnVerifyContactStep, KraVerifyContactStep } from "../steps/verify-contact";
+import type { ProductCategory, Step } from "../types/onboarding-types";
+
+const resolveIndividualFlow = (categories: ProductCategory[]): FlowKey => {
+  const hasAif = categories.includes("AIF");
+  const hasPms = categories.includes("PMS");
+  return hasAif && !hasPms ? "aif-individual" : "pms-individual";
+};
 
 const OnboardingContainer = (): ReactElement => {
   const {
@@ -42,9 +49,13 @@ const OnboardingContainer = (): ReactElement => {
     setApplicationIds,
     setProductCategories,
     setBusinessCategory,
+    setCurrentFlow,
     setEmpanelmentType,
     setOnboardingMethod,
     setArn,
+    setKraArnStatus,
+    setKraDataSource,
+    setKraRegisteredContact,
     setInputEmail,
     setInputMobile,
     setAmfiMaskedEmail,
@@ -69,8 +80,99 @@ const OnboardingContainer = (): ReactElement => {
   const [verifyContactError, setVerifyContactError] = useState<string | null>(null);
   const [isVerifyingContact, setIsVerifyingContact] = useState(false);
   const [isSavingBusinessCategory, setIsSavingBusinessCategory] = useState(false);
+  const [onboardingMethodError, setOnboardingMethodError] = useState<string | null>(null);
+  const [isUpdatingManualData, setIsUpdatingManualData] = useState(false);
 
   const flowConfig = useMemo(() => getFlowConfig(currentFlow), [currentFlow]);
+
+  const startManualJourney = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
+    if (!leadId) {
+      return { ok: false, message: "Unable to proceed. Please restart the onboarding flow." };
+    }
+
+    setIsUpdatingManualData(true);
+
+    try {
+      const response = await onboardingApi.updateManualData({ leadId });
+      if (!response.success) {
+        return {
+          ok: false,
+          message: response.message?.trim() || "Unable to start manual onboarding. Please try again.",
+        };
+      }
+
+      if (response.leadId) {
+        setLeadId(response.leadId);
+      }
+
+      resetAifOtpState();
+      setOnboardingMethod("MANUAL");
+      setStep("personal-details");
+      return { ok: true, message: "" };
+    } catch {
+      return { ok: false, message: "Unable to start manual onboarding. Please try again." };
+    } finally {
+      setIsUpdatingManualData(false);
+    }
+  }, [leadId, resetAifOtpState, setLeadId, setOnboardingMethod, setStep]);
+
+  const startKraJourney = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
+    const resolvedPan = (pan || panNumber).trim().toUpperCase();
+
+    if (!leadId || !resolvedPan) {
+      return { ok: false, message: "Unable to proceed. Please restart the onboarding flow." };
+    }
+
+    setIsUpdatingManualData(true);
+
+    try {
+      const response = await onboardingApi.getPanDetailsByKra({
+        leadId,
+        panNo: resolvedPan,
+      });
+
+      if (!response.success) {
+        return {
+          ok: false,
+          message: response.message?.trim() || "Unable to fetch KRA details. Please try again.",
+        };
+      }
+
+      if (response.leadId) {
+        setLeadId(response.leadId);
+      }
+
+      setInputEmail(null);
+      setInputMobile(null);
+      setKraArnStatus(response.arnStatus);
+      setKraDataSource(response.dataSource);
+      setKraRegisteredContact({
+        email: response.email,
+        mobile: response.mobile,
+      });
+      resetAifOtpState();
+      setOnboardingMethod("KRA");
+      setStep("verify-contact");
+      return { ok: true, message: "" };
+    } catch {
+      return { ok: false, message: "Unable to fetch KRA details. Please try again." };
+    } finally {
+      setIsUpdatingManualData(false);
+    }
+  }, [
+    leadId,
+    pan,
+    panNumber,
+    resetAifOtpState,
+    setInputEmail,
+    setInputMobile,
+    setKraArnStatus,
+    setKraDataSource,
+    setKraRegisteredContact,
+    setLeadId,
+    setOnboardingMethod,
+    setStep,
+  ]);
 
   const renderStep = (): ReactElement => {
     if (currentStep === "entity-details") {
@@ -193,7 +295,14 @@ const OnboardingContainer = (): ReactElement => {
               setApplicationIds(data.applicationIds);
               setLeadId(data.leadId ?? leadId);
 
-              const configuredSteps = Array.isArray(flowConfig?.steps) ? flowConfig.steps : [];
+              const nextFlow = resolveIndividualFlow(categories);
+              setCurrentFlow(nextFlow);
+
+              if (nextFlow === "pms-individual") {
+                setOnboardingMethod(null);
+              }
+
+              const configuredSteps = getFlowConfig(nextFlow).steps;
               const currentIndex = configuredSteps.indexOf("business-category");
               const nextConfiguredStep = configuredSteps[currentIndex + 1] as Step | undefined;
 
@@ -224,24 +333,59 @@ const OnboardingContainer = (): ReactElement => {
       return (
         <OnboardingMethodScreen
           empanelmentType={empanelmentType}
+          errorMessage={onboardingMethodError}
+          isSubmitting={isUpdatingManualData}
           onBack={() => {
+            setOnboardingMethodError(null);
             setStep("business-category");
           }}
           onContinue={() => {
-            if (!onboardingMethod) {
+            if (!onboardingMethod || isUpdatingManualData) {
               return;
             }
 
             if (onboardingMethod === "ARN") {
+              setOnboardingMethodError(null);
+              setVerifyContactError(null);
               setStep("verify-contact");
               return;
             }
 
-            // Placeholder routes for KRA, Digilocker, and Manual journeys.
+            if (onboardingMethod === "MANUAL") {
+              setOnboardingMethodError(null);
+
+              void (async () => {
+                const result = await startManualJourney();
+                if (!result.ok) {
+                  setOnboardingMethodError(result.message);
+                }
+              })();
+              return;
+            }
+
+            if (onboardingMethod === "KRA") {
+              setOnboardingMethodError(null);
+
+              void (async () => {
+                const result = await startKraJourney();
+                if (!result.ok) {
+                  setOnboardingMethodError(result.message);
+                }
+              })();
+              return;
+            }
+
+            // Placeholder route for Digilocker journey.
             window.alert(`${onboardingMethod} journey will be available in the next release.`);
           }}
           onEmpanelmentTypeChange={setEmpanelmentType}
-          onMethodChange={setOnboardingMethod}
+          onMethodChange={(value) => {
+            setOnboardingMethod(value);
+            if (value === "KRA") {
+              setInputEmail(null);
+              setInputMobile(null);
+            }
+          }}
           onboardingMethod={onboardingMethod}
           panNumber={pan || panNumber}
         />
@@ -249,6 +393,33 @@ const OnboardingContainer = (): ReactElement => {
     }
 
     if (currentStep === "verify-contact") {
+      if (onboardingMethod === "KRA" || onboardingMethod === "ARN") {
+        const VerifyContactForMethod =
+          onboardingMethod === "ARN" ? ArnVerifyContactStep : KraVerifyContactStep;
+
+        return (
+          <VerifyContactForMethod
+            onBack={() => {
+              setVerifyContactError(null);
+              setStep("onboarding-method");
+            }}
+            onContinue={() => {
+              setVerifyContactError(null);
+              resetAifOtpState();
+              setOtpAttempts(0);
+              setAccountRestricted(false);
+              setEmailVerified(false);
+              setMobileVerified(false);
+              setEmailVerifiedAt(null);
+              setMobileVerifiedAt(null);
+              setOtpTimerSeconds(30);
+              setStep("otp-verification");
+            }}
+            panNumber={pan || panNumber}
+          />
+        );
+      }
+
       const VerifyContactScreen = getScreenForStep("verify-contact", flowConfig);
 
       return (
@@ -264,8 +435,18 @@ const OnboardingContainer = (): ReactElement => {
             setStep("onboarding-method");
           }}
           onManualJourney={() => {
-            setOnboardingMethod("MANUAL");
-            window.alert("Manual AIF onboarding flow will be available in the next release.");
+            if (isUpdatingManualData) {
+              return;
+            }
+
+            setVerifyContactError(null);
+
+            void (async () => {
+              const result = await startManualJourney();
+              if (!result.ok) {
+                setVerifyContactError(result.message);
+              }
+            })();
           }}
           onRetry={() => {
             setVerifyContactError(null);
@@ -372,7 +553,10 @@ const OnboardingContainer = (): ReactElement => {
       return (
         <OtpVerificationStep
           onBack={() => {
-            if (onboardingMethod === "ARN") {
+            if (
+              currentFlow === "aif-individual" &&
+              (onboardingMethod === "ARN" || onboardingMethod === "KRA")
+            ) {
               setStep("verify-contact");
               return;
             }

@@ -38,6 +38,10 @@ export type OnboardingStateType = {
   aprnNumber: string | null;
   aprnStatus: boolean | null;
   arn: string | null;
+  kraArnStatus: string | null;
+  kraDataSource: string | null;
+  kraRegisteredEmail: string | null;
+  kraRegisteredMobile: string | null;
   inputEmail: string | null;
   inputMobile: string | null;
   amfiMaskedEmail: string | null;

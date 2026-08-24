@@ -32,13 +32,23 @@ export const isEmailValid = (email: string): boolean => {
 
 export const isPersonalDetailsStepValid = (
   data: PersonalDetailsModel,
+  options?: { isManual?: boolean },
 ): boolean => {
+  const identityValid = options?.isManual
+    ? Boolean(
+        data.personalDetails.name.trim() &&
+          data.personalDetails.pan.trim() &&
+          data.personalDetails.dob.trim(),
+      )
+    : Boolean(data.personalDetails.entityType);
+
   return Boolean(
-    data.personalDetails.entityType &&
+    identityValid &&
       isMobileValid(data.mobile.value) &&
       data.mobile.verified &&
       isEmailValid(data.email.value) &&
       data.email.verified &&
-      isAddressValid(data.correspondenceAddress),
+      isAddressValid(data.correspondenceAddress) &&
+      (!options?.isManual || isAddressValid(data.permanentAddress)),
   );
 };

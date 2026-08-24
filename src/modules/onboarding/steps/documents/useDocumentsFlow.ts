@@ -5,38 +5,60 @@ import { onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import { DOCUMENT_META } from "./constants";
 import { extractFileNameFromUrl, resolveDocumentFormat, toDisplaySrc } from "./helpers";
+import type { DocumentKind } from "./types";
 
 type UseDocumentsFlowOptions = {
   requiresPhoto?: boolean;
   requiresSignature?: boolean;
+  requiresProofDocs?: boolean;
 };
 
 type UseDocumentsFlowResult = {
   /** Storage/blob URL persisted via saveUploadedDocuments. */
   photoUrl: string;
   signatureUrl: string;
+  identityUrl: string;
+  addressUrl: string;
   /** Viewable URL from download-file for Specimen Signature / Photo previews. */
   photoDisplayUrl: string;
   signatureDisplayUrl: string;
+  identityDisplayUrl: string;
+  addressDisplayUrl: string;
   photoUploaded: boolean;
   signatureUploaded: boolean;
+  identityUploaded: boolean;
+  addressUploaded: boolean;
   isLoading: boolean;
   isUploadingPhoto: boolean;
   isUploadingSignature: boolean;
+  isUploadingIdentity: boolean;
+  isUploadingAddress: boolean;
   isSaving: boolean;
   error: string | null;
   canContinue: boolean;
   loadDocuments: () => Promise<void>;
   uploadPhoto: (file: File) => Promise<boolean>;
   uploadSignature: (file: File) => Promise<boolean>;
+  uploadIdentity: (file: File) => Promise<boolean>;
+  uploadAddress: (file: File) => Promise<boolean>;
   clearPhoto: () => void;
   clearSignature: () => void;
+  clearIdentity: () => void;
+  clearAddress: () => void;
   saveDocuments: () => Promise<boolean>;
+};
+
+const KIND_LABEL: Record<DocumentKind, string> = {
+  photo: "Photo",
+  signature: "Signature",
+  identity: "Proof of Identity",
+  address: "Proof of Address",
 };
 
 export const useDocumentsFlow = ({
   requiresPhoto = true,
   requiresSignature = true,
+  requiresProofDocs = false,
 }: UseDocumentsFlowOptions = {}): UseDocumentsFlowResult => {
   const {
     leadId,
@@ -50,36 +72,49 @@ export const useDocumentsFlow = ({
   const resolvedPan = (pan || panNumber).trim().toUpperCase();
   const photoRequired = requiresPhoto;
   const signatureRequired = requiresSignature;
+  const proofRequired = requiresProofDocs;
 
   const [photoUrl, setPhotoUrl] = useState("");
   const [signatureUrl, setSignatureUrl] = useState("");
+  const [identityUrl, setIdentityUrl] = useState("");
+  const [addressUrl, setAddressUrl] = useState("");
   const [photoDisplayUrl, setPhotoDisplayUrl] = useState("");
   const [signatureDisplayUrl, setSignatureDisplayUrl] = useState("");
+  const [identityDisplayUrl, setIdentityDisplayUrl] = useState("");
+  const [addressDisplayUrl, setAddressDisplayUrl] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  const [uploadingKind, setUploadingKind] = useState<DocumentKind | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const photoUploaded = Boolean(photoUrl.trim());
   const signatureUploaded = Boolean(signatureUrl.trim());
+  const identityUploaded = Boolean(identityUrl.trim());
+  const addressUploaded = Boolean(addressUrl.trim());
+  const isUploadingPhoto = uploadingKind === "photo";
+  const isUploadingSignature = uploadingKind === "signature";
+  const isUploadingIdentity = uploadingKind === "identity";
+  const isUploadingAddress = uploadingKind === "address";
 
   const canContinue = useMemo(() => {
-    if (isSaving || isUploadingPhoto || isUploadingSignature) {
+    if (isSaving || uploadingKind) {
       return false;
     }
 
     const photoOk = !photoRequired || photoUploaded;
     const signatureOk = !signatureRequired || signatureUploaded;
-    return photoOk && signatureOk;
+    const proofOk = !proofRequired || (identityUploaded && addressUploaded);
+    return photoOk && signatureOk && proofOk;
   }, [
+    addressUploaded,
+    identityUploaded,
     isSaving,
-    isUploadingPhoto,
-    isUploadingSignature,
     photoUploaded,
     photoRequired,
+    proofRequired,
     signatureRequired,
     signatureUploaded,
+    uploadingKind,
   ]);
 
   /** Always resolves display src via download-file — never uses the storage/blob URL as img src. */
@@ -128,19 +163,28 @@ export const useDocumentsFlow = ({
       const response = await onboardingApi.getUploadDocuments(leadId);
       const nextPhoto = response.uploadedPhoto.trim();
       const nextSignature = response.uploadedSignature.trim();
+      const nextIdentity = response.uploadedProofOfIdentity.trim();
+      const nextAddress = response.uploadedProofOfAddress.trim();
 
       setPhotoUrl(nextPhoto);
       setSignatureUrl(nextSignature);
+      setIdentityUrl(nextIdentity);
+      setAddressUrl(nextAddress);
       setPhotoUploaded(Boolean(nextPhoto));
       setSignatureUploaded(Boolean(nextSignature));
 
-      const [nextPhotoDisplay, nextSignatureDisplay] = await Promise.all([
-        nextPhoto ? resolveDisplayUrl(nextPhoto) : Promise.resolve(""),
-        nextSignature ? resolveDisplayUrl(nextSignature) : Promise.resolve(""),
-      ]);
+      const [nextPhotoDisplay, nextSignatureDisplay, nextIdentityDisplay, nextAddressDisplay] =
+        await Promise.all([
+          nextPhoto ? resolveDisplayUrl(nextPhoto) : Promise.resolve(""),
+          nextSignature ? resolveDisplayUrl(nextSignature) : Promise.resolve(""),
+          nextIdentity ? resolveDisplayUrl(nextIdentity) : Promise.resolve(""),
+          nextAddress ? resolveDisplayUrl(nextAddress) : Promise.resolve(""),
+        ]);
 
       setPhotoDisplayUrl(nextPhotoDisplay);
       setSignatureDisplayUrl(nextSignatureDisplay);
+      setIdentityDisplayUrl(nextIdentityDisplay);
+      setAddressDisplayUrl(nextAddressDisplay);
     } catch {
       setError("Unable to load uploaded documents. Please try again.");
     } finally {
@@ -152,14 +196,15 @@ export const useDocumentsFlow = ({
     void loadDocuments();
   }, [loadDocuments]);
 
-  const uploadPhoto = useCallback(
-    async (file: File): Promise<boolean> => {
+  const uploadKind = useCallback(
+    async (kind: DocumentKind, file: File): Promise<boolean> => {
+      const label = KIND_LABEL[kind];
       if (!leadId || !resolvedPan) {
-        setError("Unable to upload photo. Missing lead or PAN information.");
+        setError(`Unable to upload ${label.toLowerCase()}. Missing lead or PAN information.`);
         return false;
       }
 
-      setIsUploadingPhoto(true);
+      setUploadingKind(kind);
       setError(null);
 
       try {
@@ -169,85 +214,53 @@ export const useDocumentsFlow = ({
             leadId,
             panNumber: resolvedPan,
             applicationId: applicationIds,
-            documentName: DOCUMENT_META.photo.documentName,
-            documentType: DOCUMENT_META.photo.documentType,
+            documentName: DOCUMENT_META[kind].documentName,
+            documentType: DOCUMENT_META[kind].documentType,
             metadata: {},
           },
         });
         const storageUrl = response.fileURL.trim();
         if (!storageUrl) {
-          setError("Photo upload failed. Empty file URL returned.");
-          return false;
-        }
-
-        // Persist storage URL, but preview must come from download-file only.
-        try {
-          const displayUrl = await resolveDisplayUrl(storageUrl, file);
-          setPhotoUrl(storageUrl);
-          setPhotoDisplayUrl(displayUrl);
-          setPhotoUploaded(true);
-          return true;
-        } catch {
-          setError("Photo uploaded, but preview download failed. Please try again.");
-          return false;
-        }
-      } catch {
-        setError("Unable to upload photo. Please try again.");
-        return false;
-      } finally {
-        setIsUploadingPhoto(false);
-      }
-    },
-    [applicationIds, leadId, resolveDisplayUrl, resolvedPan, setPhotoUploaded],
-  );
-
-  const uploadSignature = useCallback(
-    async (file: File): Promise<boolean> => {
-      if (!leadId || !resolvedPan) {
-        setError("Unable to upload signature. Missing lead or PAN information.");
-        return false;
-      }
-
-      setIsUploadingSignature(true);
-      setError(null);
-
-      try {
-        const response = await onboardingApi.uploadDocument({
-          file,
-          payload: {
-            leadId,
-            panNumber: resolvedPan,
-            applicationId: applicationIds,
-            documentName: DOCUMENT_META.signature.documentName,
-            documentType: DOCUMENT_META.signature.documentType,
-            metadata: {},
-          },
-        });
-        const storageUrl = response.fileURL.trim();
-        if (!storageUrl) {
-          setError("Signature upload failed. Empty file URL returned.");
+          setError(`${label} upload failed. Empty file URL returned.`);
           return false;
         }
 
         try {
           const displayUrl = await resolveDisplayUrl(storageUrl, file);
-          setSignatureUrl(storageUrl);
-          setSignatureDisplayUrl(displayUrl);
-          setSignatureUploaded(true);
+          if (kind === "photo") {
+            setPhotoUrl(storageUrl);
+            setPhotoDisplayUrl(displayUrl);
+            setPhotoUploaded(true);
+          } else if (kind === "signature") {
+            setSignatureUrl(storageUrl);
+            setSignatureDisplayUrl(displayUrl);
+            setSignatureUploaded(true);
+          } else if (kind === "identity") {
+            setIdentityUrl(storageUrl);
+            setIdentityDisplayUrl(displayUrl);
+          } else {
+            setAddressUrl(storageUrl);
+            setAddressDisplayUrl(displayUrl);
+          }
           return true;
         } catch {
-          setError("Signature uploaded, but preview download failed. Please try again.");
+          setError(`${label} uploaded, but preview download failed. Please try again.`);
           return false;
         }
       } catch {
-        setError("Unable to upload signature. Please try again.");
+        setError(`Unable to upload ${label.toLowerCase()}. Please try again.`);
         return false;
       } finally {
-        setIsUploadingSignature(false);
+        setUploadingKind(null);
       }
     },
-    [applicationIds, leadId, resolveDisplayUrl, resolvedPan, setSignatureUploaded],
+    [applicationIds, leadId, resolveDisplayUrl, resolvedPan, setPhotoUploaded, setSignatureUploaded],
   );
+
+  const uploadPhoto = useCallback((file: File) => uploadKind("photo", file), [uploadKind]);
+  const uploadSignature = useCallback((file: File) => uploadKind("signature", file), [uploadKind]);
+  const uploadIdentity = useCallback((file: File) => uploadKind("identity", file), [uploadKind]);
+  const uploadAddress = useCallback((file: File) => uploadKind("address", file), [uploadKind]);
 
   const clearPhoto = useCallback(() => {
     setPhotoUrl("");
@@ -260,6 +273,16 @@ export const useDocumentsFlow = ({
     setSignatureDisplayUrl("");
     setSignatureUploaded(false);
   }, [setSignatureUploaded]);
+
+  const clearIdentity = useCallback(() => {
+    setIdentityUrl("");
+    setIdentityDisplayUrl("");
+  }, []);
+
+  const clearAddress = useCallback(() => {
+    setAddressUrl("");
+    setAddressDisplayUrl("");
+  }, []);
 
   const saveDocuments = useCallback(async (): Promise<boolean> => {
     if (!leadId) {
@@ -290,6 +313,22 @@ export const useDocumentsFlow = ({
       });
     }
 
+    if (identityUrl.trim()) {
+      documents.push({
+        documentName: DOCUMENT_META.identity.documentName,
+        documentType: DOCUMENT_META.identity.documentType,
+        documentUrl: identityUrl.trim(),
+      });
+    }
+
+    if (addressUrl.trim()) {
+      documents.push({
+        documentName: DOCUMENT_META.address.documentName,
+        documentType: DOCUMENT_META.address.documentType,
+        documentUrl: addressUrl.trim(),
+      });
+    }
+
     if (documents.length === 0) {
       setError("Please upload the required documents before continuing.");
       return false;
@@ -313,7 +352,9 @@ export const useDocumentsFlow = ({
       setIsSaving(false);
     }
   }, [
+    addressUrl,
     canContinue,
+    identityUrl,
     leadId,
     photoUrl,
     setPhotoUploaded,
@@ -324,21 +365,33 @@ export const useDocumentsFlow = ({
   return {
     photoUrl,
     signatureUrl,
+    identityUrl,
+    addressUrl,
     photoDisplayUrl,
     signatureDisplayUrl,
+    identityDisplayUrl,
+    addressDisplayUrl,
     photoUploaded,
     signatureUploaded,
+    identityUploaded,
+    addressUploaded,
     isLoading,
     isUploadingPhoto,
     isUploadingSignature,
+    isUploadingIdentity,
+    isUploadingAddress,
     isSaving,
     error,
     canContinue,
     loadDocuments,
     uploadPhoto,
     uploadSignature,
+    uploadIdentity,
+    uploadAddress,
     clearPhoto,
     clearSignature,
+    clearIdentity,
+    clearAddress,
     saveDocuments,
   };
 };

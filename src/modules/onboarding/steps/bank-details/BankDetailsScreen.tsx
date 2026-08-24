@@ -99,6 +99,8 @@ interface BankDetailsScreenProps {
   setChequePreviewModalAnimating: (value: boolean) => void;
   showChangeBankScreen: boolean;
   setShowChangeBankScreen: (value: boolean) => void;
+  hasBankData?: boolean;
+  isAddBankEntry?: boolean;
   changeBankTab: 'qr' | 'manual';
   setChangeBankTab: (tab: 'qr' | 'manual') => void;
   qrGenerated: boolean;
@@ -180,6 +182,8 @@ export function BankDetailsScreen({
   setChequePreviewModalAnimating,
   showChangeBankScreen,
   setShowChangeBankScreen,
+  hasBankData = false,
+  isAddBankEntry = false,
   changeBankTab,
   setChangeBankTab,
   qrGenerated,
@@ -257,10 +261,16 @@ export function BankDetailsScreen({
     isManualErrorFormValid;
 
   const closeChangeBankScreen = () => {
-    setShowChangeBankScreen(false);
     setQrGenerated(false);
     setQrTimer(213);
     setManualBankValidating(false);
+
+    if (isAddBankEntry && !hasBankData) {
+      setCurrentStep('business-details');
+      return;
+    }
+
+    setShowChangeBankScreen(false);
   };
 
   const openChangeBankScreen = (tab: 'qr' | 'manual') => {
@@ -554,7 +564,9 @@ export function BankDetailsScreen({
               {/* Header */}
               <div className="flex flex-col gap-[4px] items-start w-full">
                 <p className="font-['Mulish',sans-serif] font-medium leading-[24px] text-[#231f20] text-[16px]">Bank Details</p>
-                <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+                {isAddBankEntry ? null : (
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+                )}
               </div>
 
               {/* Step Indicator */}
@@ -1302,9 +1314,13 @@ export function BankDetailsScreen({
             nextLabel="Nominee Details"
             onPrevious={() => {
               setShowManualValidationError(false);
-              setShowChangeBankScreen(false);
               setManualAccountNumber('');
               setManualIfscCode('');
+              if (isAddBankEntry) {
+                setShowChangeBankScreen(true);
+                return;
+              }
+              setShowChangeBankScreen(false);
             }}
             continueDisabled={!canContinueFromManualError}
             isLoading={isTransitioning || isSaving}
@@ -1322,13 +1338,17 @@ export function BankDetailsScreen({
           {/* Page Title - Desktop */}
           <div className="hidden lg:flex flex-col gap-[4px] absolute left-[60px] xl:left-[120px] top-[172px] z-20 w-[1200px]">
             <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Bank Details</p>
-            <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+            {isAddBankEntry ? null : (
+              <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+            )}
           </div>
 
           {/* Mobile/Tablet Header Section */}
           <div className="lg:hidden absolute left-[24px] right-[24px] top-[96px] z-20 flex flex-col gap-[4px]">
             <h1 className="font-['Mulish',sans-serif] font-medium leading-[24px] text-[#231f20] text-[16px]">Bank Details</h1>
-            <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+            {isAddBankEntry ? null : (
+              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+            )}
           </div>
 
           {/* Form Container */}

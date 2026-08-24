@@ -11,4 +11,12 @@ export const DOCUMENT_META = {
     documentName: "signature",
     documentType: "Signature",
   },
+  identity: {
+    documentName: "proofOfIdentity",
+    documentType: "Proof Of Identity",
+  },
+  address: {
+    documentName: "proofOfAddress",
+    documentType: "Proof Of Address",
+  },
 } as const;

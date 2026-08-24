@@ -16,6 +16,7 @@ import imgPhotoGuideline4 from '../../../../assets/images/photo_guidelines_4.png
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import OnboardingStepSkeleton from '../../components/OnboardingStepSkeleton';
 import CameraCaptureModal from '../../components/CameraCaptureModal';
+import { useOnboardingStore } from '../../state/onboarding-store';
 import { useDocumentsFlow } from './useDocumentsFlow';
 
 type UploadDocumentsStepProps = {
@@ -28,6 +29,7 @@ type UploadDocumentsStepProps = {
     requiresSignature?: boolean;
     requiresCheque?: boolean;
     requiresDueDiligenceDoc?: boolean;
+    requiresProofDocs?: boolean;
   };
 };
 
@@ -39,6 +41,7 @@ interface Props {
     requiresSignature?: boolean;
     requiresCheque?: boolean;
     requiresDueDiligenceDoc?: boolean;
+    requiresProofDocs?: boolean;
   };
   showUploadInfoBanner: boolean;
   setShowUploadInfoBanner: (v: boolean) => void;
@@ -48,12 +51,20 @@ interface Props {
   errorMessage: string | null;
   initialSignatureUrl: string;
   initialPhotoUrl: string;
+  initialIdentityUrl?: string;
+  initialAddressUrl?: string;
+  identityUploaded?: boolean;
+  addressUploaded?: boolean;
   onPrevious: () => void;
   onContinue: () => void;
   onConfirmSignatureUpload: (file: File) => Promise<boolean>;
   onConfirmPhotoUpload: (file: File) => Promise<boolean>;
+  onConfirmIdentityUpload?: (file: File) => Promise<boolean>;
+  onConfirmAddressUpload?: (file: File) => Promise<boolean>;
   onRemoveSignature: () => void;
   onRemovePhoto: () => void;
+  onRemoveIdentity?: () => void;
+  onRemoveAddress?: () => void;
 }
 
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
@@ -109,9 +120,8 @@ function PreviewDialogShell({
           <button
             onClick={onSave}
             disabled={saveDisabled}
-            className={`flex-1 h-[36px] rounded-[8px] flex items-center justify-center transition-colors ${
-              saveDisabled ? 'bg-[#e5e5e6] cursor-not-allowed' : 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
-            }`}
+            className={`flex-1 h-[36px] rounded-[8px] flex items-center justify-center transition-colors ${saveDisabled ? 'bg-[#e5e5e6] cursor-not-allowed' : 'bg-[#93161e] hover:bg-[#7a1319] cursor-pointer'
+              }`}
           >
             <p className={`font-['Mulish',sans-serif] font-normal leading-[21px] text-[14px] ${saveDisabled ? 'text-[#5a6b7d]' : 'text-white'}`}>
               {saveLabel ?? 'Save'}
@@ -412,6 +422,8 @@ function MobileUploadCard({
 export function UploadDocumentsScreen({
   signatureUploaded,
   photoUploaded,
+  identityUploaded = false,
+  addressUploaded = false,
   showUploadInfoBanner,
   documentRules,
   setShowUploadInfoBanner,
@@ -421,26 +433,34 @@ export function UploadDocumentsScreen({
   errorMessage,
   initialSignatureUrl,
   initialPhotoUrl,
+  initialIdentityUrl = '',
+  initialAddressUrl = '',
   onPrevious,
   onContinue,
   onConfirmSignatureUpload,
   onConfirmPhotoUpload,
+  onConfirmIdentityUpload,
+  onConfirmAddressUpload,
   onRemoveSignature,
   onRemovePhoto,
+  onRemoveIdentity,
+  onRemoveAddress,
 }: Props) {
   const requiresSignature = documentRules?.requiresSignature ?? true;
   const requiresPhoto = documentRules?.requiresPhoto ?? true;
+  const requiresProofDocs = documentRules?.requiresProofDocs ?? false;
   const canContinue =
     !isSaving &&
     (!requiresSignature || signatureUploaded) &&
-    (!requiresPhoto || photoUploaded);
+    (!requiresPhoto || photoUploaded) &&
+    (!requiresProofDocs || (identityUploaded && addressUploaded));
   /* Signature upload state */
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string>(initialSignatureUrl);
   const [signatureObjectUrl, setSignatureObjectUrl] = useState<string>('');
   const [pendingSignatureFile, setPendingSignatureFile] = useState<File | null>(null);
   const sigFileInputRef = useRef<HTMLInputElement>(null);
-  const [cameraTarget, setCameraTarget] = useState<'signature' | 'photo' | null>(null);
+  const [cameraTarget, setCameraTarget] = useState<'signature' | 'photo' | 'identity' | 'address' | null>(null);
 
   /* Photo upload state */
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -449,7 +469,19 @@ export function UploadDocumentsScreen({
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const photoFileInputRef = useRef<HTMLInputElement>(null);
 
-  function validateSelectedFile(file: File, fileLabel: 'signature' | 'photo'): boolean {
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [identityPreviewUrl, setIdentityPreviewUrl] = useState<string>(initialIdentityUrl);
+  const [identityObjectUrl, setIdentityObjectUrl] = useState<string>('');
+  const [pendingIdentityFile, setPendingIdentityFile] = useState<File | null>(null);
+  const identityFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressPreviewUrl, setAddressPreviewUrl] = useState<string>(initialAddressUrl);
+  const [addressObjectUrl, setAddressObjectUrl] = useState<string>('');
+  const [pendingAddressFile, setPendingAddressFile] = useState<File | null>(null);
+  const addressFileInputRef = useRef<HTMLInputElement>(null);
+
+  function validateSelectedFile(file: File, fileLabel: string): boolean {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       console.warn(`Invalid ${fileLabel} file type selected. Allowed types: PNG, JPEG, PDF.`);
       return false;
@@ -495,6 +527,38 @@ export function UploadDocumentsScreen({
     setShowPhotoModal(true);
   }
 
+  function prepareIdentityPreview(file: File) {
+    if (!validateSelectedFile(file, 'identity')) {
+      return;
+    }
+
+    if (identityObjectUrl) {
+      URL.revokeObjectURL(identityObjectUrl);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setIdentityObjectUrl(objectUrl);
+    setIdentityPreviewUrl(objectUrl);
+    setPendingIdentityFile(file);
+    setShowIdentityModal(true);
+  }
+
+  function prepareAddressPreview(file: File) {
+    if (!validateSelectedFile(file, 'address')) {
+      return;
+    }
+
+    if (addressObjectUrl) {
+      URL.revokeObjectURL(addressObjectUrl);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setAddressObjectUrl(objectUrl);
+    setAddressPreviewUrl(objectUrl);
+    setPendingAddressFile(file);
+    setShowAddressModal(true);
+  }
+
   function handleSignatureCaptureClick() {
     setCameraTarget('signature');
   }
@@ -504,6 +568,10 @@ export function UploadDocumentsScreen({
       await onConfirmSignatureUpload(file);
     } else if (cameraTarget === 'photo') {
       await onConfirmPhotoUpload(file);
+    } else if (cameraTarget === 'identity') {
+      await onConfirmIdentityUpload?.(file);
+    } else if (cameraTarget === 'address') {
+      await onConfirmAddressUpload?.(file);
     }
 
     setCameraTarget(null);
@@ -511,6 +579,14 @@ export function UploadDocumentsScreen({
 
   function handlePhotoCaptureClick() {
     setCameraTarget('photo');
+  }
+
+  function handleIdentityCaptureClick() {
+    setCameraTarget('identity');
+  }
+
+  function handleAddressCaptureClick() {
+    setCameraTarget('address');
   }
 
   function triggerInput(ref: { current: HTMLInputElement | null }) {
@@ -546,6 +622,18 @@ export function UploadDocumentsScreen({
       setPhotoPreviewUrl(initialPhotoUrl);
     }
   }, [initialPhotoUrl, showPhotoModal]);
+
+  useEffect(() => {
+    if (!showIdentityModal && initialIdentityUrl) {
+      setIdentityPreviewUrl(initialIdentityUrl);
+    }
+  }, [initialIdentityUrl, showIdentityModal]);
+
+  useEffect(() => {
+    if (!showAddressModal && initialAddressUrl) {
+      setAddressPreviewUrl(initialAddressUrl);
+    }
+  }, [initialAddressUrl, showAddressModal]);
 
   function handleSignatureTrash() {
     if (signatureObjectUrl) {
@@ -643,6 +731,106 @@ export function UploadDocumentsScreen({
     onRemovePhoto();
   }
 
+  function handleIdentityUploadClick() { triggerInput(identityFileInputRef); }
+  function handleIdentityFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    prepareIdentityPreview(file);
+    e.target.value = '';
+  }
+  function handleIdentityTrash() {
+    if (identityObjectUrl) {
+      URL.revokeObjectURL(identityObjectUrl);
+    }
+    setShowIdentityModal(false);
+    setIdentityObjectUrl('');
+    setPendingIdentityFile(null);
+    setIdentityPreviewUrl(initialIdentityUrl);
+    if (identityFileInputRef.current) {
+      identityFileInputRef.current.value = '';
+    }
+  }
+  async function handleIdentitySave() {
+    if (!pendingIdentityFile) {
+      setShowIdentityModal(false);
+      return;
+    }
+
+    const uploaded = await onConfirmIdentityUpload?.(pendingIdentityFile);
+    if (!uploaded) {
+      return;
+    }
+
+    if (identityObjectUrl) {
+      URL.revokeObjectURL(identityObjectUrl);
+    }
+    setIdentityObjectUrl('');
+    setPendingIdentityFile(null);
+    setShowIdentityModal(false);
+  }
+  function handleIdentityRemove() {
+    if (identityObjectUrl) {
+      URL.revokeObjectURL(identityObjectUrl);
+    }
+    setIdentityObjectUrl('');
+    setPendingIdentityFile(null);
+    setIdentityPreviewUrl('');
+    onRemoveIdentity?.();
+  }
+
+  function handleAddressUploadClick() { triggerInput(addressFileInputRef); }
+  function handleAddressFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    prepareAddressPreview(file);
+    e.target.value = '';
+  }
+  function handleAddressTrash() {
+    if (addressObjectUrl) {
+      URL.revokeObjectURL(addressObjectUrl);
+    }
+    setShowAddressModal(false);
+    setAddressObjectUrl('');
+    setPendingAddressFile(null);
+    setAddressPreviewUrl(initialAddressUrl);
+    if (addressFileInputRef.current) {
+      addressFileInputRef.current.value = '';
+    }
+  }
+  async function handleAddressSave() {
+    if (!pendingAddressFile) {
+      setShowAddressModal(false);
+      return;
+    }
+
+    const uploaded = await onConfirmAddressUpload?.(pendingAddressFile);
+    if (!uploaded) {
+      return;
+    }
+
+    if (addressObjectUrl) {
+      URL.revokeObjectURL(addressObjectUrl);
+    }
+    setAddressObjectUrl('');
+    setPendingAddressFile(null);
+    setShowAddressModal(false);
+  }
+  function handleAddressRemove() {
+    if (addressObjectUrl) {
+      URL.revokeObjectURL(addressObjectUrl);
+    }
+    setAddressObjectUrl('');
+    setPendingAddressFile(null);
+    setAddressPreviewUrl('');
+    onRemoveAddress?.();
+  }
+
   useEffect(() => {
     return () => {
       if (signatureObjectUrl) {
@@ -651,14 +839,22 @@ export function UploadDocumentsScreen({
       if (photoObjectUrl) {
         URL.revokeObjectURL(photoObjectUrl);
       }
+      if (identityObjectUrl) {
+        URL.revokeObjectURL(identityObjectUrl);
+      }
+      if (addressObjectUrl) {
+        URL.revokeObjectURL(addressObjectUrl);
+      }
     };
-  }, [photoObjectUrl, signatureObjectUrl]);
+  }, [addressObjectUrl, identityObjectUrl, photoObjectUrl, signatureObjectUrl]);
 
   return (
     <>
       {/* Hidden file inputs */}
       <input ref={sigFileInputRef} type="file" accept="image/png,image/jpeg,application/pdf" className="hidden" onChange={handleSignatureFileChange} />
       <input ref={photoFileInputRef} type="file" accept="image/png,image/jpeg,application/pdf" className="hidden" onChange={handlePhotoFileChange} />
+      <input ref={identityFileInputRef} type="file" accept="image/png,image/jpeg,application/pdf" className="hidden" onChange={handleIdentityFileChange} />
+      <input ref={addressFileInputRef} type="file" accept="image/png,image/jpeg,application/pdf" className="hidden" onChange={handleAddressFileChange} />
 
       {/* Upload Signature Modal */}
       {showSignatureModal && signaturePreviewUrl && (
@@ -682,9 +878,37 @@ export function UploadDocumentsScreen({
         />
       )}
 
+      {showIdentityModal && identityPreviewUrl && (
+        <UploadSignatureModal
+          title="Upload Proof of Identity"
+          previewUrl={identityPreviewUrl}
+          onTrash={handleIdentityTrash}
+          onCancel={handleIdentityTrash}
+          onSave={handleIdentitySave}
+        />
+      )}
+
+      {showAddressModal && addressPreviewUrl && (
+        <UploadSignatureModal
+          title="Upload Proof of Address"
+          previewUrl={addressPreviewUrl}
+          onTrash={handleAddressTrash}
+          onCancel={handleAddressTrash}
+          onSave={handleAddressSave}
+        />
+      )}
+
       {cameraTarget ? (
         <CameraCaptureModal
-          title={cameraTarget === 'signature' ? 'Capture Signature' : 'Capture Photo'}
+          title={
+            cameraTarget === 'signature'
+              ? 'Capture Signature'
+              : cameraTarget === 'photo'
+                ? 'Capture Photo'
+                : cameraTarget === 'identity'
+                  ? 'Capture Proof of Identity'
+                  : 'Capture Proof of Address'
+          }
           onCancel={() => setCameraTarget(null)}
           onSave={handleCameraSave}
         />
@@ -742,25 +966,49 @@ export function UploadDocumentsScreen({
                 )}
 
                 {/* Two upload cards — items-stretch ensures equal height */}
-                <div className="flex gap-[20px] items-stretch w-full">
-                  <UploadCard
-                    title="Specimen Signature"
-                    uploaded={signatureUploaded}
-                    previewUrl={signaturePreviewUrl}
-                    onCaptureClick={handleSignatureCaptureClick}
-                    onUploadClick={handleSignatureUploadClick}
-                    onRemove={handleSignatureRemove}
-                    cardType="signature"
-                  />
-                  <UploadCard
-                    title="Photo Upload"
-                    uploaded={photoUploaded}
-                    previewUrl={photoPreviewUrl}
-                    onCaptureClick={handlePhotoCaptureClick}
-                    onUploadClick={handlePhotoUploadClick}
-                    onRemove={handlePhotoRemove}
-                    cardType="photo"
-                  />
+                <div className="flex flex-col gap-[20px] w-full">
+                  {requiresProofDocs ? (
+                    <div className="flex gap-[20px] items-stretch w-full">
+                      <UploadCard
+                        title="Proof of Identity"
+                        uploaded={identityUploaded}
+                        previewUrl={identityPreviewUrl}
+                        onCaptureClick={handleIdentityCaptureClick}
+                        onUploadClick={handleIdentityUploadClick}
+                        onRemove={handleIdentityRemove}
+                        cardType="photo"
+                      />
+                      <UploadCard
+                        title="Proof of Address"
+                        uploaded={addressUploaded}
+                        previewUrl={addressPreviewUrl}
+                        onCaptureClick={handleAddressCaptureClick}
+                        onUploadClick={handleAddressUploadClick}
+                        onRemove={handleAddressRemove}
+                        cardType="photo"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="flex gap-[20px] items-stretch w-full">
+                    <UploadCard
+                      title="Specimen Signature"
+                      uploaded={signatureUploaded}
+                      previewUrl={signaturePreviewUrl}
+                      onCaptureClick={handleSignatureCaptureClick}
+                      onUploadClick={handleSignatureUploadClick}
+                      onRemove={handleSignatureRemove}
+                      cardType="signature"
+                    />
+                    <UploadCard
+                      title="Photo Upload"
+                      uploaded={photoUploaded}
+                      previewUrl={photoPreviewUrl}
+                      onCaptureClick={handlePhotoCaptureClick}
+                      onUploadClick={handlePhotoUploadClick}
+                      onRemove={handlePhotoRemove}
+                      cardType="photo"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -809,6 +1057,28 @@ export function UploadDocumentsScreen({
                 )}
 
                 <div className="flex flex-col gap-[16px]">
+                  {requiresProofDocs ? (
+                    <>
+                      <MobileUploadCard
+                        title="Proof of Identity"
+                        uploaded={identityUploaded}
+                        previewUrl={identityPreviewUrl}
+                        onCaptureClick={handleIdentityCaptureClick}
+                        onUploadClick={handleIdentityUploadClick}
+                        onRemove={handleIdentityRemove}
+                        cardType="photo"
+                      />
+                      <MobileUploadCard
+                        title="Proof of Address"
+                        uploaded={addressUploaded}
+                        previewUrl={addressPreviewUrl}
+                        onCaptureClick={handleAddressCaptureClick}
+                        onUploadClick={handleAddressUploadClick}
+                        onRemove={handleAddressRemove}
+                        cardType="photo"
+                      />
+                    </>
+                  ) : null}
                   <MobileUploadCard
                     title="Specimen Signature"
                     uploaded={signatureUploaded}
@@ -861,27 +1131,47 @@ const UploadDocumentsStep = ({
   onGoToReview,
   documentRules,
 }: UploadDocumentsStepProps): ReactElement => {
+  const { currentFlow, onboardingMethod } = useOnboardingStore();
+  const requiresProofDocs =
+    currentFlow === "aif-individual" &&
+    (onboardingMethod === "MANUAL");
   const [showUploadInfoBanner, setShowUploadInfoBanner] = useState(true);
   const {
     photoDisplayUrl,
     signatureDisplayUrl,
+    identityDisplayUrl,
+    addressDisplayUrl,
     photoUploaded,
     signatureUploaded,
+    identityUploaded,
+    addressUploaded,
     isLoading,
     isUploadingPhoto,
     isUploadingSignature,
+    isUploadingIdentity,
+    isUploadingAddress,
     isSaving,
     error,
     canContinue,
     uploadPhoto,
     uploadSignature,
+    uploadIdentity,
+    uploadAddress,
     clearPhoto,
     clearSignature,
+    clearIdentity,
+    clearAddress,
     saveDocuments,
   } = useDocumentsFlow({
     requiresPhoto: documentRules?.requiresPhoto ?? true,
     requiresSignature: documentRules?.requiresSignature ?? true,
+    requiresProofDocs,
   });
+
+  const resolvedDocumentRules = {
+    ...documentRules,
+    requiresProofDocs,
+  };
 
   const handleContinue = async () => {
     if (!canContinue) {
@@ -913,9 +1203,11 @@ const UploadDocumentsStep = ({
     );
   }
 
+  const isUploadingAny =
+    isUploadingPhoto || isUploadingSignature || isUploadingIdentity || isUploadingAddress;
   const continueLabel = isSaving
     ? "Saving..."
-    : isUploadingPhoto || isUploadingSignature
+    : isUploadingAny
       ? "Uploading..."
       : isEditMode
         ? "Go to Review"
@@ -925,23 +1217,31 @@ const UploadDocumentsStep = ({
     <UploadDocumentsScreen
       signatureUploaded={signatureUploaded}
       photoUploaded={photoUploaded}
-      documentRules={documentRules}
+      identityUploaded={identityUploaded}
+      addressUploaded={addressUploaded}
+      documentRules={resolvedDocumentRules}
       showUploadInfoBanner={showUploadInfoBanner}
       setShowUploadInfoBanner={setShowUploadInfoBanner}
       isEditMode={isEditMode}
-      isSaving={isSaving || isUploadingPhoto || isUploadingSignature}
+      isSaving={isSaving || isUploadingAny}
       continueLabel={continueLabel}
       errorMessage={error}
       initialSignatureUrl={signatureDisplayUrl}
       initialPhotoUrl={photoDisplayUrl}
+      initialIdentityUrl={identityDisplayUrl}
+      initialAddressUrl={addressDisplayUrl}
       onPrevious={onBack}
       onContinue={() => {
         void handleContinue();
       }}
       onConfirmSignatureUpload={uploadSignature}
       onConfirmPhotoUpload={uploadPhoto}
+      onConfirmIdentityUpload={uploadIdentity}
+      onConfirmAddressUpload={uploadAddress}
       onRemoveSignature={clearSignature}
       onRemovePhoto={clearPhoto}
+      onRemoveIdentity={clearIdentity}
+      onRemoveAddress={clearAddress}
     />
   );
 };

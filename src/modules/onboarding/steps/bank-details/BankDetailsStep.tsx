@@ -11,7 +11,7 @@ import {
   toDisplaySrc,
 } from "../documents/helpers";
 import { BankDetailsScreen } from "./BankDetailsScreen";
-import { formatAccountTypeLabel, formatBranchDisplay } from "./helpers";
+import { formatAccountTypeLabel, formatBranchDisplay, normalizeAccountType } from "./helpers";
 import type { BankDetailsModel } from "./types";
 import { useBankDetailsFlow } from "./useBankDetailsFlow";
 
@@ -32,8 +32,11 @@ const BankDetailsStep = ({
   chequeUploaded: initialChequeUploaded = false,
   onChequeUploadedChange,
 }: BankDetailsStepProps): ReactElement => {
-  const { leadId, pan, panNumber } = useOnboardingStore();
+  const { leadId, pan, panNumber, currentFlow, onboardingMethod } = useOnboardingStore();
   const resolvedPan = (pan || panNumber).trim().toUpperCase();
+  const isAddBankEntry =
+    currentFlow === "aif-individual" &&
+    (onboardingMethod === "MANUAL" || onboardingMethod === "KRA");
 
   const {
     data,
@@ -91,6 +94,7 @@ const BankDetailsStep = ({
   const [manualErrorAccountType, setManualErrorAccountType] = useState<"saving" | "current">(
     "saving",
   );
+  const [manualErrorBankName, setManualErrorBankName] = useState("");
   const [manualErrorBankBranch, setManualErrorBankBranch] = useState("");
 
   const [manualErrorChequeUploaded, setManualErrorChequeUploaded] = useState(false);
@@ -99,6 +103,7 @@ const BankDetailsStep = ({
   const [manualErrorChequeFileSelected, setManualErrorChequeFileSelected] = useState(false);
 
   const previewRequestIdRef = useRef(0);
+  const didOpenManualAddRef = useRef(false);
 
   useEffect(() => {
     setIsEditMode(initialIsEditMode);
@@ -121,6 +126,7 @@ const BankDetailsStep = ({
     setManualIfscCode(data.ifscCode);
     setManualErrorReenterAccountNumber(data.accountNumber);
     setManualErrorAccountHolderName(data.accountHolderName);
+    setManualErrorBankName(data.bankName);
     setManualErrorBankBranch(data.branchDisplay || data.bankAddress || data.branchName);
     if (data.accountType === "current" || data.accountType === "saving") {
       setManualErrorAccountType(data.accountType);
@@ -130,6 +136,17 @@ const BankDetailsStep = ({
   useEffect(() => {
     setManualBankValidating(isValidating && changeBankTab === "manual" && showChangeBankScreen);
   }, [changeBankTab, isValidating, showChangeBankScreen]);
+
+  useEffect(() => {
+    if (!isAddBankEntry || isLoading || didOpenManualAddRef.current) {
+      return;
+    }
+
+    didOpenManualAddRef.current = true;
+    if (!data.hasBankData) {
+      setShowChangeBankScreen(true);
+    }
+  }, [data.hasBankData, isLoading, isAddBankEntry]);
 
   const lastClosedQrCaptureTokenRef = useRef(0);
   const wasFetchingQrBankDetailsRef = useRef(false);
@@ -251,6 +268,7 @@ const BankDetailsStep = ({
       ifscCode,
       accountHolderName: manualErrorAccountHolderName.trim() || data.accountHolderName,
       accountType,
+      bankName: manualErrorBankName.trim() || data.bankName,
       bankType: accountType === "current" ? "Current" : "Savings",
       bankAddress: branch || data.bankAddress,
       branchName: data.branchName,
@@ -288,6 +306,7 @@ const BankDetailsStep = ({
       cancelledCheque: canContinueOcr ? cancelledChequeUrl.trim() : "",
       isBankVerifiedOverride: bankValidationStatus === "success" ? true : false,
       details: detailsOverride,
+      verificationTypeOverride: canContinueOcr ? "Manual" : undefined,
     });
 
     if (!result) {
@@ -300,19 +319,42 @@ const BankDetailsStep = ({
   const handleUploadCancelledCheque = useCallback(
     async (file: File): Promise<boolean> => {
       setChequeUploadError(null);
-      const storageUrl = await uploadCancelledCheque(file);
-      if (!storageUrl) {
-        setChequeUploadError("Unable to upload cancelled cheque. Please try again.");
+      const result = await uploadCancelledCheque(file);
+      if (!result.ok) {
+        setChequeUploadError(result.message);
         return false;
       }
 
-      setCancelledChequeUrl(storageUrl);
-      setCancelledChequeFileName(file.name.trim() || extractFileNameFromUrl(storageUrl, "Cheque.png"));
+      setCancelledChequeUrl(result.storageUrl);
+      setCancelledChequeFileName(
+        file.name.trim() || extractFileNameFromUrl(result.storageUrl, "Cheque.png"),
+      );
       setChequeUploaded(true);
       setManualErrorChequeUploaded(true);
       setChequePreviewDisplayUrl("");
       setChequePreviewError(null);
-      // OCR API is on hold — keep prefills / user edits as-is.
+
+      const ocr = result.ocr;
+      if (ocr) {
+        if (ocr.accountNumber) {
+          setManualAccountNumber(ocr.accountNumber);
+          setManualErrorReenterAccountNumber(ocr.accountNumber);
+        }
+        if (ocr.name) {
+          setManualErrorAccountHolderName(ocr.name);
+        }
+        if (ocr.ifscCode) {
+          setManualIfscCode(ocr.ifscCode);
+        }
+        const mappedType = normalizeAccountType(ocr.accountType);
+        if (mappedType === "saving" || mappedType === "current") {
+          setManualErrorAccountType(mappedType);
+        }
+        if (ocr.bankName) {
+          setManualErrorBankName(ocr.bankName);
+        }
+      }
+
       return true;
     },
     [uploadCancelledCheque],
@@ -441,7 +483,11 @@ const BankDetailsStep = ({
     return (
       <OnboardingStepSkeleton
         title="Bank Details"
-        subtitle="Your details have been fetched from APMI. Fields shown in grey cannot be changed"
+        subtitle={
+          isAddBankEntry
+            ? "Select your preferred method to update bank account details"
+            : "Your details have been fetched from APMI. Fields shown in grey cannot be changed"
+        }
         stepLabel="Step 3 of 6"
         progressPercent={50}
         fieldRows={4}
@@ -452,7 +498,7 @@ const BankDetailsStep = ({
 
   return (
     <>
-      {error && !isUploadingCheque && !showChequeUploadModal && !showManualErrorChequeModal ? (
+      {error && !isAddBankEntry && !isUploadingCheque && !showChequeUploadModal && !showManualErrorChequeModal && !showManualValidationError ? (
         <div className="mx-auto mb-3 w-full max-w-[1240px] rounded-[8px] border border-[#f0d0d0] bg-[#fff1e2] px-4 py-3">
           <p className="font-['Mulish',sans-serif] text-[13px] leading-[19.5px] text-[#93161e]">{error}</p>
         </div>
@@ -547,6 +593,8 @@ const BankDetailsStep = ({
         setShowLoadingModal={setShowLoadingModal}
         setShowManualErrorChequeModal={setShowManualErrorChequeModal}
         setShowManualValidationError={setShowManualValidationError}
+        hasBankData={data.hasBankData}
+        isAddBankEntry={isAddBankEntry}
         showChangeBankScreen={showChangeBankScreen}
         showChequePreviewModal={showChequePreviewModal}
         showChequeUploadModal={showChequeUploadModal}

@@ -3,7 +3,7 @@ export type BankValidationStatus = "pending" | "validating" | "success" | "faile
 export type BankAccountType = "saving" | "current" | "";
 
 /** Exact `verificationtype` values expected by saveBankDetails. */
-export type BankVerificationType = "Penny drop" | "Reverse Penny Drop" | "";
+export type BankVerificationType = "Penny drop" | "Reverse Penny Drop" | "Manual" | "";
 
 export type BankDetailsModel = {
   accountHolderName: string;
@@ -30,6 +30,23 @@ export type SaveBankResult = {
   message: string;
   applicationStatus: string;
 };
+
+export type ChequeOcrPrefill = {
+  name: string;
+  bankName: string;
+  accountNumber: string;
+  ifscCode: string;
+  accountType: string;
+};
+
+export type ChequeUploadResult = {
+  storageUrl: string;
+  ocr: ChequeOcrPrefill | null;
+};
+
+export type ChequeUploadOutcome =
+  | { ok: true; storageUrl: string; ocr: ChequeOcrPrefill | null }
+  | { ok: false; message: string };
 
 export type QrSessionState = {
   reversePennyDropId: string;

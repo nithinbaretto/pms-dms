@@ -18,6 +18,10 @@ type EntitySummarySectionProps = {
   summary: EntitySummary;
   entityTypeOptions: EntityType[];
   onEntityTypeSelect: (value: EntityType) => void;
+  /** AIF ARN journey shows ARN instead of APRN. */
+  showArn?: boolean;
+  /** KRA journey has no APRN/ARN — hide the registration number. */
+  showRegistration?: boolean;
 };
 
 const iconWrapClass =
@@ -32,13 +36,23 @@ const EntitySummarySection = ({
   summary,
   entityTypeOptions,
   onEntityTypeSelect,
+  showArn = false,
+  showRegistration = true,
 }: EntitySummarySectionProps): ReactElement => {
   const canSelectEntityType = !summary.entityTypeLocked;
+  const registrationLabel = showArn ? "ARN" : "APRN";
+  const registrationValue = showArn ? summary.arn : summary.aprn;
 
   return (
     <section>
       <div className="rounded-lg bg-[#f5f5f5] p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div
+          className={
+            showRegistration
+              ? "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5"
+              : "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          }
+        >
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
               <img alt="" className="size-[18px]" src={nameIcon} />
@@ -69,15 +83,17 @@ const EntitySummarySection = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-lg">
-            <span className={iconWrapClass}>
-              <img alt="" className="size-[18px]" src={aprnIcon} />
-            </span>
-            <div>
-              <p className={labelClass}>APRN</p>
-              <p className={valueClass}>{summary.aprn}</p>
+          {showRegistration ? (
+            <div className="flex items-center gap-3 rounded-lg">
+              <span className={iconWrapClass}>
+                <img alt="" className="size-[18px]" src={aprnIcon} />
+              </span>
+              <div>
+                <p className={labelClass}>{registrationLabel}</p>
+                <p className={valueClass}>{registrationValue}</p>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="flex items-center gap-3 rounded-lg">
             <span className={iconWrapClass}>
