@@ -11,7 +11,8 @@ import {
   toDisplaySrc,
 } from "../documents/helpers";
 import { BankDetailsScreen } from "./BankDetailsScreen";
-import { formatAccountTypeLabel, formatBranchDisplay, normalizeAccountType } from "./helpers";
+import { BANK_DETAILS_PROGRESS_PERCENT, BANK_DETAILS_STEP_LABEL } from "./constants";
+import { formatAccountTypeLabel, formatBranchDisplay } from "./helpers";
 import type { BankDetailsModel } from "./types";
 import { useBankDetailsFlow } from "./useBankDetailsFlow";
 
@@ -122,8 +123,6 @@ const BankDetailsStep = ({
       return;
     }
 
-    setManualAccountNumber(data.accountNumber);
-    setManualIfscCode(data.ifscCode);
     setManualErrorReenterAccountNumber(data.accountNumber);
     setManualErrorAccountHolderName(data.accountHolderName);
     setManualErrorBankName(data.bankName);
@@ -284,29 +283,28 @@ const BankDetailsStep = ({
     }
 
     const canContinueMain = bankValidationStatus === "success";
-    const canContinueOcr =
+    const canContinueWithCheque =
       bankValidationStatus === "failed" &&
-      showManualValidationError &&
       chequeUploaded &&
       Boolean(cancelledChequeUrl.trim());
+    const canContinueManualError = canContinueWithCheque && showManualValidationError;
 
-    if (!canContinueMain && !canContinueOcr) {
+    if (!canContinueMain && !canContinueWithCheque) {
       return;
     }
 
-    if (canContinueOcr && !cancelledChequeUrl.trim()) {
+    if (canContinueWithCheque && !cancelledChequeUrl.trim()) {
       setChequeUploadError("Please upload a cancelled cheque to continue.");
       return;
     }
 
-    const detailsOverride =
-      canContinueOcr || showManualValidationError ? buildManualOverrideModel() : undefined;
+    const detailsOverride = canContinueManualError ? buildManualOverrideModel() : undefined;
 
     const result = await saveBankDetails({
-      cancelledCheque: canContinueOcr ? cancelledChequeUrl.trim() : "",
+      cancelledCheque: canContinueWithCheque ? cancelledChequeUrl.trim() : "",
       isBankVerifiedOverride: bankValidationStatus === "success" ? true : false,
       details: detailsOverride,
-      verificationTypeOverride: canContinueOcr ? "Manual" : undefined,
+      verificationTypeOverride: canContinueWithCheque ? "Manual" : undefined,
     });
 
     if (!result) {
@@ -333,27 +331,6 @@ const BankDetailsStep = ({
       setManualErrorChequeUploaded(true);
       setChequePreviewDisplayUrl("");
       setChequePreviewError(null);
-
-      const ocr = result.ocr;
-      if (ocr) {
-        if (ocr.accountNumber) {
-          setManualAccountNumber(ocr.accountNumber);
-          setManualErrorReenterAccountNumber(ocr.accountNumber);
-        }
-        if (ocr.name) {
-          setManualErrorAccountHolderName(ocr.name);
-        }
-        if (ocr.ifscCode) {
-          setManualIfscCode(ocr.ifscCode);
-        }
-        const mappedType = normalizeAccountType(ocr.accountType);
-        if (mappedType === "saving" || mappedType === "current") {
-          setManualErrorAccountType(mappedType);
-        }
-        if (ocr.bankName) {
-          setManualErrorBankName(ocr.bankName);
-        }
-      }
 
       return true;
     },
@@ -488,8 +465,8 @@ const BankDetailsStep = ({
             ? "Select your preferred method to update bank account details"
             : "Your details have been fetched from APMI. Fields shown in grey cannot be changed"
         }
-        stepLabel="Step 3 of 6"
-        progressPercent={50}
+        stepLabel={BANK_DETAILS_STEP_LABEL}
+        progressPercent={BANK_DETAILS_PROGRESS_PERCENT}
         fieldRows={4}
         nextLabel="Nominee Details"
       />

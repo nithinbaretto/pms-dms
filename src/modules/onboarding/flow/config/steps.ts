@@ -1,6 +1,8 @@
 import type { Step } from "../../types/onboarding-types";
+import { SHOW_HUF_ENTITY_DETAILS } from "../huf-entity-journey";
 
 export const STEPS: Step[] = [
+  ...(SHOW_HUF_ENTITY_DETAILS ? (["huf-entity-details"] as const) : []),
   "entity-details",
   "business-category",
   "onboarding-method",

@@ -55,6 +55,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     leadId,
     panNumber,
     onboardingMethod,
+    kraDataSource,
     arn,
     emailVerifiedFromEntry,
     mobileVerifiedFromEntry,
@@ -488,7 +489,9 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       const payload = buildSavePayload(
         data,
         leadId,
-        isManualFlow ? "MANUAL" : onboardingMethod === "KRA" ? "KRA" : "APMI",
+        isManualFlow
+          ? "MANUAL"
+          : kraDataSource ?? (onboardingMethod === "KRA" ? "KRA" : "APMI"),
       );
       const response = await onboardingApi.savePersonalDetails(payload);
       const nextFromSave = response.nextInfoSection ?? data.nextInfoSection;
@@ -513,7 +516,17 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     } finally {
       setIsSaving(false);
     }
-  }, [canSave, data, isManualFlow, leadId, onboardingMethod, setInputEmail, setInputMobile, setPersonalDetails]);
+  }, [
+    canSave,
+    data,
+    isManualFlow,
+    kraDataSource,
+    leadId,
+    onboardingMethod,
+    setInputEmail,
+    setInputMobile,
+    setPersonalDetails,
+  ]);
 
   return {
     data,

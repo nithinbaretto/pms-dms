@@ -23,6 +23,7 @@ import currencyInrIcon from '../../../../assets/icons/svg/currencyInr.svg';
 import { Input } from '../../../../shared/ui/input';
 import CameraCaptureModal from '../../components/CameraCaptureModal';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
+import { BANK_DETAILS_PROGRESS_PERCENT, BANK_DETAILS_STEP_LABEL } from './constants';
 
 const editIconMaskStyle = {
   WebkitMaskImage: `url(${editIcon})`,
@@ -248,6 +249,8 @@ export function BankDetailsScreen({
   const normalizedIfscCode = manualIfscCode.trim().toUpperCase();
   const ifscData = ifscMaster[normalizedIfscCode as keyof typeof ifscMaster] ?? ifscMaster.ELDHY6734A;
   const canContinue = bankValidationStatus === 'success';
+  const canContinueFromFailedCheque =
+    bankValidationStatus === 'failed' && chequeUploaded;
   const isManualErrorFormValid =
     manualErrorReenterAccountNumber.trim() !== '' &&
     manualErrorReenterAccountNumber === manualAccountNumber &&
@@ -276,6 +279,8 @@ export function BankDetailsScreen({
   const openChangeBankScreen = (tab: 'qr' | 'manual') => {
     setChangeBankTab(tab);
     setShowManualValidationError(false);
+    setManualAccountNumber('');
+    setManualIfscCode('');
     setShowChangeBankScreen(true);
   };
 
@@ -547,6 +552,22 @@ export function BankDetailsScreen({
   };
 
   const chequeDisplayName = cancelledChequeFileName.trim() || 'Cheque.png';
+  const cancelledChequeChip = (
+    <button
+      type="button"
+      onClick={() => onViewCancelledCheque?.()}
+      className="bg-[#fffaf6] border border-[#97291e] rounded-[8px] p-[14px] w-[196px] max-w-full shrink-0 hover:bg-[#fff5eb] transition-colors cursor-pointer"
+    >
+      <div className="flex items-center justify-between w-full gap-[6px]">
+        <p className="font-['Mulish',sans-serif] font-normal leading-normal text-[#231f20] text-[13px] whitespace-nowrap truncate min-w-0">
+          {chequeDisplayName}
+        </p>
+        <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 15 10">
+          <path d="M7.5 1.25C4.375 1.25 1.6875 3.1875 0.625 6C1.6875 8.8125 4.375 10.75 7.5 10.75C10.625 10.75 13.3125 8.8125 14.375 6C13.3125 3.1875 10.625 1.25 7.5 1.25ZM7.5 9.25C5.84375 9.25 4.5 7.90625 4.5 6.25C4.5 4.59375 5.84375 3.25 7.5 3.25C9.15625 3.25 10.5 4.59375 10.5 6.25C10.5 7.90625 9.15625 9.25 7.5 9.25ZM7.5 4.5C6.53125 4.5 5.75 5.28125 5.75 6.25C5.75 7.21875 6.53125 8 7.5 8C8.46875 8 9.25 7.21875 9.25 6.25C9.25 5.28125 8.46875 4.5 7.5 4.5Z" fill="#93161E" />
+        </svg>
+      </div>
+    </button>
+  );
 
   return (
     <>
@@ -572,8 +593,8 @@ export function BankDetailsScreen({
               {/* Step Indicator */}
               <div className="flex flex-col gap-[8px] items-start w-full">
                 <div className="flex items-center justify-between w-full h-[18px]">
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">20%</p>
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_PROGRESS_PERCENT}%</p>
                 </div>
 
                 {/* White Form Container */}
@@ -582,7 +603,7 @@ export function BankDetailsScreen({
                     <div className="flex flex-col gap-[20px] items-center pb-[16px] px-[16px] relative size-full">
                       {/* Progress Bar */}
                       <div className="bg-[#e6e7e8] h-[8px] overflow-clip relative rounded-[999px] shrink-0 w-full">
-                        <div className="absolute bg-[#37b400] h-[8px] left-0 rounded-[999px] top-0 w-[179px]"></div>
+                        <div className="absolute bg-[#37b400] h-[8px] left-0 rounded-[999px] top-0" style={{ width: `${BANK_DETAILS_PROGRESS_PERCENT}%` }}></div>
                       </div>
 
                       {/* Back Button */}
@@ -740,8 +761,8 @@ export function BankDetailsScreen({
             <div className="absolute left-[60px] xl:left-[120px] right-[60px] xl:right-[120px] top-[248px] z-20">
               {/* Step Indicator */}
               <div className="flex items-center justify-between mb-[8px] w-full">
-                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
-                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">50%</p>
+                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
+                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_PROGRESS_PERCENT}%</p>
               </div>
 
               {/* White Form Container */}
@@ -749,7 +770,7 @@ export function BankDetailsScreen({
                 {/* Progress Bar */}
                 <div className="overflow-hidden rounded-t-[16px]">
                   <div className="bg-[#e6e7e8] h-[8px] w-full">
-                    <div className="bg-[#37b400] h-full w-[50%] animate-[progressBar_0.8s_ease-out]"></div>
+                    <div className="bg-[#37b400] h-full animate-[progressBar_0.8s_ease-out]" style={{ width: `${BANK_DETAILS_PROGRESS_PERCENT}%` }}></div>
                   </div>
                 </div>
 
@@ -957,15 +978,15 @@ export function BankDetailsScreen({
               {/* Step Indicator + Card */}
               <div className="flex flex-col gap-[8px] items-start w-full">
                 <div className="flex items-center justify-between w-full h-[18px]">
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">20%</p>
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_PROGRESS_PERCENT}%</p>
                 </div>
 
                 {/* White Form Card */}
                 <div className="bg-white rounded-[16px] shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)] w-full overflow-hidden">
                   {/* Progress Bar */}
                   <div className="bg-[#e6e7e8] h-[8px] w-full relative">
-                    <div className="absolute bg-[#37b400] h-[8px] left-0 top-0 rounded-[999px]" style={{ width: '50.56%' }} />
+                    <div className="absolute bg-[#37b400] h-[8px] left-0 top-0 rounded-[999px]" style={{ width: `${BANK_DETAILS_PROGRESS_PERCENT}%` }} />
                   </div>
 
                   <div className="flex flex-col gap-[20px] items-start pb-[16px] px-[16px] pt-[0px]">
@@ -1143,8 +1164,8 @@ export function BankDetailsScreen({
           <div className="hidden lg:block absolute left-[60px] xl:left-[120px] right-[60px] xl:right-[120px] top-[248px] z-20 pb-[80px]">
             {/* Step Indicator */}
             <div className="flex items-center justify-between mb-[8px] w-full">
-              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
-              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">20%</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_PROGRESS_PERCENT}%</p>
             </div>
 
             {/* White Form Container */}
@@ -1152,7 +1173,7 @@ export function BankDetailsScreen({
               {/* Progress Bar */}
               <div className="overflow-hidden rounded-t-[16px]">
                 <div className="bg-[#e6e7e8] h-[8px] w-full">
-                  <div className="bg-[#37b400] h-full w-[50%] animate-[progressBar_0.8s_ease-out]"></div>
+                  <div className="bg-[#37b400] h-full animate-[progressBar_0.8s_ease-out]" style={{ width: `${BANK_DETAILS_PROGRESS_PERCENT}%` }}></div>
                 </div>
               </div>
 
@@ -1356,8 +1377,8 @@ export function BankDetailsScreen({
             }`}>
             {/* Step Indicator - Desktop Only */}
             <div className="hidden lg:flex items-center justify-between mb-[8px] w-full">
-              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
-              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">50%</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_PROGRESS_PERCENT}%</p>
             </div>
 
             {/* White Form Container */}
@@ -1365,14 +1386,14 @@ export function BankDetailsScreen({
               {/* Progress Bar */}
               <div className="overflow-hidden rounded-t-[16px]">
                 <div className="bg-[#e6e7e8] h-[8px] w-full">
-                  <div className="bg-[#37b400] h-full w-[50%] animate-[progressBar_0.8s_ease-out]"></div>
+                  <div className="bg-[#37b400] h-full animate-[progressBar_0.8s_ease-out]" style={{ width: `${BANK_DETAILS_PROGRESS_PERCENT}%` }}></div>
                 </div>
               </div>
 
               {/* Step Indicator - Mobile/Tablet Inside Card */}
               <div className="lg:hidden flex items-center justify-between px-[16px] pt-[16px] pb-[8px] w-full">
-                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">Step 3 of 6</p>
-                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">20%</p>
+                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
+                <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_PROGRESS_PERCENT}%</p>
               </div>
 
               <div className="flex flex-col gap-[16px] lg:gap-[20px] px-[16px] pb-[16px] lg:p-[16px]">
@@ -1436,18 +1457,34 @@ export function BankDetailsScreen({
                   </div>
                 </div>
 
-                {/* Validation Status & Actions — cheque upload is OCR-journey only */}
+                {/* Validation Status & Actions */}
                 <div className="flex flex-col lg:flex-row gap-[8px] lg:gap-0 items-stretch lg:items-center justify-between w-full">
                   {/* Desktop Layout */}
                   <div className="hidden lg:flex lg:flex-row gap-[8px] items-center justify-between w-full">
-                    {/* Status Message or Empty */}
+                    {/* Status Message, uploaded cheque, or Empty */}
                     {bankValidationStatus === 'failed' ? (
-                      <div className="bg-[#FFF1E2] flex gap-[8px] items-center px-[12px] py-[8px] rounded-[8px] shrink-0">
-                        <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 13.7506 12.2499">
-                          <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
-                        </svg>
-                        <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-[#93161E] text-[12px] whitespace-nowrap shrink-0">It seems that the account validation has failed. Please upload a Cancelled Cheque.</p>
-                      </div>
+                      chequeUploaded ? (
+                        cancelledChequeChip
+                      ) : (
+                        <div className="bg-[#FFF1E2] flex gap-[8px] items-center px-[12px] py-[8px] rounded-[8px] shrink-0">
+                          <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 13.7506 12.2499">
+                            <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
+                          </svg>
+                          <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-[#93161E] text-[12px] whitespace-nowrap shrink-0">It seems that the account validation has failed. Please upload a Cancelled Cheque.</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClearChequeUploadError?.();
+                              clearChequeSelection();
+                              setShowChequeUploadModal(true);
+                              setTimeout(() => setChequeUploadModalAnimating(true), 10);
+                            }}
+                            className="flex gap-[8px] h-[29px] items-center justify-center px-[16px] py-[7px] rounded-[8px] bg-[#93161E] hover:bg-[#7a1319] transition-colors whitespace-nowrap"
+                          >
+                            <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-center text-white text-[14px] whitespace-nowrap">Upload</p>
+                          </button>
+                        </div>
+                      )
                     ) : bankValidationStatus === 'success' ? (
                       <div className="bg-[#eeffe5] flex gap-[8px] h-[32px] items-center px-[12px] rounded-[8px] shrink-0">
                         <svg className="size-[13px] shrink-0" fill="none" viewBox="0 0 13 13">
@@ -1468,20 +1505,6 @@ export function BankDetailsScreen({
                         <span aria-hidden className="size-[16px] shrink-0 bg-[#435160]" style={editIconMaskStyle} />
                         <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-center text-[#435160] text-[14px] whitespace-nowrap">Change Bank Account</p>
                       </button>
-                      {bankValidationStatus === 'failed' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onClearChequeUploadError?.();
-                            clearChequeSelection();
-                            setShowChequeUploadModal(true);
-                            setTimeout(() => setChequeUploadModalAnimating(true), 10);
-                          }}
-                          className="flex gap-[8px] h-[29px] items-center justify-center px-[16px] py-[7px] rounded-[8px] bg-[#93161E] hover:bg-[#7a1319] transition-colors whitespace-nowrap"
-                        >
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-center text-white text-[14px] whitespace-nowrap">Upload</p>
-                        </button>
-                      )}
                       {(bankValidationStatus === 'pending' || bankValidationStatus === 'validating') && (
                         <button
                           onClick={handleApmiValidate}
@@ -1518,26 +1541,30 @@ export function BankDetailsScreen({
                     )}
 
                     {bankValidationStatus === 'failed' && (
-                      <div className="bg-[#FFF1E2] rounded-[8px] p-[12px] flex flex-col gap-[12px] w-full">
-                        <div className="flex gap-[8px] items-center w-full">
-                          <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 13.7506 12.2499">
-                            <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
-                          </svg>
-                          <p className="flex-1 font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-[#93161E] text-[12px]">It seems that the account validation has failed. Please upload a Cancelled Cheque.</p>
+                      chequeUploaded ? (
+                        cancelledChequeChip
+                      ) : (
+                        <div className="bg-[#FFF1E2] rounded-[8px] p-[12px] flex flex-col gap-[12px] w-full">
+                          <div className="flex gap-[8px] items-center w-full">
+                            <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 13.7506 12.2499">
+                              <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
+                            </svg>
+                            <p className="flex-1 font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-[#93161E] text-[12px]">It seems that the account validation has failed. Please upload a Cancelled Cheque.</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClearChequeUploadError?.();
+                              clearChequeSelection();
+                              setShowChequeUploadModal(true);
+                              setTimeout(() => setChequeUploadModalAnimating(true), 10);
+                            }}
+                            className="flex h-[29px] w-full items-center justify-center px-[16px] py-[7px] rounded-[8px] bg-[#93161E] hover:bg-[#7a1319] transition-colors"
+                          >
+                            <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-center text-white text-[14px] whitespace-nowrap">Upload</p>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onClearChequeUploadError?.();
-                            clearChequeSelection();
-                            setShowChequeUploadModal(true);
-                            setTimeout(() => setChequeUploadModalAnimating(true), 10);
-                          }}
-                          className="flex h-[29px] w-full items-center justify-center px-[16px] py-[7px] rounded-[8px] bg-[#93161E] hover:bg-[#7a1319] transition-colors"
-                        >
-                          <p className="font-['Mulish',sans-serif] font-normal leading-[100%] tracking-[0px] text-center text-white text-[14px] whitespace-nowrap">Upload</p>
-                        </button>
-                      </div>
+                      )
                     )}
 
                     {bankValidationStatus === 'success' && (
@@ -1874,7 +1901,7 @@ export function BankDetailsScreen({
               }, 300);
             }}
             continueLabel={isEditMode ? 'Go to Review' : 'Continue'}
-            continueDisabled={!canContinue}
+            continueDisabled={!canContinue && !canContinueFromFailedCheque}
             isLoading={isTransitioning || isSaving}
             loadingLabel="Saving..."
             hideContinueArrow={isEditMode}
@@ -1897,10 +1924,10 @@ export function BankDetailsScreen({
             }}
           />
 
-          <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100%-48px)] max-w-[420px] z-[80] flex flex-col gap-[24px] p-[24px] transition-all duration-200 ease-out ${chequePreviewModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+          <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100%-48px)] max-w-[679.5px] z-[80] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-all duration-200 ease-out ${chequePreviewModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}>
-            <div className="flex items-center justify-between w-full">
-              <p className="font-['Mulish',sans-serif] font-medium leading-[27px] text-[#435160] text-[18px]">View Cancelled Cheque</p>
+            <div className="flex h-[33px] items-center justify-between w-full shrink-0">
+              <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Cancelled Cheque</p>
               <button
                 type="button"
                 onClick={() => {
@@ -1909,7 +1936,8 @@ export function BankDetailsScreen({
                     setShowChequePreviewModal(false);
                   }, 200);
                 }}
-                className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
+                className="size-[16px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
+                aria-label="Close"
               >
                 <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
                   <path d={personalInfo5SvgPaths.p3bbf7480} fill="#435160" />
@@ -1917,27 +1945,29 @@ export function BankDetailsScreen({
               </button>
             </div>
 
-            <div className="border border-dashed border-[#eee] rounded-[8px] p-[12px] flex items-center justify-center min-h-[180px]">
-              {isLoadingChequePreview ? (
-                <div className="flex flex-col items-center gap-2 py-6">
-                  <Loader2 className="size-6 animate-spin text-[#93161e]" />
-                  <p className="font-['Mulish',sans-serif] text-[13px] text-[#435160]">Loading...</p>
-                </div>
-              ) : chequePreviewError ? (
-                <p className="font-['Mulish',sans-serif] text-[13px] text-[#93161e] text-center py-6 px-2">
-                  {chequePreviewError}
-                </p>
-              ) : chequePreviewDisplayUrl ? (
-                <img
-                  alt="Cancelled Cheque Preview"
-                  className="max-h-[280px] w-full object-contain"
-                  src={chequePreviewDisplayUrl}
-                />
-              ) : (
-                <p className="font-['Mulish',sans-serif] text-[13px] text-[#71859b] text-center py-6">
-                  No preview available.
-                </p>
-              )}
+            <div className="relative w-full overflow-hidden rounded-[8px] border border-dashed border-[#eee]">
+              <div className="relative flex h-[211px] w-full items-center justify-center p-[12px]">
+                {isLoadingChequePreview ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="size-6 animate-spin text-[#93161e]" />
+                    <p className="font-['Mulish',sans-serif] text-[13px] text-[#435160]">Loading...</p>
+                  </div>
+                ) : chequePreviewError ? (
+                  <p className="font-['Mulish',sans-serif] text-[13px] text-[#93161e] text-center px-2">
+                    {chequePreviewError}
+                  </p>
+                ) : chequePreviewDisplayUrl ? (
+                  <img
+                    alt="Cancelled Cheque Preview"
+                    className="max-h-full max-w-full object-contain"
+                    src={chequePreviewDisplayUrl}
+                  />
+                ) : (
+                  <p className="font-['Mulish',sans-serif] text-[13px] text-[#71859b] text-center">
+                    No preview available.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </>

@@ -2,27 +2,22 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
   Camera,
-  CheckCircle2,
   ChevronDown,
   FileText,
   Loader2,
   Trash2,
   Upload,
-  XCircle,
 } from "lucide-react";
 
 import { Button } from "../../../../../shared/ui/button";
 import { Dialog, DialogContent } from "../../../../../shared/ui/dialog";
 import { Input } from "../../../../../shared/ui/input";
-import guidlinesImg1 from "../../../../../assets/images/guidlines_img_1.png";
-import guidlinesImg2 from "../../../../../assets/images/guidlines_img_2.png";
-import guidlinesImg3 from "../../../../../assets/images/guidlines_img_3.png";
-import guidlinesImg4 from "../../../../../assets/images/guidlines_img_4.png";
 import { MAX_GST_CERTIFICATE_BYTES } from "../constants";
 import { formatStateLabel } from "../helpers";
 import type { ManualGstDraft, ValidateGstResult } from "../types";
 import { formatGstName, isValidGstNumber } from "../validation";
 import CameraCaptureModal from "../../../components/CameraCaptureModal";
+import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
 
 type AddGstModalProps = {
   open: boolean;
@@ -33,36 +28,6 @@ type AddGstModalProps = {
   onValidateGst: (gstInNumber: string) => Promise<ValidateGstResult | null>;
   onUploadFile: (file: File) => Promise<string | null>;
   onSave: (draft: ManualGstDraft) => void;
-};
-
-const GuidanceCard = ({
-  label,
-  status,
-  statusColor,
-  borderColor,
-  imageSrc,
-}: {
-  label: string;
-  status: string;
-  statusColor: string;
-  borderColor: string;
-  imageSrc: string;
-}): ReactElement => {
-  return (
-    <div className="space-y-1">
-      <div className={`h-[112px] rounded-[4px] border bg-white p-1 ${borderColor}`}>
-        <img alt={label} className="h-full w-full rounded-[2px] object-cover" src={imageSrc} />
-      </div>
-      <div className={`flex items-center justify-center gap-1 text-[10px] ${statusColor}`}>
-        {statusColor.includes("green") ? (
-          <CheckCircle2 className="h-3 w-3" />
-        ) : (
-          <XCircle className="h-3 w-3" />
-        )}
-        {status}
-      </div>
-    </div>
-  );
 };
 
 const emptyDraft = (): ManualGstDraft => ({
@@ -444,39 +409,7 @@ const AddGstModal = ({
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <p className="text-[14px] text-[#435160]">Upload image guidelines</p>
-                      <div className="grid grid-cols-2 gap-2 rounded-[8px] bg-[#f2f4f7] p-2.5 md:grid-cols-4">
-                        <GuidanceCard
-                          borderColor="border-[#6ac15a]"
-                          imageSrc={guidlinesImg1}
-                          label="Clear"
-                          status="Clear & Complete"
-                          statusColor="text-[#44b832]"
-                        />
-                        <GuidanceCard
-                          borderColor="border-[#f6bf95]"
-                          imageSrc={guidlinesImg2}
-                          label="Blurry"
-                          status="Blurry / Out of focus"
-                          statusColor="text-[#ff6b57]"
-                        />
-                        <GuidanceCard
-                          borderColor="border-[#f6bf95]"
-                          imageSrc={guidlinesImg3}
-                          label="Half"
-                          status="Half cut / Incomplete"
-                          statusColor="text-[#ff6b57]"
-                        />
-                        <GuidanceCard
-                          borderColor="border-[#f6bf95]"
-                          imageSrc={guidlinesImg4}
-                          label="Glare"
-                          status="Poor lighting / Glare"
-                          statusColor="text-[#ff6b57]"
-                        />
-                      </div>
-                    </div>
+                    <UploadImageGuidelines />
                   </>
                 ) : null}
 

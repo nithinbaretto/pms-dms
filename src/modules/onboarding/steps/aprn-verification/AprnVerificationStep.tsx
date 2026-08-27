@@ -25,8 +25,15 @@ const AprnVerificationStep = ({
   onBack,
   onContinue,
 }: AprnVerificationStepProps): ReactElement => {
-  const { setAprnNumber: setAprnNumberInStore, setAprnStatus, setInputEmail, setInputMobile, setLeadId, setArn } =
-    useOnboardingStore();
+  const {
+    setAprnNumber: setAprnNumberInStore,
+    setAprnStatus,
+    setInputEmail,
+    setInputMobile,
+    setLeadId,
+    setArn,
+    setKraDataSource,
+  } = useOnboardingStore();
   const [aprnNumber, setAprnNumber] = useState("");
   const [empanelmentType, setEmpanelmentType] = useState<EmpanelmentType>("Distributor");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -85,9 +92,8 @@ const AprnVerificationStep = ({
         panNumber: normalizedPan,
       });
       const backendMessage = response.message?.trim();
-      const hasBackendErrorMessage = /error|invalid|unable|failed|not\s+valid/i.test(backendMessage ?? "");
 
-      if (response.validationStatus !== true || hasBackendErrorMessage) {
+      if (!response.success || response.validationStatus !== true) {
         setErrorMessage(backendMessage || "Invalid APRN");
         setVariant("error");
         return;
@@ -130,7 +136,8 @@ const AprnVerificationStep = ({
       setAprnNumberInStore(normalizedAprn);
       setInputEmail(email);
       setInputMobile(mobile);
-      setAprnStatus(response.aprnStatus ?? true);
+      setAprnStatus(response.aprnStatus);
+      setKraDataSource(response.dataSource ?? "APMI");
       setLeadId(resolvedLeadId);
       setArn(normalizedAprn);
       setErrorMessage(null);

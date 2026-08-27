@@ -1,3 +1,6 @@
+export const BANK_DETAILS_STEP_LABEL = "Step 3 of 6";
+export const BANK_DETAILS_PROGRESS_PERCENT = 50;
+
 /** Default vendor for reverse penny drop until product configures otherwise. */
 export const DEFAULT_RPD_VENDOR =
   (import.meta.env.VITE_PMS_REVERSE_PENNY_DROP_VENDOR as string | undefined)?.trim() || "hyperverge";

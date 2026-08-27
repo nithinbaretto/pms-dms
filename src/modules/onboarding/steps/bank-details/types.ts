@@ -31,21 +31,8 @@ export type SaveBankResult = {
   applicationStatus: string;
 };
 
-export type ChequeOcrPrefill = {
-  name: string;
-  bankName: string;
-  accountNumber: string;
-  ifscCode: string;
-  accountType: string;
-};
-
-export type ChequeUploadResult = {
-  storageUrl: string;
-  ocr: ChequeOcrPrefill | null;
-};
-
 export type ChequeUploadOutcome =
-  | { ok: true; storageUrl: string; ocr: ChequeOcrPrefill | null }
+  | { ok: true; storageUrl: string }
   | { ok: false; message: string };
 
 export type QrSessionState = {

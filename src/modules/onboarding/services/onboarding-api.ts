@@ -8,12 +8,14 @@ export type VerifyAprnRequest = {
 };
 
 export type VerifyAprnResponse = {
+  success: boolean;
   validationStatus: boolean;
   message?: string;
   email?: string | null;
   mobile?: string | null;
-  aprnStatus?: boolean | null;
+  aprnStatus: boolean;
   leadId?: string | null;
+  dataSource?: string | null;
 };
 
 /** Entry / first personal-details verify uses Partner Integration; re-verify uses Primary. */
@@ -574,14 +576,18 @@ type InternalPanApiResponse = {
 };
 
 type VerifyAprnApiResponse = {
-  validationStatus?: boolean;
+  validationStatus?: boolean | string | null;
   isValid?: boolean;
   valid?: boolean;
-  message?: string;
+  message?: string | null;
+  Message?: string | null;
   email?: string | null;
-  mobile?: string | null;
-  aprnStatus?: boolean | null;
+  mobile?: string | number | null;
+  aprnStatus?: boolean | string | null;
   leadId?: string | null;
+  dataSource?: string | null;
+  status?: string;
+  statusCode?: number;
 };
 
 type ValidateAmfiContactApiResponse = {
@@ -1347,15 +1353,42 @@ export const onboardingApi = {
     };
 
     const response = await apiPost<VerifyAprnApiResponse>(API_ENDPOINTS.verifyAprn, payload);
-    const data = response ?? {};
+    const envelope = isRecord(response) ? response : {};
+    const data = extractPayload(response) as VerifyAprnApiResponse;
+    const envelopeStatus = (asStringOrNull(envelope.status) ?? "").toLowerCase();
+    const envelopeFailed = envelopeStatus === "failed" || envelopeStatus === "error";
+    const hasEnvelope = envelopeStatus.length > 0 || typeof envelope.statusCode === "number";
+    const envelopeSuccess =
+      !envelopeFailed &&
+      (envelopeStatus === "success" || envelope.statusCode === 200 || !hasEnvelope);
+
+    const validationFlag =
+      asBooleanOrUndefined(data.validationStatus) ??
+      asBooleanOrUndefined(data.isValid) ??
+      asBooleanOrUndefined(data.valid);
+    const validationText = asTextOrNull(data.validationStatus)?.toLowerCase();
+    const validationStatus = validationFlag === true || validationText === "success";
+
+    const aprnStatusFlag = asBooleanOrUndefined(data.aprnStatus);
+    const aprnStatusText = asTextOrNull(data.aprnStatus)?.toLowerCase();
+    const aprnStatus =
+      aprnStatusFlag === true ||
+      aprnStatusText === "success" ||
+      (aprnStatusFlag === undefined && aprnStatusText == null);
 
     return {
-      validationStatus: data.validationStatus ?? data.isValid ?? data.valid ?? false,
-      message: data.message,
-      email: data.email ?? null,
-      mobile: data.mobile ?? null,
-      aprnStatus: data.aprnStatus ?? null,
-      leadId: data.leadId ?? request.leadId,
+      success: envelopeSuccess && validationStatus && aprnStatus,
+      validationStatus,
+      message:
+        asStringOrNull(data.message) ??
+        asStringOrNull(data.Message) ??
+        asStringOrNull(envelope.message) ??
+        undefined,
+      email: asStringOrNull(data.email),
+      mobile: toLastTenMobileDigits(data.mobile),
+      aprnStatus,
+      leadId: asStringOrNull(data.leadId) ?? request.leadId,
+      dataSource: asStringOrNull(data.dataSource),
     };
   },
 
@@ -2141,21 +2174,24 @@ export const onboardingApi = {
 
     const status = pickString(root, ["status", "Status"]).toLowerCase();
     const statusCode = typeof root.statusCode === "number" ? root.statusCode : Number(root.statusCode) || 0;
+    const message =
+      pickString(root, ["message", "Message"]) ||
+      pickString(payload, ["message", "Message"]) ||
+      pickString(successBlock, ["responseMessage", "ResponseMessage"]) ||
+      "";
     const topSuccess = accounts.some(
       (item) =>
         item.errorCode === "0" ||
         item.nameMatchStatus.toUpperCase() === "Y" ||
         item.errorDescription.toLowerCase().includes("success"),
     );
+    const envelopeSuccess = status === "success" || message.toLowerCase().includes("successful");
 
     return {
       statusCode,
       status,
-      message:
-        pickString(root, ["message", "Message"]) ||
-        pickString(successBlock, ["responseMessage", "ResponseMessage"]) ||
-        "",
-      success: status === "success" || statusCode === 200 || topSuccess,
+      message,
+      success: envelopeSuccess || topSuccess,
       referenceId: pickString(accountSource, ["referenceId", "ReferenceId", "referenceID"]),
       successCode: pickString(successBlock, ["successCode", "SuccessCode"]),
       responseMessage: pickString(successBlock, ["responseMessage", "ResponseMessage"]),

@@ -247,6 +247,17 @@ export const isPennyDropAccountSuccess = (account: PennyDropAccountInfo): boolea
   return errorOk && nameMatchOk && descOk;
 };
 
+/** UAT pennyDropCall may return only { statusCode, status, message } with no accounts[]. */
+export const isPennyDropEnvelopeSuccess = (response: PennyDropCallResponse): boolean => {
+  const status = response.status.trim().toLowerCase();
+  if (status === "failed" || status === "failure" || status === "error") {
+    return false;
+  }
+
+  const message = `${response.message} ${response.responseMessage}`.trim().toLowerCase();
+  return status === "success" || message.includes("successful");
+};
+
 export const mapPennyDropAccountToModel = (
   account: PennyDropAccountInfo,
   fallback: { accountNumber: string; ifscCode: string },
@@ -272,10 +283,11 @@ export const mapPennyDropResponseToModel = (
   response: PennyDropCallResponse,
   fallback: { accountNumber: string; ifscCode: string },
 ): { success: boolean; data: BankDetailsModel; message: string } => {
+  const envelopeSuccess = isPennyDropEnvelopeSuccess(response);
   const account = response.accounts[0];
   if (!account) {
     return {
-      success: false,
+      success: envelopeSuccess,
       data: toBankDetailsModel({
         accountHolderName: "",
         bankName: "",
@@ -284,13 +296,16 @@ export const mapPennyDropResponseToModel = (
         ifscCode: fallback.ifscCode,
         branchName: "",
         bankAddress: "",
-        isBankVerified: false,
+        isBankVerified: envelopeSuccess,
       }),
-      message: response.message || response.responseMessage || "Penny drop failed.",
+      message:
+        response.message ||
+        response.responseMessage ||
+        (envelopeSuccess ? "PennyDrop is successful" : "Penny drop failed."),
     };
   }
 
-  const success = response.success && isPennyDropAccountSuccess(account);
+  const success = isPennyDropAccountSuccess(account);
   return {
     success,
     data: mapPennyDropAccountToModel(account, fallback),

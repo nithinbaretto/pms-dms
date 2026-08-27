@@ -1,11 +1,12 @@
 import type { ReactElement } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import backgroundImage from "../../../assets/images/background_img.png";
 import logoImage from "../../../assets/logo.png";
 import OnboardingHero from "../components/OnboardingHero";
 import { getFlowConfig, type FlowKey } from "../flow/flow.config";
 import { getScreenForStep } from "../flow/getScreenForStep";
+import { isHufEntityJourney } from "../flow/huf-entity-journey";
 import { onboardingApi } from "../services/onboarding-api";
 import { useOnboardingStore } from "../state/onboarding-store";
 import { AprnVerificationStep } from "../steps/aprn-verification";
@@ -14,6 +15,7 @@ import { BusinessCategoryStep } from "../steps/business-category";
 import { BusinessDetailsStep } from "../steps/business-details";
 import { UploadDocumentsStep } from "../steps/documents";
 import { EntityDetailsStep } from "../steps/entity-details";
+import { HufEntityDetailsStep } from "../steps/huf-entity-details";
 import { NomineeStep } from "../steps/nominee";
 import { OtpVerificationStep } from "../steps/otp-verification";
 import { PersonalDetailsStep } from "../steps/personal-details";
@@ -84,6 +86,12 @@ const OnboardingContainer = (): ReactElement => {
   const [isUpdatingManualData, setIsUpdatingManualData] = useState(false);
 
   const flowConfig = useMemo(() => getFlowConfig(currentFlow), [currentFlow]);
+
+  useEffect(() => {
+    if (!isHufEntityJourney() && currentStep === "huf-entity-details") {
+      setStep("entity-details");
+    }
+  }, [currentStep, setStep]);
 
   const startManualJourney = useCallback(async (): Promise<{ ok: boolean; message: string }> => {
     if (!leadId) {
@@ -175,6 +183,10 @@ const OnboardingContainer = (): ReactElement => {
   ]);
 
   const renderStep = (): ReactElement => {
+    if (currentStep === "huf-entity-details" && isHufEntityJourney()) {
+      return <HufEntityDetailsStep />;
+    }
+
     if (currentStep === "entity-details") {
       return (
         <EntityDetailsStep
@@ -666,7 +678,7 @@ const OnboardingContainer = (): ReactElement => {
           src={logoImage}
         />
 
-        {currentStep === "personal-details" || currentStep === "business-details" || currentStep === "bank-details" || currentStep === "nominee-details" || currentStep === "upload-documents" || currentStep === "review-confirm" ? (
+        {(currentStep === "huf-entity-details" && isHufEntityJourney()) || currentStep === "personal-details" || currentStep === "business-details" || currentStep === "bank-details" || currentStep === "nominee-details" || currentStep === "upload-documents" || currentStep === "review-confirm" ? (
           <div className="mt-6 pb-28 lg:mt-10 lg:pb-24">{renderStep()}</div>
         ) : (
           <div className="relative mt-0 min-w-0">

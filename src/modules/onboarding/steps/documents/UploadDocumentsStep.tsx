@@ -13,9 +13,10 @@ import imgPhotoGuideline1 from '../../../../assets/images/photo_guidelines_1.png
 import imgPhotoGuideline2 from '../../../../assets/images/photo_guidelines_2.png';
 import imgPhotoGuideline3 from '../../../../assets/images/photo_guidelines_3.png';
 import imgPhotoGuideline4 from '../../../../assets/images/photo_guidelines_4.png';
+import CameraCaptureModal from '../../components/CameraCaptureModal';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import OnboardingStepSkeleton from '../../components/OnboardingStepSkeleton';
-import CameraCaptureModal from '../../components/CameraCaptureModal';
+import UploadImageGuidelines from '../../components/UploadImageGuidelines';
 import { useOnboardingStore } from '../../state/onboarding-store';
 import { useDocumentsFlow } from './useDocumentsFlow';
 
@@ -255,6 +256,20 @@ function PhotoGuidelineStrip() {
   );
 }
 
+function DocumentGuidelineStrip() {
+  return <UploadImageGuidelines showTitle={false} />;
+}
+
+function renderGuidelineStrip(cardType: 'signature' | 'photo' | 'document') {
+  if (cardType === 'signature') {
+    return <SignatureGuidelineStrip />;
+  }
+  if (cardType === 'document') {
+    return <DocumentGuidelineStrip />;
+  }
+  return <PhotoGuidelineStrip />;
+}
+
 /* ─── Desktop Upload Card ────────────────────────────────────────────────── */
 
 function UploadCard({
@@ -272,7 +287,7 @@ function UploadCard({
   onCaptureClick: () => void;
   onUploadClick: () => void;
   onRemove: () => void;
-  cardType: 'signature' | 'photo';
+  cardType: 'signature' | 'photo' | 'document';
 }) {
   const cardCls = 'bg-white flex-1 min-w-px rounded-[8px] border border-[#eee] flex flex-col gap-[12px] p-[14px]';
 
@@ -332,7 +347,7 @@ function UploadCard({
           </button>
         </div>
       </div>
-      {cardType === 'signature' ? <SignatureGuidelineStrip /> : <PhotoGuidelineStrip />}
+      {renderGuidelineStrip(cardType)}
     </div>
   );
 }
@@ -354,7 +369,7 @@ function MobileUploadCard({
   onCaptureClick: () => void;
   onUploadClick: () => void;
   onRemove: () => void;
-  cardType: 'signature' | 'photo';
+  cardType: 'signature' | 'photo' | 'document';
 }) {
   if (uploaded && previewUrl) {
     return (
@@ -395,7 +410,7 @@ function MobileUploadCard({
         <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px]">Format Supported: PNG, PDF or JPEG up to 2MB</p>
       </div>
 
-      {cardType === 'signature' ? <SignatureGuidelineStrip /> : <PhotoGuidelineStrip />}
+      {renderGuidelineStrip(cardType)}
 
       <div className="flex gap-[12px] items-center w-full">
         <div onClick={onCaptureClick} className="flex-1 min-w-px h-[36px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors flex items-center justify-center gap-[8px]">
@@ -976,7 +991,7 @@ export function UploadDocumentsScreen({
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
                         onRemove={handleIdentityRemove}
-                        cardType="photo"
+                        cardType="document"
                       />
                       <UploadCard
                         title="Proof of Address"
@@ -985,7 +1000,7 @@ export function UploadDocumentsScreen({
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
                         onRemove={handleAddressRemove}
-                        cardType="photo"
+                        cardType="document"
                       />
                     </div>
                   ) : null}
@@ -1066,7 +1081,7 @@ export function UploadDocumentsScreen({
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
                         onRemove={handleIdentityRemove}
-                        cardType="photo"
+                        cardType="document"
                       />
                       <MobileUploadCard
                         title="Proof of Address"
@@ -1075,7 +1090,7 @@ export function UploadDocumentsScreen({
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
                         onRemove={handleAddressRemove}
-                        cardType="photo"
+                        cardType="document"
                       />
                     </>
                   ) : null}

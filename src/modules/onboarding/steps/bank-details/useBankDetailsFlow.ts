@@ -25,7 +25,6 @@ import type {
   BankDetailsModel,
   BankValidationStatus,
   BankVerificationType,
-  ChequeOcrPrefill,
   ChequeUploadOutcome,
   ManualPennyDropResult,
   QrSessionState,
@@ -210,13 +209,20 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         ifscCode,
       });
 
-      // Replace bank home page with penny-drop response; keep APMI-only fields
-      // that the API does not return (bank name / branch / address).
+      // Envelope-only success has no account payload — keep APMI-fetched fields.
       setData({
-        ...mapped.data,
+        ...data,
+        accountHolderName: mapped.data.accountHolderName || data.accountHolderName,
         bankName: mapped.data.bankName || data.bankName,
+        bankType: mapped.data.bankType || data.bankType,
+        accountType: mapped.data.accountType || data.accountType,
+        accountNumber: mapped.data.accountNumber || data.accountNumber,
+        ifscCode: mapped.data.ifscCode || data.ifscCode,
+        branchName: mapped.data.branchName || data.branchName,
         bankAddress: mapped.data.bankAddress || data.bankAddress,
         branchDisplay: mapped.data.branchDisplay || data.branchDisplay,
+        isBankVerified: mapped.success,
+        hasBankData: true,
       });
       setVerificationType(mapped.success ? "Penny drop" : "");
       setBankValidationStatus(mapped.success ? "success" : "failed");
@@ -600,14 +606,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           return { ok: false, message };
         }
 
-        let ocr: ChequeOcrPrefill | null = null;
-        try {
-          ocr = await onboardingApi.documentOcr(file);
-        } catch {
-          ocr = null;
-        }
-
-        return { ok: true, storageUrl, ocr };
+        return { ok: true, storageUrl };
       } catch (error) {
         const message =
           extractErrorMessage(error) || "Unable to upload cancelled cheque. Please try again.";

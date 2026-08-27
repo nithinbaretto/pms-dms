@@ -3,6 +3,7 @@ import type { FlowKey } from "../flow/flow.config";
 
 export type Step =
   | "entity-details"
+  | "huf-entity-details"
   | "onboarding-method"
   | "verify-contact"
   | "personal-details"
