@@ -30,7 +30,7 @@ const EntityDetailsStep = ({
   const isPanValid = PAN_REGEX.test(normalizedPan);
   const shouldShowError =
     (showValidationError && normalizedPan.length > 0 && !isPanValid) || Boolean(externalError);
-  const resolvedError = externalError ?? "Invalid PAN number";
+  const resolvedError = externalError ?? "Invalid PAN";
 
   const handleContinue = (): void => {
     if (!normalizedPan) {
@@ -64,7 +64,13 @@ const EntityDetailsStep = ({
           </label>
 
           <Input
+            aria-invalid={shouldShowError}
             autoComplete="off"
+            className={
+              shouldShowError
+                ? "border-[#E8402F] focus-visible:border-[#E8402F] focus-visible:ring-0"
+                : undefined
+            }
             disabled={isSubmitting}
             id="pan-number"
             maxLength={10}
@@ -79,7 +85,9 @@ const EntityDetailsStep = ({
           />
 
           {shouldShowError ? (
-            <p className="text-xs text-[var(--color-onboarding-danger)]">{resolvedError}</p>
+            <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#E8402F]">
+              {resolvedError}
+            </p>
           ) : null}
         </div>
 

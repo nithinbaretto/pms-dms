@@ -32,7 +32,7 @@ type UsePersonalDetailsFlowResult = {
   isManualFlow: boolean;
   isArnFlow: boolean;
   isKraFlow: boolean;
-  /** Entry-OTP verified channels stay locked on this step. */
+  /** Contact fields stay locked until both email and mobile are verified. */
   emailLockedFromEntry: boolean;
   mobileLockedFromEntry: boolean;
   fetchDetails: () => Promise<void>;
@@ -79,6 +79,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   const [error, setError] = useState<string | null>(null);
   const [otpChannel, setOtpChannel] = useState<VerificationChannel | null>(null);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [contactFieldsUnlocked, setContactFieldsUnlocked] = useState(false);
   /** Last successfully verified values — editing away from these requires re-verify. */
   const verifiedEmailBaselineRef = useRef<string | null>(null);
   const verifiedMobileBaselineRef = useRef<string | null>(null);
@@ -165,6 +166,12 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     void fetchDetails();
   }, [fetchDetails]);
 
+  useEffect(() => {
+    if (isManualFlow || (data?.email.verified && data?.mobile.verified)) {
+      setContactFieldsUnlocked(true);
+    }
+  }, [data?.email.verified, data?.mobile.verified, isManualFlow]);
+
   const canSave = useMemo(() => {
     if (!data) {
       return false;
@@ -207,8 +214,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
 
   const setEmailValue = useCallback(
     (value: string): void => {
-      // Entry-verified email stays locked — only personal-details channel is editable.
-      if (emailVerifiedFromEntry) {
+      if (!isManualFlow && !contactFieldsUnlocked) {
         return;
       }
 
@@ -231,13 +237,12 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         };
       });
     },
-    [emailVerifiedFromEntry, setEmailVerified],
+    [contactFieldsUnlocked, isManualFlow, setEmailVerified],
   );
 
   const setMobileValue = useCallback(
     (value: string): void => {
-      // Entry-verified mobile stays locked — only personal-details channel is editable.
-      if (mobileVerifiedFromEntry) {
+      if (!isManualFlow && !contactFieldsUnlocked) {
         return;
       }
 
@@ -261,7 +266,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         };
       });
     },
-    [mobileVerifiedFromEntry, setMobileVerified],
+    [contactFieldsUnlocked, isManualFlow, setMobileVerified],
   );
 
   const sendChannelOtp = useCallback(
@@ -541,8 +546,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     isManualFlow,
     isArnFlow,
     isKraFlow,
-    emailLockedFromEntry: isManualFlow ? false : emailVerifiedFromEntry,
-    mobileLockedFromEntry: isManualFlow ? false : mobileVerifiedFromEntry,
+    emailLockedFromEntry: isManualFlow ? false : !contactFieldsUnlocked,
+    mobileLockedFromEntry: isManualFlow ? false : !contactFieldsUnlocked,
     fetchDetails,
     setNameValue,
     setDobValue,

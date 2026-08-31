@@ -208,7 +208,7 @@ const OnboardingContainer = (): ReactElement => {
               const hasErrorMessage = /error|invalid|unable|failed|not\s+valid|not\s+eligible/i.test(responseMessage ?? "");
 
               if (!panValidation.isValid || hasErrorMessage) {
-                setPanEntryError(responseMessage || "Invalid PAN number");
+                setPanEntryError(responseMessage || "Invalid PAN");
                 setIsValidatingPan(false);
                 return;
               }

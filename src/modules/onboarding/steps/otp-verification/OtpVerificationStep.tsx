@@ -19,12 +19,12 @@ type OtpVerificationStepProps = {
 };
 
 const maskMobile = (mobile: string): string => {
-  const digits = mobile.replace(/\D/g, "");
+  const digits = mobile.replace(/\D/g, "").slice(-10);
   if (digits.length < 4) {
-    return mobile;
+    return digits || mobile;
   }
 
-  return `${"x".repeat(Math.max(0, digits.length - 4))}${digits.slice(-4)}`;
+  return `${digits[0]}${"x".repeat(digits.length - 4)}${digits.slice(-1)}`;
 };
 
 const maskEmail = (email: string): string => {
@@ -34,7 +34,7 @@ const maskEmail = (email: string): string => {
     return email;
   }
 
-  return `${name.slice(0, 2)}${"x".repeat(Math.max(0, name.length - 2))}@${domain}`;
+  return `${name.slice(0, 2).toLocaleLowerCase()}${"x".repeat(Math.max(0, name.length - 2))}@${domain.toLocaleLowerCase()}`;
 };
 
 const maskKraMobile = (mobile: string): string => {
@@ -155,7 +155,7 @@ const OtpVerificationStep = ({
       if (!response.verified) {
         const nextAttempts = otpAttempts + 1;
         setOtpAttempts(nextAttempts);
-        setErrorMessage(response.message || "Invalid OTP. Please try again.");
+        setErrorMessage("Please enter a valid OTP.");
         if (nextAttempts > maxAttempts) {
           setAccountRestricted(true);
           setErrorMessage("Account restricted. Please contact support.");
@@ -262,27 +262,29 @@ const OtpVerificationStep = ({
     <section className="w-full max-w-full min-w-0 overflow-hidden rounded-2xl bg-[var(--color-onboarding-surface)] p-6 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)] lg:p-8">
       <div className="min-w-0 space-y-5">
         <header className="space-y-8">
-          <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
-            Verify OTP
-          </h2>
+          <div className="flex flex-col gap-2">
+            <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
+              Verify OTP
+            </h2>
 
-          <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
-            {aifKraFlow
-              ? "OTP has been sent to your registered contact details"
-              : "OTP has been sent to your APMI registered contact details"}
-          </p>
+            <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
+              {aifKraFlow
+                ? "OTP has been sent to your registered contact details"
+                : "OTP has been sent to your APMI registered contact details"}
+            </p>
 
-          <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
-            {visibleMobile ? (
-              <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
-                <Smartphone className="size-3.5 shrink-0" /> +91 {visibleMobile}
-              </span>
-            ) : null}
-            {visibleEmail ? (
-              <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
-                <Mail className="size-3.5 shrink-0" /> {visibleEmail}
-              </span>
-            ) : null}
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
+              {visibleMobile ? (
+                <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
+                  <Smartphone className="size-3.5 shrink-0" /> +91 {visibleMobile}
+                </span>
+              ) : null}
+              {visibleEmail ? (
+                <span className="inline-flex min-w-0 items-center gap-1 break-all font-['Mulish',sans-serif] text-[14px] font-medium leading-[18px] tracking-normal text-[#93161E]">
+                  <Mail className="size-3.5 shrink-0" /> {visibleEmail}
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
@@ -290,41 +292,47 @@ const OtpVerificationStep = ({
           </p>
         </header>
 
-        <OtpInput
-          onChange={(next) => {
-            setOtpValue(next);
-            if (errorMessage) {
-              setErrorMessage(null);
-            }
-          }}
-          value={otpValue}
-        />
+        <div className="flex flex-col items-center">
+          <OtpInput
+            onChange={(next) => {
+              setOtpValue(next);
+              if (errorMessage) {
+                setErrorMessage(null);
+              }
+            }}
+            value={otpValue}
+          />
 
-        <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[var(--color-onboarding-muted)]">
-          {timer > 0 ? (
-            <>
-              Resend OTP in{" "}
-              <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal">
-                {timer} Sec
-              </span>
-            </>
-          ) : (
-            <button
-              className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={accountRestricted}
-              onClick={() => {
-                void handleResend();
-              }}
-              type="button"
-            >
-              Resend OTP
-            </button>
-          )}
-        </p>
+          <div className="mt-2 flex w-full flex-col items-center gap-5">
+            {errorMessage ? (
+              <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[var(--color-onboarding-danger)]">
+                {errorMessage}
+              </p>
+            ) : null}
 
-        {errorMessage ? (
-          <p className="text-center text-xs text-[var(--color-onboarding-danger)]">{errorMessage}</p>
-        ) : null}
+            <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[var(--color-onboarding-muted)]">
+              {timer > 0 ? (
+                <>
+                  Resend OTP in{" "}
+                  <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal">
+                    {timer} Sec
+                  </span>
+                </>
+              ) : (
+                <button
+                  className="mt-3 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal disabled:cursor-not-allowed disabled:opacity-70"
+                  disabled={accountRestricted}
+                  onClick={() => {
+                    void handleResend();
+                  }}
+                  type="button"
+                >
+                  Resend OTP
+                </button>
+              )}
+            </p>
+          </div>
+        </div>
 
         {accountRestricted ? (
           <p className="text-center text-xs text-[var(--color-onboarding-danger)]">

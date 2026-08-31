@@ -16,7 +16,10 @@ type AprnVerificationStepProps = {
   onContinue: () => void;
 };
 
-const APRN_NUMERIC_FORMAT = /^(?:APRN)?\d+$/;
+const APRN_PREFIX = "APRN";
+const APRN_DIGITS_FORMAT = /^\d+$/;
+
+const toFullAprnNumber = (digits: string): string => `${APRN_PREFIX}${digits.trim()}`;
 
 const AprnVerificationStep = ({
   panNumber,
@@ -48,13 +51,13 @@ const AprnVerificationStep = ({
   }, [productCategories]);
 
   const validateAprn = (value: string): string | null => {
-    const trimmed = value.trim().toUpperCase();
+    const digits = value.trim();
 
-    if (!trimmed) {
+    if (!digits) {
       return "APRN Number is required";
     }
 
-    if (!APRN_NUMERIC_FORMAT.test(trimmed)) {
+    if (!APRN_DIGITS_FORMAT.test(digits)) {
       return "Please enter a valid APRN number";
     }
 
@@ -80,7 +83,7 @@ const AprnVerificationStep = ({
       return;
     }
 
-    const normalizedAprn = aprnNumber.trim().toUpperCase();
+    const normalizedAprn = toFullAprnNumber(aprnNumber);
     const normalizedPan = panNumber.trim().toUpperCase();
 
     setIsSubmitting(true);

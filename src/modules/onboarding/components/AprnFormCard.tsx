@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { useRef } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 import { Button } from "../../../shared/ui/button";
@@ -6,6 +7,9 @@ import { Input } from "../../../shared/ui/input";
 import { cn } from "../../../shared/ui/utils";
 import type { EmpanelmentType } from "../types/onboarding-types";
 import SupportFooter from "./SupportFooter";
+
+const APRN_PREFIX = "APRN";
+const APRN_DIGITS_ONLY = /\D/g;
 
 type AprnFormCardProps = {
   panNumber: string;
@@ -34,6 +38,9 @@ const AprnFormCard = ({
   onBack,
   onContinue,
 }: AprnFormCardProps): ReactElement => {
+  const aprnInputRef = useRef<HTMLInputElement>(null);
+  const hasError = Boolean(errorMessage);
+
   return (
     <section className="w-full rounded-2xl bg-[var(--color-onboarding-surface)] p-6 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)] lg:p-8">
       <div className="space-y-5">
@@ -101,16 +108,39 @@ const AprnFormCard = ({
               APRN Number <span className="text-[var(--color-onboarding-danger)]">*</span>
             </label>
 
-            <Input
-              autoComplete="off"
-              id="aprn-number"
-              onChange={(event) => {
-                const sanitizedValue = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-                onChange(sanitizedValue);
+            <div
+              className={cn(
+                "flex h-9 w-full min-w-0 cursor-text items-center rounded-[8px] border border-[#eeeeee] bg-white px-[14px] shadow-none transition-[color,box-shadow]",
+                "focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]",
+                hasError &&
+                "border-[#E8402F] focus-within:border-[#E8402F] focus-within:ring-0",
+              )}
+              onClick={() => {
+                aprnInputRef.current?.focus();
               }}
-              placeholder="APRN 102030"
-              value={value}
-            />
+            >
+              <span
+                aria-hidden="true"
+                className="shrink-0 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#7F8E9D]"
+              >
+                {APRN_PREFIX}
+              </span>
+              <Input
+                aria-invalid={hasError}
+                autoComplete="off"
+                className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 pl-1 shadow-none aria-invalid:border-transparent aria-invalid:ring-0 focus-visible:border-transparent focus-visible:ring-0"
+                id="aprn-number"
+                inputMode="numeric"
+                onChange={(event) => {
+                  onChange(event.target.value.replace(APRN_DIGITS_ONLY, ""));
+                }}
+                pattern="[0-9]*"
+                placeholder="102030"
+                ref={aprnInputRef}
+                spellCheck={false}
+                value={value}
+              />
+            </div>
 
             {errorMessage ? (
               <p className="text-xs text-[var(--color-onboarding-danger)]">{errorMessage}</p>
@@ -124,7 +154,7 @@ const AprnFormCard = ({
           </p>
         ) : (
           <p className="text-left font-['Mulish',sans-serif] text-[14px] font-normal leading-[18px] tracking-normal text-[#93161E] underline decoration-solid underline-offset-0">
-            Looking to register as an RIA? Click here
+            Looking to register as an RIA?
           </p>
         )}
 
