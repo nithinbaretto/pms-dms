@@ -9,8 +9,7 @@
 html,
 body,
 #root {
-  height: 100svh;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 body {
@@ -24,6 +23,10 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
 }
 
 h1,

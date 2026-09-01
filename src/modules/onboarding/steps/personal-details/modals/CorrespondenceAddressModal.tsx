@@ -216,8 +216,8 @@ const CorrespondenceAddressModal = ({
 
   return (
     <Dialog onOpenChange={onCancel} open={open}>
-      <DialogContent className="flex max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] flex-col overflow-hidden rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]">
-        <div className="min-h-0 overflow-y-auto bg-white p-6 md:p-8">
+      <DialogContent className="max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] overflow-y-auto rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]">
+        <div className="bg-white p-6 md:p-8">
           <div className="space-y-4">
             <div className="space-y-2">
               <h2 className="text-[22px] leading-[33px] font-medium text-[#435160]">

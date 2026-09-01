@@ -79,7 +79,7 @@ const BusinessDetailsStep = ({
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[1240px] space-y-3">
+      <div className="mx-auto w-full max-w-[1240px] space-y-3 pb-28 lg:pb-24">
         <section className="space-y-3">
           <header className="space-y-1">
             <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">

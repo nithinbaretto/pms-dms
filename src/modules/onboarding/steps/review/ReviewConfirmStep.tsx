@@ -446,7 +446,7 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full overflow-y-auto pb-[100px]">
       <div className="w-full max-w-[1168px] mx-auto">
         <div className="mb-[24px] flex flex-col gap-[16px]">
           <div className="flex flex-col gap-[4px]">

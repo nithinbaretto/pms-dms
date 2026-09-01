@@ -659,17 +659,8 @@ const OnboardingContainer = (): ReactElement => {
     );
   };
 
-  const isFullPageStep =
-    (currentStep === "huf-entity-details" && isHufEntityJourney()) ||
-    currentStep === "personal-details" ||
-    currentStep === "business-details" ||
-    currentStep === "bank-details" ||
-    currentStep === "nominee-details" ||
-    currentStep === "upload-documents" ||
-    currentStep === "review-confirm";
-
   return (
-    <main className="relative flex h-svh flex-col overflow-hidden bg-[var(--color-onboarding-background)]">
+    <main className="relative min-h-screen overflow-x-hidden bg-[var(--color-onboarding-background)]">
       <div className="pointer-events-none absolute left-1/2 top-1/2 h-[810px] w-[1440px] -translate-x-1/2 -translate-y-1/2 opacity-60">
         <div className="absolute inset-0 overflow-hidden">
           <img
@@ -680,32 +671,22 @@ const OnboardingContainer = (): ReactElement => {
         </div>
       </div>
 
-      <div
-        className={
-          isFullPageStep
-            ? "relative z-10 mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col px-6 pt-8 pb-24 lg:px-[120px] lg:pt-16 lg:pb-16"
-            : "relative z-10 mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col px-6 py-8 lg:px-[120px] lg:py-16"
-        }
-      >
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-8 lg:px-[120px] lg:py-16">
         <img
           alt="ICICI Prudential Alternate Investments"
-          className="h-[56px] w-[115px] shrink-0 object-contain object-left"
+          className="h-[56px] w-[115px] object-contain object-left"
           src={logoImage}
         />
 
-        {isFullPageStep ? (
-          <div className="mt-6 min-h-0 flex-1 overflow-y-auto lg:mt-10">
-            {renderStep()}
-          </div>
+        {(currentStep === "huf-entity-details" && isHufEntityJourney()) || currentStep === "personal-details" || currentStep === "business-details" || currentStep === "bank-details" || currentStep === "nominee-details" || currentStep === "upload-documents" || currentStep === "review-confirm" ? (
+          <div className="mt-6 pb-28 lg:mt-10 lg:pb-24">{renderStep()}</div>
         ) : (
-          <div className="mt-10 flex min-h-0 flex-1 flex-col overflow-y-auto lg:mt-16">
-            <div className="my-auto flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-              <div className="min-w-0 max-w-[610px]">
-                <OnboardingHero />
-              </div>
-              <div className="w-full min-w-0 max-w-[488px] shrink-0 lg:ml-auto">
-                {renderStep()}
-              </div>
+          <div className="relative mt-0 min-w-0">
+            <div className="mt-10 min-w-0 max-w-[610px] lg:mt-34">
+              <OnboardingHero />
+            </div>
+            <div className="mt-10 w-full min-w-0 max-w-[488px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[488px] lg:-translate-y-1/2 lg:translate-x-6">
+              {renderStep()}
             </div>
           </div>
         )}

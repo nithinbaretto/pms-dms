@@ -488,8 +488,8 @@ const AddGstModal = ({
         }}
         open={open && !showCamera}
       >
-        <DialogContent className="flex h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] flex-col gap-0 overflow-hidden rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]">
-          <div className="min-h-0 overflow-y-auto overscroll-contain p-6">
+        <DialogContent className="h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] gap-0 overflow-y-auto rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]">
+          <div className="p-6">
             <div className="mb-4">
               <DialogTitle className="pr-8 font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] !text-[#435160]">
                 Add GST
