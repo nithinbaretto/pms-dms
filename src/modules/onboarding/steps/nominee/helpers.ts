@@ -3,8 +3,36 @@ import type {
   SaveNomineeDetailsRequest,
 } from "../../services/onboarding-api";
 import type { Address } from "../personal-details/types";
-import { DOB_PATTERN } from "./constants";
+import { DEFAULT_PROOF_OF_IDENTITY, DOB_PATTERN } from "./constants";
 import type { NomineeFormData, NomineeSnapshot } from "./types";
+
+export const formatAadhaarNumber = (value: string): string => {
+  const digits = value.replace(/\D/g, "").slice(0, 12);
+  return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+};
+
+export const sanitizeProofNumber = (type: string, value: string): string => {
+  switch (type) {
+    case "Aadhar":
+      return formatAadhaarNumber(value);
+    case "PAN":
+      return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+    case "Driving License":
+      return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 15);
+    case "Passport":
+      return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+    default:
+      return value.trim();
+  }
+};
+
+export const normalizeProofNumberForSave = (type: string, value: string): string => {
+  if (type === "Aadhar") {
+    return value.replace(/\s/g, "");
+  }
+
+  return value.trim().toUpperCase();
+};
 
 export const parseDob = (value: string): Date | null => {
   const trimmed = value.trim();
@@ -78,6 +106,20 @@ export const getSafeDobParts = (dob: string) => {
   };
 };
 
+export const emptyAddress = (): Address => ({
+  lat: 0,
+  lng: 0,
+  addressLine: "",
+  city: "",
+  state: "",
+  pincode: "",
+});
+
+export const addressFromLine = (line: string): Address => ({
+  ...emptyAddress(),
+  addressLine: line.trim(),
+});
+
 export const formatApplicantAddress = (address: Address | null | undefined): string => {
   if (!address) {
     return "";
@@ -105,12 +147,39 @@ export const formatApplicantAddress = (address: Address | null | undefined): str
   return parts.join(", ");
 };
 
-export const mapGetNomineeDetailsToForm = (response: GetNomineeDetailsResponse): NomineeFormData => {
+export const withDefaultGuardianSameAsNominee = (form: NomineeFormData): NomineeFormData => {
+  if (!validateAgeForMinor(form.dateOfBirth)) {
+    return form;
+  }
+
+  const hasDistinctGuardianAddress =
+    form.guardianAddress.trim() !== "" &&
+    form.guardianAddress.trim() !== form.nomineeAddress.trim();
+
+  if (hasDistinctGuardianAddress && !form.isGuardianAddressSameAsNomineeAddress) {
+    return form;
+  }
+
+  if (form.isGuardianAddressSameAsNomineeAddress && form.guardianAddress === form.nomineeAddress) {
+    return form;
+  }
+
   return {
+    ...form,
+    isGuardianAddressSameAsNomineeAddress: true,
+    guardianAddress: form.nomineeAddress,
+  };
+};
+
+export const mapGetNomineeDetailsToForm = (response: GetNomineeDetailsResponse): NomineeFormData => {
+  return withDefaultGuardianSameAsNominee({
     nomineeName: response.nomineeName,
     relationshipWithApplicant: response.relationshipWithApplicant,
-    proofOfIdentityType: response.proofOfIdentityType || "Aadhar",
-    proofOfIdentityNumber: response.proofOfIdentityNumber,
+    proofOfIdentityType: response.proofOfIdentityType || DEFAULT_PROOF_OF_IDENTITY,
+    proofOfIdentityNumber: sanitizeProofNumber(
+      response.proofOfIdentityType || DEFAULT_PROOF_OF_IDENTITY,
+      response.proofOfIdentityNumber,
+    ),
     mobileNumber: response.mobileNumber.replace(/\D/g, "").slice(0, 10),
     emailId: response.emailId.trim(),
     dateOfBirth: response.dateOfBirth.trim(),
@@ -119,7 +188,7 @@ export const mapGetNomineeDetailsToForm = (response: GetNomineeDetailsResponse):
     guardianAddress: response.guardianAddress.trim(),
     isNomineeAddressSameAsApplicantAddress: response.isNomineeAddressSameAsApplicantAddress,
     isGuardianAddressSameAsNomineeAddress: response.isGuardianAddressSameAsNomineeAddress,
-  };
+  });
 };
 
 export const hasNomineeCoreData = (form: NomineeFormData): boolean => {
@@ -169,7 +238,10 @@ export const buildSaveNomineePayload = (
     mobileNumber: form.mobileNumber.trim(),
     nomineeAddress,
     nomineeName: form.nomineeName.trim(),
-    proofOfIdentityNumber: form.proofOfIdentityNumber.trim(),
+    proofOfIdentityNumber: normalizeProofNumberForSave(
+      form.proofOfIdentityType,
+      form.proofOfIdentityNumber,
+    ),
     proofOfIdentityType: form.proofOfIdentityType.trim(),
     relationshipWithApplicant: form.relationshipWithApplicant.trim(),
   };

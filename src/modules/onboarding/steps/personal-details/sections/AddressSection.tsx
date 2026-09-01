@@ -51,11 +51,6 @@ const AddressSection = ({
               className="inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#93161E] disabled:cursor-not-allowed disabled:opacity-40"
               disabled={!canEditCorrespondenceAddress}
               onClick={onEditCorrespondenceAddress}
-              title={
-                canEditCorrespondenceAddress
-                  ? undefined
-                  : "Verify mobile number and email to edit address"
-              }
               type="button"
             >
               <img alt="" className="h-3 w-3" src={editIcon} /> Edit
@@ -66,11 +61,6 @@ const AddressSection = ({
               <span className="text-[#71859B]">Enter Correspondence Address</span>
             )}
           </div>
-          {!canEditCorrespondenceAddress ? (
-            <p className="font-['Mulish',sans-serif] text-[11px] font-normal leading-[16px] tracking-normal text-[#71859B]">
-              Verify your mobile number and email to edit address
-            </p>
-          ) : null}
         </div>
       </div>
     </section>

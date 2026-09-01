@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useMemo, useState } from "react";
 
 import AprnFormCard from "../../components/AprnFormCard";
-import { onboardingApi } from "../../services/onboarding-api";
+import { extractErrorMessage, onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import type { EmpanelmentType, ProductCategory } from "../../types/onboarding-types";
 
@@ -97,7 +97,7 @@ const AprnVerificationStep = ({
       const backendMessage = response.message?.trim();
 
       if (!response.success || response.validationStatus !== true) {
-        setErrorMessage(backendMessage || "Invalid APRN");
+        setErrorMessage(backendMessage || "Please enter valid APRN Number");
         setVariant("error");
         return;
       }
@@ -146,8 +146,8 @@ const AprnVerificationStep = ({
       setErrorMessage(null);
       setVariant(hasAifCategory ? "riaVariant" : "default");
       onContinue();
-    } catch {
-      setErrorMessage("Invalid APRN");
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error) || "Please enter valid APRN Number");
       setVariant("error");
     } finally {
       setIsSubmitting(false);

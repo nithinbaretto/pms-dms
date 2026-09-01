@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import type { ReactElement } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
+import CorrespondenceAddressModal from "../personal-details/modals/CorrespondenceAddressModal";
 import { NomineeDetailsScreen } from "./NomineeDetailsScreen";
-import { getSafeDobParts } from "./helpers";
+import { addressFromLine, getSafeDobParts, sanitizeProofNumber } from "./helpers";
 import { useNomineeFlow } from "./useNomineeFlow";
 
 type NomineeStepProps = {
@@ -26,12 +27,13 @@ const NomineeStep = ({
     isLoading,
     isSaving,
     error,
-    applicantPermanentAddress,
+    applicantPermanentAddressModel,
     isMinor,
     canProceed,
     setOption,
     updateField,
-    handleAddressSync,
+    saveNomineeAddress,
+    saveGuardianAddress,
     handleGuardianSync,
     submitNominee,
   } = useNomineeFlow();
@@ -41,8 +43,6 @@ const NomineeStep = ({
 
   const [showNomineeAddressModal, setShowNomineeAddressModal] = useState(false);
   const [showGuardianAddressModal, setShowGuardianAddressModal] = useState(false);
-  const [nomineeAddressModalAnimating, setNomineeAddressModalAnimating] = useState(false);
-  const [guardianAddressModalAnimating, setGuardianAddressModalAnimating] = useState(false);
 
   const [showDobPicker, setShowDobPicker] = useState(false);
   const [dobPickerAnimating, setDobPickerAnimating] = useState(false);
@@ -57,22 +57,9 @@ const NomineeStep = ({
   const relationshipDropdownRef = useRef<HTMLDivElement>(null);
   const relationshipDropdownMobileRef = useRef<HTMLDivElement>(null);
 
-  const [nomineeAddressSearch, setNomineeAddressSearch] = useState("");
-  const [nomineeAddressDetails, setNomineeAddressDetails] = useState("");
-  const [guardianAddressSearch, setGuardianAddressSearch] = useState("");
-  const [guardianAddressDetails, setGuardianAddressDetails] = useState("");
-
   useEffect(() => {
     setIsEditMode(initialIsEditMode);
   }, [initialIsEditMode]);
-
-  useEffect(() => {
-    setNomineeAddressDetails(form.nomineeAddress);
-  }, [form.nomineeAddress]);
-
-  useEffect(() => {
-    setGuardianAddressDetails(form.guardianAddress);
-  }, [form.guardianAddress]);
 
   useEffect(() => {
     const isInside = (target: Node, ...refs: Array<{ current: HTMLDivElement | null }>) =>
@@ -123,63 +110,36 @@ const NomineeStep = ({
   };
 
   const handleOpenNomineeAddressModal = () => {
-    setNomineeAddressSearch("");
-    setNomineeAddressDetails(
-      form.nomineeAddress || applicantPermanentAddress,
-    );
     setShowNomineeAddressModal(true);
-    setTimeout(() => setNomineeAddressModalAnimating(true), 10);
-  };
-
-  const handleCloseNomineeAddressModal = () => {
-    setNomineeAddressModalAnimating(false);
-    setTimeout(() => setShowNomineeAddressModal(false), 200);
-  };
-
-  const handleSaveNomineeAddress = () => {
-    const resolved = form.isNomineeAddressSameAsApplicantAddress
-      ? applicantPermanentAddress
-      : nomineeAddressDetails.trim() || nomineeAddressSearch.trim() || form.nomineeAddress;
-
-    if (resolved.trim()) {
-      updateField("nomineeAddress", resolved.trim());
-      setNomineeAddressDetails(resolved.trim());
-
-      if (form.isGuardianAddressSameAsNomineeAddress && isMinor) {
-        updateField("guardianAddress", resolved.trim());
-        setGuardianAddressDetails(resolved.trim());
-      }
-    }
-
-    handleCloseNomineeAddressModal();
   };
 
   const handleOpenGuardianAddressModal = () => {
-    setGuardianAddressSearch("");
-    setGuardianAddressDetails(
-      form.guardianAddress || form.nomineeAddress || applicantPermanentAddress,
-    );
     setShowGuardianAddressModal(true);
-    setTimeout(() => setGuardianAddressModalAnimating(true), 10);
   };
 
-  const handleCloseGuardianAddressModal = () => {
-    setGuardianAddressModalAnimating(false);
-    setTimeout(() => setShowGuardianAddressModal(false), 200);
-  };
-
-  const handleSaveGuardianAddress = () => {
-    const resolved = form.isGuardianAddressSameAsNomineeAddress
-      ? form.nomineeAddress
-      : guardianAddressDetails.trim() || guardianAddressSearch.trim() || form.guardianAddress;
-
-    if (resolved.trim()) {
-      updateField("guardianAddress", resolved.trim());
-      setGuardianAddressDetails(resolved.trim());
+  const nomineeAddressModel = useMemo(() => {
+    if (form.isNomineeAddressSameAsApplicantAddress) {
+      return applicantPermanentAddressModel;
     }
 
-    handleCloseGuardianAddressModal();
-  };
+    return addressFromLine(form.nomineeAddress);
+  }, [
+    applicantPermanentAddressModel,
+    form.isNomineeAddressSameAsApplicantAddress,
+    form.nomineeAddress,
+  ]);
+
+  const guardianAddressModel = useMemo(() => {
+    if (form.isGuardianAddressSameAsNomineeAddress) {
+      return nomineeAddressModel;
+    }
+
+    return addressFromLine(form.guardianAddress);
+  }, [
+    form.guardianAddress,
+    form.isGuardianAddressSameAsNomineeAddress,
+    nomineeAddressModel,
+  ]);
 
   const setCurrentStep = (step: string) => {
     if (step === "bank-details") {
@@ -244,9 +204,14 @@ const NomineeStep = ({
         nomineeRelationship={form.relationshipWithApplicant}
         setNomineeRelationship={(value) => updateField("relationshipWithApplicant", value)}
         nomineeProofType={form.proofOfIdentityType}
-        setNomineeProofType={(value) => updateField("proofOfIdentityType", value)}
+        setNomineeProofType={(value) => {
+          updateField("proofOfIdentityType", value);
+          updateField("proofOfIdentityNumber", "");
+        }}
         nomineeProofNumber={form.proofOfIdentityNumber}
-        setNomineeProofNumber={(value) => updateField("proofOfIdentityNumber", value)}
+        setNomineeProofNumber={(value) =>
+          updateField("proofOfIdentityNumber", sanitizeProofNumber(form.proofOfIdentityType, value))
+        }
         nomineeMobileCountry="+91 (IND)"
         nomineeMobile={form.mobileNumber}
         setNomineeMobile={(value) =>
@@ -260,6 +225,8 @@ const NomineeStep = ({
         guardianName={form.guardianName}
         setGuardianName={(value) => updateField("guardianName", value)}
         guardianAddress={form.guardianAddress}
+        sameAsNomineeAddress={form.isGuardianAddressSameAsNomineeAddress}
+        onSameAsNomineeAddressChange={handleGuardianSync}
         showProofDropdown={showProofDropdown}
         setShowProofDropdown={setShowProofDropdown}
         proofDropdownRef={proofDropdownRef}
@@ -279,35 +246,46 @@ const NomineeStep = ({
         handleOpenDobPicker={handleOpenDobPicker}
         handleCloseDobPicker={handleCloseDobPicker}
         handleSaveDob={handleSaveDob}
-        showNomineeAddressModal={showNomineeAddressModal}
-        nomineeAddressModalAnimating={nomineeAddressModalAnimating}
-        sameAsApplicant={form.isNomineeAddressSameAsApplicantAddress}
-        setSameAsApplicant={handleAddressSync}
-        nomineeAddressSearch={nomineeAddressSearch}
-        setNomineeAddressSearch={setNomineeAddressSearch}
-        nomineeAddressDetails={nomineeAddressDetails}
-        setNomineeAddressDetails={setNomineeAddressDetails}
-        permanentAddress={applicantPermanentAddress || "Applicant permanent address not available"}
         handleOpenNomineeAddressModal={handleOpenNomineeAddressModal}
-        handleCloseNomineeAddressModal={handleCloseNomineeAddressModal}
-        handleSaveNomineeAddress={handleSaveNomineeAddress}
-        showGuardianAddressModal={showGuardianAddressModal}
-        guardianAddressModalAnimating={guardianAddressModalAnimating}
-        sameAsNominee={form.isGuardianAddressSameAsNomineeAddress}
-        setSameAsNominee={handleGuardianSync}
-        guardianAddressSearch={guardianAddressSearch}
-        setGuardianAddressSearch={setGuardianAddressSearch}
-        guardianAddressDetails={guardianAddressDetails}
-        setGuardianAddressDetails={setGuardianAddressDetails}
         handleOpenGuardianAddressModal={handleOpenGuardianAddressModal}
-        handleCloseGuardianAddressModal={handleCloseGuardianAddressModal}
-        handleSaveGuardianAddress={handleSaveGuardianAddress}
         isEditMode={isEditMode}
         isTransitioning={isTransitioning || isSaving}
         canProceed={canProceed && !isSaving}
         setIsTransitioning={setIsTransitioning}
         setCurrentStep={setCurrentStep}
         setIsEditMode={setIsEditMode}
+      />
+
+      <CorrespondenceAddressModal
+        initialAddress={nomineeAddressModel}
+        initialSameAsPermanent={form.isNomineeAddressSameAsApplicantAddress}
+        onCancel={() => {
+          setShowNomineeAddressModal(false);
+        }}
+        onSave={(address, sameAsApplicant) => {
+          saveNomineeAddress(address, sameAsApplicant);
+          setShowNomineeAddressModal(false);
+        }}
+        open={showNomineeAddressModal}
+        permanentAddress={applicantPermanentAddressModel}
+        sameAsLabel="Same as applicant's address"
+        title="Nominee Address"
+      />
+
+      <CorrespondenceAddressModal
+        initialAddress={guardianAddressModel}
+        initialSameAsPermanent={form.isGuardianAddressSameAsNomineeAddress}
+        onCancel={() => {
+          setShowGuardianAddressModal(false);
+        }}
+        onSave={(address, sameAsNominee) => {
+          saveGuardianAddress(address, sameAsNominee);
+          setShowGuardianAddressModal(false);
+        }}
+        open={showGuardianAddressModal}
+        permanentAddress={nomineeAddressModel}
+        sameAsLabel="Same as nominee address"
+        title="Guardian Address"
       />
     </>
   );

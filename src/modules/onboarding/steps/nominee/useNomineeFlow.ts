@@ -2,14 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
+import type { Address } from "../personal-details/types";
 import { createEmptyNomineeForm } from "./constants";
 import {
   buildSaveNomineePayload,
   cloneNomineeSnapshot,
+  emptyAddress,
   formatApplicantAddress,
   hasNomineeCoreData,
   mapGetNomineeDetailsToForm,
   validateAgeForMinor,
+  withDefaultGuardianSameAsNominee,
 } from "./helpers";
 import type { NomineeFormData, NomineeOption, NomineeSnapshot } from "./types";
 import { isNomineeFormValid } from "./validation";
@@ -25,12 +28,15 @@ type UseNomineeFlowResult = {
   isSaving: boolean;
   error: string | null;
   applicantPermanentAddress: string;
+  applicantPermanentAddressModel: Address;
   isMinor: boolean;
   canProceed: boolean;
   setOption: (option: NomineeOption) => void;
   updateField: <K extends keyof NomineeFormData>(key: K, value: NomineeFormData[K]) => void;
   handleAddressSync: (sameAsApplicant: boolean) => void;
   handleGuardianSync: (sameAsNominee: boolean) => void;
+  saveNomineeAddress: (address: Address, sameAsApplicant: boolean) => void;
+  saveGuardianAddress: (address: Address, sameAsNominee: boolean) => void;
   validateAgeForMinor: (dob: string) => boolean;
   loadNominee: () => Promise<void>;
   addNomineeLater: () => void;
@@ -40,9 +46,14 @@ type UseNomineeFlowResult = {
 export const useNomineeFlow = (): UseNomineeFlowResult => {
   const { leadId, personalDetails } = useOnboardingStore();
 
-  const applicantPermanentAddress = useMemo(
-    () => formatApplicantAddress(personalDetails?.permanentAddress),
+  const applicantPermanentAddressModel = useMemo(
+    () => personalDetails?.permanentAddress ?? emptyAddress(),
     [personalDetails?.permanentAddress],
+  );
+
+  const applicantPermanentAddress = useMemo(
+    () => formatApplicantAddress(applicantPermanentAddressModel),
+    [applicantPermanentAddressModel],
   );
 
   const [form, setForm] = useState<NomineeFormData>(createEmptyNomineeForm);
@@ -80,12 +91,8 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
         mapped.nomineeAddress = applicantPermanentAddress;
       }
 
-      if (mapped.isGuardianAddressSameAsNomineeAddress && mapped.nomineeAddress) {
-        mapped.guardianAddress = mapped.nomineeAddress;
-      }
-
-      // Empty GET → Add Now blank form. Prefill only when backend already has data.
-      setForm(hasNomineeCoreData(mapped) ? mapped : createEmptyNomineeForm());
+      const nextForm = hasNomineeCoreData(mapped) ? mapped : createEmptyNomineeForm();
+      setForm(withDefaultGuardianSameAsNominee(nextForm));
       setInitialSnapshot(cloneNomineeSnapshot(mapped));
       setOptionState("now");
     } catch {
@@ -102,13 +109,9 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
   }, [loadNominee]);
 
   useEffect(() => {
-    if (!isMinor) {
-      setForm((current) => {
-        if (
-          !current.guardianName &&
-          !current.guardianAddress &&
-          !current.isGuardianAddressSameAsNomineeAddress
-        ) {
+    setForm((current) => {
+      if (!isMinor) {
+        if (!current.guardianName && !current.guardianAddress) {
           return current;
         }
 
@@ -116,10 +119,12 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
           ...current,
           guardianName: "",
           guardianAddress: "",
-          isGuardianAddressSameAsNomineeAddress: false,
+          isGuardianAddressSameAsNomineeAddress: true,
         };
-      });
-    }
+      }
+
+      return withDefaultGuardianSameAsNominee(current);
+    });
   }, [isMinor]);
 
   const updateField = useCallback(<K extends keyof NomineeFormData>(key: K, value: NomineeFormData[K]) => {
@@ -150,8 +155,40 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
     setForm((current) => ({
       ...current,
       isGuardianAddressSameAsNomineeAddress: sameAsNominee,
-      guardianAddress: sameAsNominee ? current.nomineeAddress : current.guardianAddress,
+      guardianAddress: sameAsNominee ? current.nomineeAddress : "",
     }));
+  }, []);
+
+  const saveNomineeAddress = useCallback(
+    (address: Address, sameAsApplicant: boolean) => {
+      const formatted = sameAsApplicant
+        ? formatApplicantAddress(applicantPermanentAddressModel) || formatApplicantAddress(address)
+        : formatApplicantAddress(address);
+
+      setForm((current) => ({
+        ...current,
+        isNomineeAddressSameAsApplicantAddress: sameAsApplicant,
+        nomineeAddress: formatted,
+        guardianAddress: current.isGuardianAddressSameAsNomineeAddress
+          ? formatted
+          : current.guardianAddress,
+      }));
+    },
+    [applicantPermanentAddressModel],
+  );
+
+  const saveGuardianAddress = useCallback((address: Address, sameAsNominee: boolean) => {
+    setForm((current) => {
+      const formatted = sameAsNominee
+        ? current.nomineeAddress
+        : formatApplicantAddress(address);
+
+      return {
+        ...current,
+        isGuardianAddressSameAsNomineeAddress: sameAsNominee,
+        guardianAddress: formatted,
+      };
+    });
   }, []);
 
   const setOption = useCallback((next: NomineeOption) => {
@@ -202,12 +239,15 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
     isSaving,
     error,
     applicantPermanentAddress,
+    applicantPermanentAddressModel,
     isMinor,
     canProceed,
     setOption,
     updateField,
     handleAddressSync,
     handleGuardianSync,
+    saveNomineeAddress,
+    saveGuardianAddress,
     validateAgeForMinor,
     loadNominee,
     addNomineeLater,

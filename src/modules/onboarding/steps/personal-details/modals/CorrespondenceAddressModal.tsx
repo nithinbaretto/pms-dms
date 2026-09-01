@@ -2,17 +2,19 @@
 import type { ReactElement } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Autocomplete,
   GoogleMap,
   MarkerF,
   useLoadScript,
 } from "@react-google-maps/api";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, Search } from "lucide-react";
 
 import { Button } from "../../../../../shared/ui/button";
 import { Checkbox } from "../../../../../shared/ui/checkbox";
 import { Dialog, DialogContent } from "../../../../../shared/ui/dialog";
 import { Input } from "../../../../../shared/ui/input";
 import { cn } from "../../../../../shared/ui/utils";
+import locationIcon from "../../../../../assets/icons/svg/Location.svg";
 import type { Address } from "../types";
 
 type CorrespondenceAddressModalProps = {
@@ -22,6 +24,8 @@ type CorrespondenceAddressModalProps = {
   initialSameAsPermanent?: boolean;
   /** Defaults to correspondence. Permanent mode hides the same-as checkbox. */
   mode?: "correspondence" | "permanent";
+  title?: string;
+  sameAsLabel?: string;
   onCancel: () => void;
   onSave: (address: Address, sameAsPermanent: boolean) => void;
 };
@@ -32,7 +36,7 @@ type LatLng = {
 };
 
 const FALLBACK_CENTER: LatLng = { lat: 19.076, lng: 72.8777 };
-const MAP_LIBRARIES: ("places")[] = [];
+const MAP_LIBRARIES: ("places")[] = ["places"];
 
 const mapContainerStyle = {
   width: "100%",
@@ -52,12 +56,44 @@ const isSameAddress = (left: Address, right: Address): boolean => {
   );
 };
 
+const getAddressComponent = (
+  components: google.maps.GeocoderAddressComponent[] | undefined,
+  type: string,
+): string => {
+  return components?.find((item) => item.types.includes(type))?.long_name ?? "";
+};
+
+const addressFromPlace = (place: google.maps.places.PlaceResult): Address | null => {
+  const location = place.geometry?.location;
+  if (!location) {
+    return null;
+  }
+
+  const components = place.address_components;
+
+  return {
+    lat: location.lat(),
+    lng: location.lng(),
+    addressLine: place.formatted_address?.trim() || place.name?.trim() || "",
+    city:
+      getAddressComponent(components, "locality") ||
+      getAddressComponent(components, "administrative_area_level_2"),
+    state: getAddressComponent(components, "administrative_area_level_1"),
+    pincode: getAddressComponent(components, "postal_code"),
+  };
+};
+
+const searchInputClassName =
+  "h-9 w-full min-w-0 border-0 bg-transparent p-0 shadow-none outline-none focus-visible:border-transparent focus-visible:ring-0 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#231f20] placeholder:font-['Mulish',sans-serif] placeholder:text-[14px] placeholder:font-normal placeholder:leading-none placeholder:tracking-normal placeholder:text-[#71859B]";
+
 const CorrespondenceAddressModal = ({
   open,
   permanentAddress,
   initialAddress,
   initialSameAsPermanent,
   mode = "correspondence",
+  title,
+  sameAsLabel,
   onCancel,
   onSave,
 }: CorrespondenceAddressModalProps): ReactElement => {
@@ -73,8 +109,10 @@ const CorrespondenceAddressModal = ({
   const [isLocatingUser, setIsLocatingUser] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Address>(initialAddress);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const mapRef = useRef<google.maps.Map | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -82,6 +120,7 @@ const CorrespondenceAddressModal = ({
     }
 
     setDraft(initialAddress);
+    setSearchQuery("");
     setLocationError(null);
     setSameAsPermanent(
       mode === "permanent"
@@ -116,6 +155,24 @@ const CorrespondenceAddressModal = ({
       pincode: "",
     }));
   }, []);
+
+  const handlePlaceChanged = (): void => {
+    const place = autocompleteRef.current?.getPlace();
+    if (!place) {
+      return;
+    }
+
+    const nextAddress = addressFromPlace(place);
+    if (!nextAddress) {
+      return;
+    }
+
+    setLocationError(null);
+    setDraft(nextAddress);
+    setSearchQuery(nextAddress.addressLine);
+    mapRef.current?.panTo({ lat: nextAddress.lat, lng: nextAddress.lng });
+    mapRef.current?.setZoom(16);
+  };
 
   const handleUseCurrentLocation = (): void => {
     if (!navigator.geolocation) {
@@ -159,12 +216,12 @@ const CorrespondenceAddressModal = ({
 
   return (
     <Dialog onOpenChange={onCancel} open={open}>
-      <DialogContent className="max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] overflow-y-auto rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]">
-        <div className="bg-white p-6 md:p-8">
+      <DialogContent className="flex max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] flex-col overflow-hidden rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]">
+        <div className="min-h-0 overflow-y-auto bg-white p-6 md:p-8">
           <div className="space-y-4">
             <div className="space-y-2">
               <h2 className="text-[22px] leading-[33px] font-medium text-[#435160]">
-                {isPermanentMode ? "Permanent Address" : "Correspondence Address"}
+                {title ?? (isPermanentMode ? "Permanent Address" : "Correspondence Address")}
               </h2>
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 Update the address details.
@@ -183,7 +240,7 @@ const CorrespondenceAddressModal = ({
               <label className="flex items-start gap-2">
                 <Checkbox
                   checked={sameAsPermanent}
-                  className="mt-px border-[#eeeeee] data-[state=checked]:border-[#93161e] data-[state=checked]:bg-[#93161e]"
+                  className="mt-px border-[#eeeeee] data-[state=checked]:border-[#93161e] data-[state=checked]:bg-[#93161e] data-[state=checked]:text-white"
                   onCheckedChange={(checked) => {
                     const isChecked = Boolean(checked);
                     setSameAsPermanent(isChecked);
@@ -194,7 +251,7 @@ const CorrespondenceAddressModal = ({
                 />
                 <span className="space-y-3">
                   <span className="block text-[13px] leading-[19.5px] text-[#435160]">
-                    Same as permanent address
+                    {sameAsLabel ?? "Same as permanent address"}
                   </span>
                   <span className="block text-[13px] leading-[19.5px] text-[#231f20]">
                     {toSingleLine(permanentAddress)}
@@ -206,6 +263,44 @@ const CorrespondenceAddressModal = ({
 
             {isPermanentMode || !sameAsPermanent ? (
               <div className="space-y-3">
+                <div className="flex h-9 w-full items-center gap-2 rounded-[8px] border border-[#eeeeee] bg-white px-[14px]">
+                  <Search className="size-[14px] shrink-0 text-[#231F20]" strokeWidth={1.75} />
+                  <div className="min-w-0 flex-1">
+                    {isLoaded ? (
+                      <Autocomplete
+                        onLoad={(instance) => {
+                          autocompleteRef.current = instance;
+                        }}
+                        onPlaceChanged={handlePlaceChanged}
+                        options={{
+                          componentRestrictions: { country: "in" },
+                          fields: ["address_components", "formatted_address", "geometry", "name"],
+                        }}
+                      >
+                        <input
+                          className={searchInputClassName}
+                          onChange={(event) => {
+                            setSearchQuery(event.target.value);
+                          }}
+                          placeholder="Search on google map"
+                          type="text"
+                          value={searchQuery}
+                        />
+                      </Autocomplete>
+                    ) : (
+                      <input
+                        className={searchInputClassName}
+                        onChange={(event) => {
+                          setSearchQuery(event.target.value);
+                        }}
+                        placeholder="Search on google map"
+                        type="text"
+                        value={searchQuery}
+                      />
+                    )}
+                  </div>
+                </div>
+
                 {isLoaded ? (
                   <>
                     <div className="relative h-[220px] overflow-hidden rounded-[8px] border border-[#eeeeee] md:h-[260px]">
@@ -287,7 +382,7 @@ const CorrespondenceAddressModal = ({
 
                 <div className="space-y-1">
                   <label className="text-[12px] leading-[18px] text-[#231f20]">
-                    Address Line <span className="text-[#E8402F]">*</span>
+                    Address Details <span className="text-[#E8402F]">*</span>
                   </label>
                   <Input
                     onChange={(event) => {
@@ -303,7 +398,7 @@ const CorrespondenceAddressModal = ({
 
                 <div className="rounded-[8px] border border-[#eeeeee] bg-white p-[14px]">
                   <p className="inline-flex items-center gap-2 text-[14px] leading-[21px] font-medium text-[#231f20]">
-                    <MapPin className="h-4 w-4 text-[#93161e]" />
+                    <img alt="" className="h-4 w-4 shrink-0" src={locationIcon} />
                     {draft.addressLine || "Selected location"}
                   </p>
                   {(draft.lat || draft.lng) ? (

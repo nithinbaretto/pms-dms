@@ -1,14 +1,11 @@
 import type { RefObject } from 'react';
 import nomineeFormSvgPaths from '../../../../assets/figma-svg/svg-2tncnp7dy5';
 import emailOtpSvgPaths from '../../../../assets/figma-svg/svg-ftc9bj5bhu';
-import nomineeAddressSvgPaths from '../../../../assets/figma-svg/svg-8pstwmmui8';
-import guardianAddressSvgPaths from '../../../../assets/figma-svg/svg-31cjxfwjep';
 import imgEmptyNominee from '../../../../assets/icons/svg/empty_nominee_icon.svg';
-import imgMapPreview from '../../../../assets/images/guidlines_img_1.png';
-import imgGuardianMapPreview from '../../../../assets/images/guidlines_img_1.png';
+import { Checkbox } from '../../../../shared/ui/checkbox';
 import { Input } from '../../../../shared/ui/input';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
-import { PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
+import { PROOF_NUMBER_MAX_LENGTH, PROOF_NUMBER_PLACEHOLDERS, PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
 
 interface NomineeDetailsScreenProps {
   // Nominee form state
@@ -35,6 +32,8 @@ interface NomineeDetailsScreenProps {
   guardianName: string;
   setGuardianName: (name: string) => void;
   guardianAddress: string;
+  sameAsNomineeAddress: boolean;
+  onSameAsNomineeAddressChange: (same: boolean) => void;
 
   // Dropdown state
   showProofDropdown: boolean;
@@ -59,32 +58,8 @@ interface NomineeDetailsScreenProps {
   handleCloseDobPicker: () => void;
   handleSaveDob: () => void;
 
-  // Nominee address modal
-  showNomineeAddressModal: boolean;
-  nomineeAddressModalAnimating: boolean;
-  sameAsApplicant: boolean;
-  setSameAsApplicant: (same: boolean) => void;
-  nomineeAddressSearch: string;
-  setNomineeAddressSearch: (search: string) => void;
-  nomineeAddressDetails: string;
-  setNomineeAddressDetails: (details: string) => void;
-  permanentAddress: string;
   handleOpenNomineeAddressModal: () => void;
-  handleCloseNomineeAddressModal: () => void;
-  handleSaveNomineeAddress: () => void;
-
-  // Guardian address modal
-  showGuardianAddressModal: boolean;
-  guardianAddressModalAnimating: boolean;
-  sameAsNominee: boolean;
-  setSameAsNominee: (same: boolean) => void;
-  guardianAddressSearch: string;
-  setGuardianAddressSearch: (search: string) => void;
-  guardianAddressDetails: string;
-  setGuardianAddressDetails: (details: string) => void;
   handleOpenGuardianAddressModal: () => void;
-  handleCloseGuardianAddressModal: () => void;
-  handleSaveGuardianAddress: () => void;
 
   // Navigation
   isEditMode: boolean;
@@ -117,6 +92,8 @@ export function NomineeDetailsScreen({
   guardianName,
   setGuardianName,
   guardianAddress,
+  sameAsNomineeAddress,
+  onSameAsNomineeAddressChange,
   showProofDropdown,
   setShowProofDropdown,
   proofDropdownRef,
@@ -136,29 +113,8 @@ export function NomineeDetailsScreen({
   handleOpenDobPicker,
   handleCloseDobPicker,
   handleSaveDob,
-  showNomineeAddressModal,
-  nomineeAddressModalAnimating,
-  sameAsApplicant,
-  setSameAsApplicant,
-  nomineeAddressSearch,
-  setNomineeAddressSearch,
-  nomineeAddressDetails,
-  setNomineeAddressDetails,
-  permanentAddress,
   handleOpenNomineeAddressModal,
-  handleCloseNomineeAddressModal,
-  handleSaveNomineeAddress,
-  showGuardianAddressModal,
-  guardianAddressModalAnimating,
-  sameAsNominee,
-  setSameAsNominee,
-  guardianAddressSearch,
-  setGuardianAddressSearch,
-  guardianAddressDetails,
-  setGuardianAddressDetails,
   handleOpenGuardianAddressModal,
-  handleCloseGuardianAddressModal,
-  handleSaveGuardianAddress,
   isEditMode,
   isTransitioning,
   canProceed,
@@ -166,6 +122,11 @@ export function NomineeDetailsScreen({
   setCurrentStep,
   setIsEditMode,
 }: NomineeDetailsScreenProps) {
+  const proofTypeKey = nomineeProofType as keyof typeof PROOF_NUMBER_PLACEHOLDERS;
+  const proofNumberPlaceholder = PROOF_NUMBER_PLACEHOLDERS[proofTypeKey] ?? 'Enter Proof Number';
+  const proofNumberMaxLength = PROOF_NUMBER_MAX_LENGTH[proofTypeKey];
+  const isAadhaarProof = nomineeProofType === 'Aadhar';
+
   return (
     <>
       {/* Desktop View */}
@@ -301,8 +262,11 @@ export function NomineeDetailsScreen({
                           type="text"
                           value={nomineeProofNumber}
                           onChange={(e) => setNomineeProofNumber(e.target.value)}
-                          placeholder="Enter Proof Number"
-                          className="h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0"
+                          placeholder={proofNumberPlaceholder}
+                          maxLength={proofNumberMaxLength}
+                          inputMode={isAadhaarProof ? 'numeric' : 'text'}
+                          autoCapitalize={isAadhaarProof ? 'off' : 'characters'}
+                          className={`h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0 ${isAadhaarProof ? '' : 'uppercase'}`}
                         />
                       </div>
 
@@ -493,9 +457,23 @@ export function NomineeDetailsScreen({
                           </div>
                           <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
                             <div className="flex items-center px-[14px] py-[14px]">
-                              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] text-[#5a6b7d] flex-1 overflow-hidden text-ellipsis">{guardianAddress}</p>
+                              <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${guardianAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
+                                {guardianAddress || 'Enter Address'}
+                              </p>
                             </div>
                           </div>
+                          <label className="flex items-center gap-2 pt-[4px]">
+                            <Checkbox
+                              checked={sameAsNomineeAddress}
+                              className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
+                              onCheckedChange={(checked) => {
+                                onSameAsNomineeAddressChange(Boolean(checked));
+                              }}
+                            />
+                            <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
+                              Same as nominee address
+                            </span>
+                          </label>
                         </div>
 
                         {/* Empty spacer for layout - maintains 3-column grid alignment */}
@@ -646,8 +624,11 @@ export function NomineeDetailsScreen({
                           type="text"
                           value={nomineeProofNumber}
                           onChange={(e) => setNomineeProofNumber(e.target.value)}
-                          placeholder="Enter Proof Number"
-                          className="h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0"
+                          placeholder={proofNumberPlaceholder}
+                          maxLength={proofNumberMaxLength}
+                          inputMode={isAadhaarProof ? 'numeric' : 'text'}
+                          autoCapitalize={isAadhaarProof ? 'off' : 'characters'}
+                          className={`h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0 ${isAadhaarProof ? '' : 'uppercase'}`}
                         />
                       </div>
 
@@ -838,9 +819,23 @@ export function NomineeDetailsScreen({
                           </div>
                           <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
                             <div className="flex items-center px-[14px] py-[14px]">
-                              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] text-[#5a6b7d] flex-1 overflow-hidden text-ellipsis">{guardianAddress}</p>
+                              <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${guardianAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
+                                {guardianAddress || 'Enter Address'}
+                              </p>
                             </div>
                           </div>
+                          <label className="flex items-center gap-2 pt-[4px]">
+                            <Checkbox
+                              checked={sameAsNomineeAddress}
+                              className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
+                              onCheckedChange={(checked) => {
+                                onSameAsNomineeAddressChange(Boolean(checked));
+                              }}
+                            />
+                            <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
+                              Same as nominee address
+                            </span>
+                          </label>
                         </div>
 
                         {/* Empty spacer for layout - maintains 3-column grid alignment */}
@@ -992,287 +987,6 @@ export function NomineeDetailsScreen({
         </>
       )}
 
-      {/* Nominee Address Edit Modal */}
-      {showNomineeAddressModal && (
-        <>
-          {/* Backdrop + scroll container */}
-          <div
-            className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 overflow-y-auto transition-opacity duration-200 ease-out ${
-              nomineeAddressModalAnimating ? 'opacity-100' : 'opacity-0'
-            }`}
-            onClick={handleCloseNomineeAddressModal}
-          >
-          <div className="flex min-h-full items-center justify-center p-[20px]">
-          {/* Modal */}
-          <div className={`bg-white rounded-[16px] drop-shadow-[4px_4px_20px_rgba(0,0,0,0.12)] w-full max-w-[590px] flex flex-col transition-transform duration-200 ease-out ${
-            nomineeAddressModalAnimating ? 'scale-100' : 'scale-95'
-          }`} onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col gap-[20px] md:gap-[24px] p-[20px] md:p-[32px]">
-              {/* Header */}
-              <div className="flex flex-col gap-[16px] items-start w-full">
-                <div className="flex items-center justify-between w-full">
-                  <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Nominee Address</p>
-                  <button
-                    onClick={handleCloseNomineeAddressModal}
-                    className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
-                  >
-                    <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
-                      <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
-                    </svg>
-                  </button>
-                </div>
-                <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px] w-full">Update the address details.</p>
-              </div>
-
-              {/* Same as Applicant's Address Option */}
-              <div className="bg-white rounded-[8px] border border-[#eee] w-full">
-                <div className="flex flex-col items-start justify-center p-[14px]">
-                  <div className="flex gap-[8px] items-start w-full">
-                    <button
-                      onClick={() => setSameAsApplicant(!sameAsApplicant)}
-                      className="shrink-0"
-                    >
-                      <div className={`bg-white rounded-[4px] size-[16px] border-[2.286px] flex items-center justify-center transition-colors ${
-                        sameAsApplicant ? 'border-[#93161e]' : 'border-[#eee]'
-                      }`}>
-                        {sameAsApplicant && (
-                          <svg className="size-[10px]" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4L3.5 6.5L9 1" stroke="#93161e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-                    <div className="flex flex-col gap-[12px] flex-1">
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Same as applicant's address</p>
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px]">{permanentAddress}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Manual Address Entry - Only shown when NOT same as applicant */}
-              {!sameAsApplicant && (
-                <div className="flex flex-col gap-[12px] items-start w-full">
-                  {/* Search Bar */}
-                  <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] w-full">
-                    <div className="flex items-center gap-[8px] p-[14px] size-full">
-                      <svg className="size-[14px]" fill="none" viewBox="0 0 11.3873 11.3873">
-                        <path d={nomineeAddressSvgPaths.p1210c800} fill="#231F20" />
-                      </svg>
-                      <Input
-                        type="text"
-                        value={nomineeAddressSearch}
-                        onChange={(e) => setNomineeAddressSearch(e.target.value)}
-                        placeholder="Search on google map"
-                        className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Map Preview */}
-                  <div className="bg-white rounded-[8px] border border-[#eee] w-full overflow-hidden">
-                    <div className="flex flex-col items-start justify-center p-[12px]">
-                      <div className="h-[177px] w-full relative overflow-hidden">
-                        <img alt="Map preview" className="absolute h-full w-full object-cover" src={imgMapPreview} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Address Details Input */}
-                  <div className="flex flex-col gap-[4px] w-full">
-                    <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
-                      <p className="text-[#231F20]">Address Details</p>
-                      <p className="text-[#E8402F]">*</p>
-                    </div>
-                    <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] w-full">
-                      <div className="flex items-center gap-[8px] p-[14px] size-full">
-                        <Input
-                          type="text"
-                          value={nomineeAddressDetails}
-                          onChange={(e) => setNomineeAddressDetails(e.target.value)}
-                          className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Address Suggestion Card */}
-                  <div className="bg-white rounded-[8px] border border-[#eee] w-full">
-                    <div className="flex flex-col gap-[8px] items-start justify-center p-[14px]">
-                      <div className="flex gap-[8px] items-center w-full">
-                        <svg className="size-[16px]" fill="none" viewBox="0 0 14 13.5">
-                          <path d={nomineeAddressSvgPaths.p6bbd070} fill="#93161E" />
-                        </svg>
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] overflow-hidden text-ellipsis whitespace-nowrap flex-1">MG Road, Mumbai</p>
-                      </div>
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px]">Ghatkopar East Mumbai, Maharashtra 400077</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-[24px] items-center w-full">
-                <button
-                  onClick={handleCloseNomineeAddressModal}
-                  className="flex-1 h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors"
-                >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Cancel</p>
-                </button>
-                <button
-                  onClick={handleSaveNomineeAddress}
-                  className="flex-1 h-[36px] bg-[#93161e] hover:bg-[#7a1319] rounded-[8px] flex items-center justify-center transition-colors"
-                >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-white text-[14px]">Save & Continue</p>
-                </button>
-              </div>
-            </div>
-          </div>
-          </div>
-          </div>
-        </>
-      )}
-
-      {/* Guardian Address Edit Modal */}
-      {showGuardianAddressModal && (
-        <>
-          {/* Backdrop + scroll container */}
-          <div
-            className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 overflow-y-auto transition-opacity duration-200 ease-out ${
-              guardianAddressModalAnimating ? 'opacity-100' : 'opacity-0'
-            }`}
-            onClick={handleCloseGuardianAddressModal}
-          >
-          <div className="flex min-h-full items-center justify-center p-[20px]">
-          {/* Modal */}
-          <div className={`bg-white rounded-[16px] drop-shadow-[4px_4px_20px_rgba(0,0,0,0.12)] w-full max-w-[590px] flex flex-col transition-transform duration-200 ease-out ${
-            guardianAddressModalAnimating ? 'scale-100' : 'scale-95'
-          }`} onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col gap-[20px] md:gap-[24px] p-[20px] md:p-[32px]">
-              {/* Header */}
-              <div className="flex flex-col gap-[16px] items-start w-full">
-                <div className="flex items-center justify-between w-full">
-                  <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Guardian Address</p>
-                  <button
-                    onClick={handleCloseGuardianAddressModal}
-                    className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
-                  >
-                    <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
-                      <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
-                    </svg>
-                  </button>
-                </div>
-                <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px] w-full">Update the address details.</p>
-              </div>
-
-              {/* Same as Nominee Address Option */}
-              <div className="bg-white rounded-[8px] border border-[#eee] w-full">
-                <div className="flex flex-col items-start justify-center p-[14px]">
-                  <div className="flex gap-[8px] items-start w-full">
-                    <button
-                      onClick={() => setSameAsNominee(!sameAsNominee)}
-                      className="shrink-0"
-                    >
-                      <div className={`bg-white rounded-[4px] size-[16px] border-[2.286px] flex items-center justify-center transition-colors ${
-                        sameAsNominee ? 'border-[#93161e]' : 'border-[#eee]'
-                      }`}>
-                        {sameAsNominee && (
-                          <svg className="size-[10px]" viewBox="0 0 10 8" fill="none">
-                            <path d="M1 4L3.5 6.5L9 1" stroke="#93161e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-                    <div className="flex flex-col gap-[12px] flex-1">
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Same as nominee address</p>
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px]">{nomineeAddress}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Manual Address Entry - Only shown when NOT same as nominee */}
-              {!sameAsNominee && (
-                <div className="flex flex-col gap-[12px] items-start w-full">
-                  {/* Search Bar */}
-                  <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] w-full">
-                    <div className="flex items-center gap-[8px] p-[14px] size-full">
-                      <svg className="size-[14px]" fill="none" viewBox="0 0 11.3873 11.3873">
-                        <path d={guardianAddressSvgPaths.p1210c800} fill="#231F20" />
-                      </svg>
-                      <Input
-                        type="text"
-                        value={guardianAddressSearch}
-                        onChange={(e) => setGuardianAddressSearch(e.target.value)}
-                        placeholder="Search on google map"
-                        className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Map Preview */}
-                  <div className="bg-white rounded-[8px] border border-[#eee] w-full overflow-hidden">
-                    <div className="flex flex-col items-start justify-center p-[12px]">
-                      <div className="h-[177px] w-full relative overflow-hidden">
-                        <img alt="Map preview" className="absolute h-full w-full object-cover" src={imgGuardianMapPreview} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Address Details Input */}
-                  <div className="flex flex-col gap-[4px] w-full">
-                    <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
-                      <p className="text-[#231F20]">Address Details</p>
-                      <p className="text-[#E8402F]">*</p>
-                    </div>
-                    <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] w-full">
-                      <div className="flex items-center gap-[8px] p-[14px] size-full">
-                        <Input
-                          type="text"
-                          value={guardianAddressDetails}
-                          onChange={(e) => setGuardianAddressDetails(e.target.value)}
-                          className="h-full flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Address Suggestion Card */}
-                  <div className="bg-white rounded-[8px] border border-[#eee] w-full">
-                    <div className="flex flex-col gap-[8px] items-start justify-center p-[14px]">
-                      <div className="flex gap-[8px] items-center w-full">
-                        <svg className="size-[16px]" fill="none" viewBox="0 0 14 13.5">
-                          <path d={guardianAddressSvgPaths.p6bbd070} fill="#93161E" />
-                        </svg>
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] overflow-hidden text-ellipsis whitespace-nowrap flex-1">MG Road, Mumbai</p>
-                      </div>
-                      <p className="font-['Mulish',sans-serif] font-normal leading-[normal] text-[#231f20] text-[13px]">Ghatkopar East Mumbai, Maharashtra 400077</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-[24px] items-center w-full">
-                <button
-                  onClick={handleCloseGuardianAddressModal}
-                  className="flex-1 h-[36px] rounded-[8px] border border-[#eee] flex items-center justify-center hover:border-[#c7aa7b] transition-colors"
-                >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-[#435160] text-[14px]">Cancel</p>
-                </button>
-                <button
-                  onClick={handleSaveGuardianAddress}
-                  className="flex-1 h-[36px] bg-[#93161e] hover:bg-[#7a1319] rounded-[8px] flex items-center justify-center transition-colors"
-                >
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[21px] text-white text-[14px]">Save & Continue</p>
-                </button>
-              </div>
-            </div>
-          </div>
-          </div>
-          </div>
-        </>
-      )}
     </>
   );
 }

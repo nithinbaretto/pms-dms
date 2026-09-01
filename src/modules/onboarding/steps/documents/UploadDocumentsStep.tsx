@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 
 import svgPaths from '../../../../assets/figma-svg/svg-fcmqq9l0qc';
 import modalSvgPaths from '../../../../assets/figma-svg/svg-kmnbjcgk4j';
-import imgBgImg from '../../../../assets/images/background_img.png';
 import imgSignGuideline1 from '../../../../assets/images/sign_guidelines_1.png';
 import imgSignGuideline2 from '../../../../assets/images/sign_guidelines_2.png';
 import imgSignGuideline3 from '../../../../assets/images/sign_guidelines_3.png';
@@ -930,17 +929,10 @@ export function UploadDocumentsScreen({
       ) : null}
 
       {/* ── Desktop View ── */}
-      <div className="hidden lg:block min-h-screen bg-[#fffaf6] pb-[80px]">
-        <div className="fixed inset-0 opacity-60 pointer-events-none overflow-hidden">
-          <img alt="" className="absolute left-[27.29%] top-[-2.35%] w-[90.41%] h-[107.16%] max-w-none" src={imgBgImg} />
-        </div>
-
-        {/* Title — no subtitle, so form starts at top-[229px] */}
-        <div className="hidden lg:flex flex-col gap-[4px] absolute left-[60px] xl:left-[120px] top-[172px] z-20 w-[1200px]">
+      <div className="hidden lg:block">
+        <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-[24px]">
           <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Upload Documents</p>
-        </div>
 
-        <div className="absolute left-[60px] xl:left-[120px] top-[229px] z-10 w-[calc(100%-120px)] xl:w-[calc(100%-240px)] max-w-[1200px]">
           <div className="flex flex-col gap-[8px]">
             {/* Step / progress */}
             <div className="flex items-center justify-between font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px] w-full">
@@ -1033,7 +1025,7 @@ export function UploadDocumentsScreen({
 
       {/* ── Mobile / Tablet View ── */}
       <div className="relative z-10 flex w-full flex-col lg:hidden">
-        <div className="relative z-10 flex flex-col gap-[20px] pb-[140px]">
+        <div className="relative z-10 flex flex-col gap-[20px]">
           <p className="font-['Mulish',sans-serif] font-medium leading-[28px] text-[#231f20] text-[20px]">Upload Documents</p>
 
           <div className="flex flex-col gap-[8px]">

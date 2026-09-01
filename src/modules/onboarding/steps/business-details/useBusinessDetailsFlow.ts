@@ -40,7 +40,7 @@ type UseBusinessDetailsFlowResult = {
   toggleGstSelection: (id: string) => void;
   selectAllGst: () => void;
   removeGstEntry: (id: string) => void;
-  addManualGst: (draft: ManualGstDraft) => void;
+  addManualGst: (drafts: ManualGstDraft[]) => void;
   validateGstNumber: (gstInNumber: string) => Promise<ValidateGstResult | null>;
   uploadGstDocument: (file: File) => Promise<string | null>;
   uploadGstDocumentForRecord: (id: string, file: File) => Promise<boolean>;
@@ -183,14 +183,18 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
     setRecords((current) => current.filter((record) => record.id !== id));
   }, []);
 
-  const addManualGst = useCallback((draft: ManualGstDraft): void => {
-    const next = mapDraftToRecord(draft);
+  const addManualGst = useCallback((drafts: ManualGstDraft[]): void => {
     setRecords((current) => {
-      const withoutDuplicate = current.filter(
-        (record) =>
-          !(next.gstNumber && record.gstNumber && record.gstNumber === next.gstNumber),
-      );
-      return [...withoutDuplicate, next];
+      let next = [...current];
+      drafts.forEach((draft) => {
+        const mapped = mapDraftToRecord(draft);
+        next = next.filter(
+          (record) =>
+            !(mapped.gstNumber && record.gstNumber && record.gstNumber === mapped.gstNumber),
+        );
+        next.push(mapped);
+      });
+      return next;
     });
     setAddGstModalOpen(false);
   }, []);

@@ -581,6 +581,8 @@ type VerifyAprnApiResponse = {
   valid?: boolean;
   message?: string | null;
   Message?: string | null;
+  messageText?: string | null;
+  messages?: unknown;
   email?: string | null;
   mobile?: string | number | null;
   aprnStatus?: boolean | string | null;

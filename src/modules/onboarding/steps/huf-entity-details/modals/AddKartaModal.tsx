@@ -468,7 +468,7 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
                       <label className="flex items-center gap-2">
                         <Checkbox
                           checked={draft.sameAsApplicantAddress}
-                          className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E]"
+                          className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
                           onCheckedChange={(checked) => {
                             const isChecked = Boolean(checked);
                             updateDraft({
@@ -521,7 +521,7 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
                       <label className="flex items-center gap-2">
                         <Checkbox
                           checked={draft.sameAsPermanentAddress}
-                          className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E]"
+                          className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
                           onCheckedChange={(checked) => {
                             const isChecked = Boolean(checked);
                             updateDraft({

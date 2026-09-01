@@ -20,11 +20,11 @@ type OtpVerificationStepProps = {
 
 const maskMobile = (mobile: string): string => {
   const digits = mobile.replace(/\D/g, "").slice(-10);
-  if (digits.length < 4) {
+  if (digits.length < 2) {
     return digits || mobile;
   }
 
-  return `${digits[0]}${"x".repeat(digits.length - 4)}${digits.slice(-1)}`;
+  return `${digits[0]}${"x".repeat(8)}${digits.slice(-1)}`;
 };
 
 const maskEmail = (email: string): string => {
@@ -35,15 +35,6 @@ const maskEmail = (email: string): string => {
   }
 
   return `${name.slice(0, 2).toLocaleLowerCase()}${"x".repeat(Math.max(0, name.length - 2))}@${domain.toLocaleLowerCase()}`;
-};
-
-const maskKraMobile = (mobile: string): string => {
-  const digits = mobile.replace(/\D/g, "").slice(-10);
-  if (digits.length < 2) {
-    return digits || mobile;
-  }
-
-  return `${digits[0]}${"x".repeat(digits.length - 2)}${digits.slice(-1)}`;
 };
 
 const OtpVerificationStep = ({
@@ -227,7 +218,7 @@ const OtpVerificationStep = ({
 
   const visibleMobile = aifPartnerOtpFlow
     ? kraRegisteredMobile
-      ? maskKraMobile(kraRegisteredMobile)
+      ? maskMobile(kraRegisteredMobile)
       : inputMobile
         ? maskMobile(inputMobile)
         : null

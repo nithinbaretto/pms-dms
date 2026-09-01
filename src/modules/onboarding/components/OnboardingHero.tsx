@@ -22,9 +22,9 @@ const OnboardingHero = (): ReactElement => {
         <div className="mt-4 h-[2px] w-10 shrink-0 rounded-full bg-[var(--color-onboarding-accent)]" />
 
         <p className="max-w-[600px] pt-5 font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
-          Join thousands of distributors earning more with a trusted fund house.
+          Join thousands of distributors earning more with a trusted fund house. Empanel in
           <br />
-          Empanel in minutes - go live in days.
+          minutes - go live in days.
         </p>
       </div>
 

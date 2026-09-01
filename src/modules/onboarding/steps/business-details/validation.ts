@@ -7,6 +7,15 @@ export const isValidGstNumber = (gstNumber: string): boolean => {
   return GSTIN_PATTERN.test(gstNumber.trim().toUpperCase());
 };
 
+export const isDuplicateGstNumber = (gstNumber: string, existingGstNumbers: string[]): boolean => {
+  const normalized = gstNumber.trim().toUpperCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return existingGstNumbers.some((item) => item.trim().toUpperCase() === normalized);
+};
+
 export const formatGstName = (name: string): string => {
   return name.trim().replace(/\s+/g, " ");
 };

@@ -45,26 +45,49 @@ const StatusIcon = ({ good, size }: { good: boolean; size: number }): ReactEleme
   );
 };
 
-const GuidelineTile = ({ src, label, good }: GuidelineItem): ReactElement => {
+const GuidelineTile = ({
+  src,
+  label,
+  good,
+  framed = false,
+}: GuidelineItem & { framed?: boolean }): ReactElement => {
   return (
     <div
-      className={`relative flex flex-col items-center justify-center gap-2 rounded-[8px] px-2 py-3 ${
-        good ? "bg-[#eeffe5]" : "bg-[#fff0e5]"
-      }`}
+      className={`relative flex min-w-0 flex-col items-center justify-center gap-2 rounded-[8px] ${
+        framed ? "px-1 py-2" : "px-2 py-3"
+      } ${good ? "bg-[#eeffe5]" : "bg-[#fff0e5]"}`}
     >
-      <div className="absolute left-1.5 top-1.5">
-        <StatusIcon good={good} size={18} />
+      {framed ? null : (
+        <div className="absolute left-1.5 top-1.5">
+          <StatusIcon good={good} size={18} />
+        </div>
+      )}
+      <div className={framed ? "relative w-full max-w-[116.3px]" : "relative w-full max-w-[188px]"}>
+        <img
+          alt={label}
+          className={
+            framed
+              ? "h-[139.7px] w-full object-cover"
+              : "h-[72px] w-full max-w-[188px] object-contain drop-shadow-[0px_6px_16px_rgba(0,0,0,0.12)]"
+          }
+          src={src}
+          style={
+            framed
+              ? { boxShadow: "-4.39px 4.39px 14.63px 0px rgba(0, 0, 0, 0.08)" }
+              : undefined
+          }
+        />
+        {framed ? (
+          <div className="absolute left-1/2 top-full z-10 -translate-x-1/2 -translate-y-1/2">
+            <StatusIcon good={good} size={16} />
+          </div>
+        ) : null}
       </div>
-      <img
-        alt={label}
-        className="h-[72px] w-full max-w-[188px] object-contain drop-shadow-[0px_6px_16px_rgba(0,0,0,0.12)]"
-        src={src}
-      />
-      <div className="flex items-center gap-1">
+      <div className={`flex items-center gap-1 ${framed ? "pt-2" : ""}`}>
         <StatusIcon good={good} size={14} />
         <p
-          className={`font-['Mulish',sans-serif] text-[9px] font-normal leading-[1.1] whitespace-nowrap ${
-            good ? "text-[#37b400]" : "text-[#e8402f]"
+          className={`font-['Mulish',sans-serif] text-[6.58px] font-normal leading-[110%] tracking-[0px] whitespace-nowrap ${
+            good ? "text-[#37B400]" : "text-[#E8402F]"
           }`}
         >
           {label}
@@ -77,22 +100,32 @@ const GuidelineTile = ({ src, label, good }: GuidelineItem): ReactElement => {
 type UploadImageGuidelinesProps = {
   className?: string;
   showTitle?: boolean;
+  items?: GuidelineItem[];
+  layout?: "grid" | "row";
 };
 
 const UploadImageGuidelines = ({
   className,
   showTitle = true,
+  items = GUIDELINE_ITEMS,
+  layout = "grid",
 }: UploadImageGuidelinesProps): ReactElement => {
   return (
     <div className={cn("flex w-full flex-col gap-[11px]", className)}>
       {showTitle ? (
-        <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[18px] text-[#231F20]">
+        <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
           Upload image guidelines
         </p>
       ) : null}
-      <div className="grid grid-cols-2 gap-4">
-        {GUIDELINE_ITEMS.map((item) => (
-          <GuidelineTile key={item.label} {...item} />
+      <div
+        className={
+            layout === "row"
+            ? "grid grid-cols-4 gap-2"
+            : "grid grid-cols-2 gap-4"
+        }
+      >
+        {items.map((item) => (
+          <GuidelineTile framed={layout === "row"} key={item.label} {...item} />
         ))}
       </div>
     </div>

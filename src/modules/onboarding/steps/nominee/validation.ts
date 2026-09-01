@@ -1,6 +1,53 @@
-import { EMAIL_PATTERN, MOBILE_PATTERN } from "./constants";
+import {
+  AADHAAR_REGEX,
+  DRIVING_LICENSE_REGEX,
+  EMAIL_PATTERN,
+  MOBILE_PATTERN,
+  PAN_REGEX,
+  PASSPORT_REGEX,
+} from "./constants";
 import { parseDob, validateAgeForMinor } from "./helpers";
 import type { NomineeFieldErrors, NomineeFormData, NomineeOption } from "./types";
+
+const getProofOfIdentityNumberError = (type: string, value: string): string | undefined => {
+  const proofType = type.trim();
+  const proofNumber = value.trim();
+
+  if (!proofNumber) {
+    return "Proof number is required.";
+  }
+
+  if (proofType === "Aadhar") {
+    const digits = proofNumber.replace(/\s/g, "");
+    if (!AADHAAR_REGEX.test(digits)) {
+      return "Enter a valid 12-digit Aadhaar number.";
+    }
+    return undefined;
+  }
+
+  if (proofType === "PAN") {
+    if (!PAN_REGEX.test(proofNumber.toUpperCase())) {
+      return "Enter a valid 10-character PAN.";
+    }
+    return undefined;
+  }
+
+  if (proofType === "Driving License") {
+    if (!DRIVING_LICENSE_REGEX.test(proofNumber.toUpperCase())) {
+      return "Enter a valid 15-character driving license number.";
+    }
+    return undefined;
+  }
+
+  if (proofType === "Passport") {
+    if (!PASSPORT_REGEX.test(proofNumber.toUpperCase())) {
+      return "Enter a valid 8-character passport number.";
+    }
+    return undefined;
+  }
+
+  return undefined;
+};
 
 export const isNomineeFormValid = (
   option: NomineeOption,
@@ -33,8 +80,12 @@ export const getNomineeFieldErrors = (
     errors.proofOfIdentityType = "Proof of identity is required.";
   }
 
-  if (!form.proofOfIdentityNumber.trim()) {
-    errors.proofOfIdentityNumber = "Proof number is required.";
+  const proofNumberError = getProofOfIdentityNumberError(
+    form.proofOfIdentityType,
+    form.proofOfIdentityNumber,
+  );
+  if (proofNumberError) {
+    errors.proofOfIdentityNumber = proofNumberError;
   }
 
   if (!form.dateOfBirth.trim() || parseDob(form.dateOfBirth) === null) {
