@@ -4,7 +4,7 @@ import type { UploadedDocumentItem } from "../../services/onboarding-api";
 import { onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import { DOCUMENT_META } from "./constants";
-import { extractFileNameFromUrl, resolveDocumentFormat, toDisplaySrc } from "./helpers";
+import { extractFileNameFromUrl, isPdfBase64, resolveDocumentFormat, toDisplaySrc } from "./helpers";
 import type { DocumentKind } from "./types";
 
 type UseDocumentsFlowOptions = {
@@ -139,7 +139,8 @@ export const useDocumentsFlow = ({
         type,
       });
 
-      const displaySrc = toDisplaySrc(response.fileURL, type);
+      const resolvedType = isPdfBase64(response.fileURL) ? "pdf" : type;
+      const displaySrc = toDisplaySrc(response.fileURL, resolvedType);
       if (!displaySrc) {
         throw new Error("Document download returned an empty file URL.");
       }

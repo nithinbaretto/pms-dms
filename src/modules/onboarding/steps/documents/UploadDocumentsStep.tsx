@@ -18,6 +18,7 @@ import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import OnboardingStepSkeleton from '../../components/OnboardingStepSkeleton';
 import UploadImageGuidelines from '../../components/UploadImageGuidelines';
 import { useOnboardingStore } from '../../state/onboarding-store';
+import { isPdfDisplaySrc, isPdfFile, pdfSrcToBlob } from './helpers';
 import { useDocumentsFlow } from './useDocumentsFlow';
 
 type UploadDocumentsStepProps = {
@@ -70,6 +71,18 @@ interface Props {
 
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+const DOCUMENT_PREVIEW_WIDTH = 219;
+const DOCUMENT_PREVIEW_HEIGHT = 122;
+
+function filePreviewMime(file: File | null | undefined): string | undefined {
+  if (!file) {
+    return undefined;
+  }
+  if (isPdfFile(file)) {
+    return 'application/pdf';
+  }
+  return file.type || undefined;
+}
 
 function TrashIcon({ className }: { className?: string }) {
   return (
@@ -79,6 +92,81 @@ function TrashIcon({ className }: { className?: string }) {
         fill="#93161E"
       />
     </svg>
+  );
+}
+
+function withPdfViewerParams(src: string): string {
+  if (src.startsWith("blob:") || src.startsWith("http://") || src.startsWith("https://")) {
+    return `${src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&zoom=page-width`;
+  }
+  return src;
+}
+
+function DocumentPreviewMedia({
+  src,
+  alt,
+  className,
+  mimeType,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  mimeType?: string;
+}) {
+  const isPdf = isPdfDisplaySrc(src, mimeType);
+  const [pdfEmbedSrc, setPdfEmbedSrc] = useState(src);
+
+  useEffect(() => {
+    if (!isPdf) {
+      return undefined;
+    }
+
+    if (src.startsWith("blob:") || src.startsWith("http://") || src.startsWith("https://")) {
+      setPdfEmbedSrc(src);
+      return undefined;
+    }
+
+    let objectUrl = "";
+    try {
+      objectUrl = URL.createObjectURL(pdfSrcToBlob(src));
+      setPdfEmbedSrc(objectUrl);
+    } catch {
+      setPdfEmbedSrc(src);
+    }
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [isPdf, src]);
+
+  if (isPdf) {
+    return (
+      <iframe
+        className={className}
+        src={withPdfViewerParams(pdfEmbedSrc)}
+        title={alt}
+      />
+    );
+  }
+
+  return <img alt={alt} className={className} src={src} />;
+}
+
+function DocumentPreviewFrame({ src, mimeType }: { src: string; mimeType?: string }) {
+  return (
+    <div
+      className="shrink-0 overflow-hidden bg-white"
+      style={{ width: DOCUMENT_PREVIEW_WIDTH, height: DOCUMENT_PREVIEW_HEIGHT }}
+    >
+      <DocumentPreviewMedia
+        alt="Uploaded document"
+        className="block h-full w-full object-contain border-0 bg-white"
+        mimeType={mimeType}
+        src={src}
+      />
+    </div>
   );
 }
 
@@ -139,12 +227,14 @@ function PreviewDialogShell({
 function UploadSignatureModal({
   title,
   previewUrl,
+  mimeType,
   onTrash,
   onCancel,
   onSave,
 }: {
   title: string;
   previewUrl: string;
+  mimeType?: string;
   onTrash: () => void;
   onCancel: () => void;
   onSave: () => void;
@@ -153,10 +243,8 @@ function UploadSignatureModal({
     <PreviewDialogShell title={title} onCancel={onCancel} onSave={onSave}>
       <div className="flex flex-col items-center justify-center p-[12px]">
         <div className="flex gap-[16px] items-start justify-end w-full">
-          <div className="flex-1 relative" style={{ height: '211px' }}>
-            <div className="absolute inset-0 overflow-hidden">
-              <img alt="Uploaded document" className="absolute inset-0 w-full h-full object-contain" src={previewUrl} />
-            </div>
+          <div className="flex flex-1 items-center justify-center" style={{ height: '211px' }}>
+            <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
           <button onClick={onTrash} className="overflow-clip size-[24px] shrink-0 hover:opacity-70 transition-opacity mt-[4px]" title="Remove">
             <TrashIcon className="size-full" />
@@ -276,6 +364,7 @@ function UploadCard({
   title,
   uploaded,
   previewUrl,
+  mimeType,
   onCaptureClick,
   onUploadClick,
   onRemove,
@@ -284,6 +373,7 @@ function UploadCard({
   title: string;
   uploaded: boolean;
   previewUrl?: string;
+  mimeType?: string;
   onCaptureClick: () => void;
   onUploadClick: () => void;
   onRemove: () => void;
@@ -308,8 +398,8 @@ function UploadCard({
               <TrashIcon className="size-full" />
             </button>
           </div>
-          <div className="flex-1 flex items-center justify-center overflow-hidden">
-            <img alt="Uploaded document" className="max-w-full max-h-full object-contain" src={previewUrl} />
+          <div className="flex min-h-[160px] flex-1 items-center justify-center overflow-hidden">
+            <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
         </div>
       </div>
@@ -358,6 +448,7 @@ function MobileUploadCard({
   title,
   uploaded,
   previewUrl,
+  mimeType,
   onCaptureClick,
   onUploadClick,
   onRemove,
@@ -366,6 +457,7 @@ function MobileUploadCard({
   title: string;
   uploaded: boolean;
   previewUrl?: string;
+  mimeType?: string;
   onCaptureClick: () => void;
   onUploadClick: () => void;
   onRemove: () => void;
@@ -388,8 +480,8 @@ function MobileUploadCard({
               <TrashIcon className="size-full" />
             </button>
           </div>
-          <div className="flex-1 flex items-center justify-center overflow-hidden">
-            <img alt="Uploaded document" className="max-w-full max-h-[110px] object-contain" src={previewUrl} />
+          <div className="flex flex-1 items-center justify-center overflow-hidden">
+            <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
         </div>
       </div>
@@ -876,6 +968,7 @@ export function UploadDocumentsScreen({
         <UploadSignatureModal
           title="Upload Signature"
           previewUrl={signaturePreviewUrl}
+          mimeType={filePreviewMime(pendingSignatureFile)}
           onTrash={handleSignatureTrash}
           onCancel={handleSignatureCancel}
           onSave={handleSignatureSave}
@@ -887,6 +980,7 @@ export function UploadDocumentsScreen({
         <UploadSignatureModal
           title="Upload Photo"
           previewUrl={photoPreviewUrl}
+          mimeType={filePreviewMime(pendingPhotoFile)}
           onTrash={handlePhotoTrash}
           onCancel={handlePhotoCancel}
           onSave={handlePhotoSave}
@@ -897,6 +991,7 @@ export function UploadDocumentsScreen({
         <UploadSignatureModal
           title="Upload Proof of Identity"
           previewUrl={identityPreviewUrl}
+          mimeType={filePreviewMime(pendingIdentityFile)}
           onTrash={handleIdentityTrash}
           onCancel={handleIdentityTrash}
           onSave={handleIdentitySave}
@@ -907,6 +1002,7 @@ export function UploadDocumentsScreen({
         <UploadSignatureModal
           title="Upload Proof of Address"
           previewUrl={addressPreviewUrl}
+          mimeType={filePreviewMime(pendingAddressFile)}
           onTrash={handleAddressTrash}
           onCancel={handleAddressTrash}
           onSave={handleAddressSave}
