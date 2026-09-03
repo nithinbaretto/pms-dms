@@ -12,7 +12,7 @@ import {
 } from "../documents/helpers";
 import { BankDetailsScreen } from "./BankDetailsScreen";
 import { BANK_DETAILS_PROGRESS_PERCENT, BANK_DETAILS_STEP_LABEL } from "./constants";
-import { formatAccountTypeLabel, formatBranchDisplay } from "./helpers";
+import { formatAccountTypeLabel, formatBranchDisplay, isValidIfscCode, mapDocumentOcrToChequeFields } from "./helpers";
 import type { BankDetailsModel } from "./types";
 import { useBankDetailsFlow } from "./useBankDetailsFlow";
 
@@ -117,20 +117,6 @@ const BankDetailsStep = ({
   useEffect(() => {
     onChequeUploadedChange?.(chequeUploaded);
   }, [chequeUploaded, onChequeUploadedChange]);
-
-  useEffect(() => {
-    if (!data.hasBankData) {
-      return;
-    }
-
-    setManualErrorReenterAccountNumber(data.accountNumber);
-    setManualErrorAccountHolderName(data.accountHolderName);
-    setManualErrorBankName(data.bankName);
-    setManualErrorBankBranch(data.branchDisplay || data.bankAddress || data.branchName);
-    if (data.accountType === "current" || data.accountType === "saving") {
-      setManualErrorAccountType(data.accountType);
-    }
-  }, [data]);
 
   useEffect(() => {
     setManualBankValidating(isValidating && changeBankTab === "manual" && showChangeBankScreen);
@@ -293,6 +279,10 @@ const BankDetailsStep = ({
       return;
     }
 
+    if (canContinueManualError && !isValidIfscCode(manualIfscCode.trim() || data.ifscCode)) {
+      return;
+    }
+
     if (canContinueWithCheque && !cancelledChequeUrl.trim()) {
       setChequeUploadError("Please upload a cancelled cheque to continue.");
       return;
@@ -331,6 +321,29 @@ const BankDetailsStep = ({
       setManualErrorChequeUploaded(true);
       setChequePreviewDisplayUrl("");
       setChequePreviewError(null);
+
+      if (result.ocr) {
+        const ocrFields = mapDocumentOcrToChequeFields(result.ocr);
+        if (ocrFields.accountNumber) {
+          setManualAccountNumber(ocrFields.accountNumber);
+          setManualErrorReenterAccountNumber(ocrFields.accountNumber);
+        }
+        if (ocrFields.accountHolderName) {
+          setManualErrorAccountHolderName(ocrFields.accountHolderName);
+        }
+        if (ocrFields.bankName) {
+          setManualErrorBankName(ocrFields.bankName);
+        }
+        if (ocrFields.ifscCode) {
+          setManualIfscCode(ocrFields.ifscCode);
+        }
+        if (ocrFields.branchAddress) {
+          setManualErrorBankBranch(ocrFields.branchAddress);
+        }
+        if (ocrFields.accountType === "current" || ocrFields.accountType === "saving") {
+          setManualErrorAccountType(ocrFields.accountType);
+        }
+      }
 
       return true;
     },
@@ -394,6 +407,10 @@ const BankDetailsStep = ({
   ]);
 
   const handleManualValidate = async () => {
+    if (!isValidIfscCode(manualIfscCode)) {
+      return;
+    }
+
     const result = await validateManualPennyDrop(manualAccountNumber, manualIfscCode);
 
     if (result.success) {
@@ -409,15 +426,15 @@ const BankDetailsStep = ({
       return;
     }
 
-    // Prefill OCR / manual override screen from penny-drop response + entered values.
+    // Leave fields blank until cancelled-cheque OCR returns values.
     setShowManualValidationError(true);
     clearChequeUploadState();
-    setManualErrorReenterAccountNumber(result.data.accountNumber || manualAccountNumber);
-    setManualErrorAccountHolderName(result.data.accountHolderName || "");
-    setManualErrorBankBranch(result.data.branchDisplay || result.data.bankAddress || "");
-    if (result.data.accountType === "current" || result.data.accountType === "saving") {
-      setManualErrorAccountType(result.data.accountType);
-    }
+    setManualErrorReenterAccountNumber("");
+    setManualErrorAccountHolderName("");
+    setManualErrorBankName("");
+    setManualErrorBankBranch("");
+    setManualIfscCode("");
+    setManualAccountNumber("");
   };
 
   const handleQrGenerate = async () => {

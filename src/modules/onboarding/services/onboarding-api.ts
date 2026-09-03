@@ -250,6 +250,7 @@ export type DocumentOcrResponse = {
   accountNumber: string;
   ifscCode: string;
   accountType: string;
+  branchAddress: string;
 };
 
 export type DownloadFileRequest = {
@@ -1785,13 +1786,26 @@ export const onboardingApi = {
     }
 
     const data = extractPayload(response);
+    const nested = isRecord(data.data) ? data.data : data;
+    const source = nested;
 
     return {
-      name: pickString(data, ["name", "accountHolderName"]),
-      bankName: pickString(data, ["bankName"]),
-      accountNumber: pickString(data, ["accountNumber"]),
-      ifscCode: pickString(data, ["ifscCode", "ifsc", "IFSCCode"]).toUpperCase(),
-      accountType: pickString(data, ["accountType"]),
+      name: pickString(source, ["name", "accountHolderName", "accountHolder", "Name"]),
+      bankName: pickString(source, ["bankName", "BankName", "bank"]),
+      accountNumber:
+        asTextOrNull(source.accountNumber) ??
+        asTextOrNull(source.AccountNumber) ??
+        pickString(source, ["accountNumber", "AccountNumber", "accountNo"]),
+      ifscCode: pickString(source, ["ifscCode", "ifsc", "IFSCCode", "IFSC"]).toUpperCase(),
+      accountType: pickString(source, ["accountType", "AccountType", "acctType"]),
+      branchAddress: pickString(source, [
+        "branchAddress",
+        "bankAddress",
+        "branchName",
+        "branch",
+        "address",
+        "branchNameAndAddress",
+      ]),
     };
   },
 

@@ -1,3 +1,5 @@
+import type { DocumentOcrResponse } from "../../services/onboarding-api";
+
 export type BankValidationStatus = "pending" | "validating" | "success" | "failed";
 
 export type BankAccountType = "saving" | "current" | "";
@@ -32,7 +34,7 @@ export type SaveBankResult = {
 };
 
 export type ChequeUploadOutcome =
-  | { ok: true; storageUrl: string }
+  | { ok: true; storageUrl: string; ocr: DocumentOcrResponse | null }
   | { ok: false; message: string };
 
 export type QrSessionState = {

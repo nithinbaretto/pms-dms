@@ -606,7 +606,14 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           return { ok: false, message };
         }
 
-        return { ok: true, storageUrl };
+        let ocr: Awaited<ReturnType<typeof onboardingApi.documentOcr>> | null = null;
+        try {
+          ocr = await onboardingApi.documentOcr(file);
+        } catch {
+          ocr = null;
+        }
+
+        return { ok: true, storageUrl, ocr };
       } catch (error) {
         const message =
           extractErrorMessage(error) || "Unable to upload cancelled cheque. Please try again.";

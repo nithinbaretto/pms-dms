@@ -1,4 +1,5 @@
 import type {
+  DocumentOcrResponse,
   GetBankDetailsResponse,
   PennyDropAccountInfo,
   PennyDropCallResponse,
@@ -89,6 +90,16 @@ export const isAllowedChequeFile = (file: File, allowedMimeTypes: readonly strin
   const extension = file.name.split(".").pop()?.trim().toLowerCase() ?? "";
   return (CHEQUE_FILE_EXTENSIONS as readonly string[]).includes(extension);
 };
+
+/** RBI IFSC: 4 letters + 0 + 6 alphanumeric, e.g. HDFC0001234. */
+export const IFSC_FORMAT = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+export const IFSC_MAX_LENGTH = 11;
+
+export const normalizeIfscInput = (value: string): string =>
+  value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, IFSC_MAX_LENGTH);
+
+export const isValidIfscCode = (value: string): boolean => IFSC_FORMAT.test(value.trim().toUpperCase());
 
 /**
  * HyperVerge reverse-penny-drop does not return bankName/branch/address.
@@ -317,6 +328,24 @@ export const mapPennyDropResponseToModel = (
       (success ? "PennyDrop is successful" : "Penny drop failed."),
   };
 };
+
+export const maskBankAccountNumber = (accountNumber: string): string => {
+  const trimmed = accountNumber.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  return "*".repeat(trimmed.length);
+};
+
+export const mapDocumentOcrToChequeFields = (ocr: DocumentOcrResponse) => ({
+  accountNumber: ocr.accountNumber.trim(),
+  accountHolderName: ocr.name.trim(),
+  bankName: ocr.bankName.trim(),
+  ifscCode: normalizeIfscInput(ocr.ifscCode),
+  branchAddress: ocr.branchAddress.trim(),
+  accountType: normalizeAccountType(ocr.accountType),
+});
 
 export const resolveValidationStatus = (model: BankDetailsModel): BankValidationStatus => {
   if (!model.hasBankData) {
