@@ -51,39 +51,54 @@ const GuidelineTile = ({
   good,
   framed = false,
 }: GuidelineItem & { framed?: boolean }): ReactElement => {
+  if (framed) {
+    return (
+      <div className="flex min-w-0 flex-col items-center">
+        <div
+          className={`flex w-full min-w-0 flex-col items-center gap-1 rounded-[8px] p-[8px] ${
+            good ? "bg-[#eeffe5]" : "bg-[#fff0e5]"
+          }`}
+        >
+          <img
+            alt={label}
+            className="block h-[120px] w-full object-cover object-center"
+            src={src}
+          />
+          <div className="flex items-center justify-center gap-1">
+            <StatusIcon good={good} size={9} />
+            <p
+              className={`font-['Mulish',sans-serif] text-[6.58px] font-normal leading-[110%] tracking-[0px] whitespace-nowrap ${
+                good ? "text-[#37B400]" : "text-[#E8402F]"
+              }`}
+            >
+              {label}
+            </p>
+          </div>
+        </div>
+        <div className="mt-2 flex h-4 items-center justify-center">
+          <StatusIcon good={good} size={16} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`relative flex min-w-0 flex-col items-center justify-center gap-2 rounded-[8px] ${
-        framed ? "px-1 py-2" : "px-2 py-3"
-      } ${good ? "bg-[#eeffe5]" : "bg-[#fff0e5]"}`}
+      className={`relative flex min-w-0 flex-col items-center justify-center gap-2 rounded-[8px] px-2 py-3 ${
+        good ? "bg-[#eeffe5]" : "bg-[#fff0e5]"
+      }`}
     >
-      {framed ? null : (
-        <div className="absolute left-1.5 top-1.5">
-          <StatusIcon good={good} size={18} />
-        </div>
-      )}
-      <div className={framed ? "relative w-full max-w-[116.3px]" : "relative w-full max-w-[188px]"}>
+      <div className="absolute left-1.5 top-1.5">
+        <StatusIcon good={good} size={18} />
+      </div>
+      <div className="relative w-full max-w-[188px]">
         <img
           alt={label}
-          className={
-            framed
-              ? "h-[139.7px] w-full object-cover"
-              : "h-[72px] w-full max-w-[188px] object-contain drop-shadow-[0px_6px_16px_rgba(0,0,0,0.12)]"
-          }
+          className="h-[72px] w-full max-w-[188px] object-contain drop-shadow-[0px_6px_16px_rgba(0,0,0,0.12)]"
           src={src}
-          style={
-            framed
-              ? { boxShadow: "-4.39px 4.39px 14.63px 0px rgba(0, 0, 0, 0.08)" }
-              : undefined
-          }
         />
-        {framed ? (
-          <div className="absolute left-1/2 top-full z-10 -translate-x-1/2 -translate-y-1/2">
-            <StatusIcon good={good} size={16} />
-          </div>
-        ) : null}
       </div>
-      <div className={`flex items-center gap-1 ${framed ? "pt-2" : ""}`}>
+      <div className="flex items-center gap-1">
         <StatusIcon good={good} size={14} />
         <p
           className={`font-['Mulish',sans-serif] text-[6.58px] font-normal leading-[110%] tracking-[0px] whitespace-nowrap ${
@@ -120,7 +135,7 @@ const UploadImageGuidelines = ({
       <div
         className={
             layout === "row"
-            ? "grid grid-cols-4 gap-2"
+            ? "grid grid-cols-4 gap-2 rounded-[4px] bg-[#f5f5f5] p-2"
             : "grid grid-cols-2 gap-4"
         }
       >

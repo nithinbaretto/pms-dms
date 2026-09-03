@@ -27,9 +27,9 @@ import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
 
 const GST_GUIDELINE_ITEMS = [
   { src: gstGuideline4, label: "Clear & Complete", good: true },
-  { src: gstGuideline3, label: "Blurry / Out of focus", good: false },
-  { src: gstGuideline2, label: "Half cut / Incomplete", good: false },
   { src: gstGuideline1, label: "Poor lighting / Glare", good: false },
+  { src: gstGuideline2, label: "Half cut / Incomplete", good: false },
+  { src: gstGuideline3, label: "Blurry / Out of focus", good: false },
 ];
 
 type GstModalView = "fetch" | "manual" | "list";
@@ -310,145 +310,144 @@ const AddGstModal = ({
             isSideBySideFields ? "flex w-full flex-nowrap gap-3" : "contents"
           }
         >
-        <div className={fieldColClass}>
-          <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
-            State <span className="text-[#E8402F]">*</span>
-          </label>
-          <div className="relative">
-            <select
-              className="h-[38px] w-full appearance-none rounded-[8px] border border-[#e5e5e6] bg-white px-3 pr-9 text-[13px] text-[#231f20] outline-none"
+          <div className={fieldColClass}>
+            <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
+              State <span className="text-[#E8402F]">*</span>
+            </label>
+            <div className="relative">
+              <select
+                className="h-[38px] w-full appearance-none rounded-[8px] border border-[#e5e5e6] bg-white px-3 pr-9 text-[13px] text-[#231f20] outline-none"
+                onChange={(event) => {
+                  setDraft((current) => ({
+                    ...current,
+                    stateCode: event.target.value,
+                  }));
+                }}
+                value={draft.stateCode}
+              >
+                <option value="">Select state</option>
+                {stateOptions.map((state) => (
+                  <option key={state} value={state}>
+                    {formatStateLabel(state)}
+                  </option>
+                ))}
+                {draft.stateCode &&
+                  !stateOptions.some(
+                    (state) => state.toLowerCase() === draft.stateCode.toLowerCase(),
+                  ) ? (
+                  <option value={draft.stateCode}>
+                    {formatStateLabel(draft.stateCode)}
+                  </option>
+                ) : null}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8ca1b5]" />
+            </div>
+          </div>
+
+          <div className={fieldColClass}>
+            <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
+              Legal Name <span className="text-[#E8402F]">*</span>
+            </label>
+            <Input
+              className="h-[38px] min-w-0 w-full bg-white disabled:bg-white [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff]"
               onChange={(event) => {
                 setDraft((current) => ({
                   ...current,
-                  stateCode: event.target.value,
+                  legalName: event.target.value,
                 }));
               }}
-              value={draft.stateCode}
-            >
-              <option value="">Select state</option>
-              {stateOptions.map((state) => (
-                <option key={state} value={state}>
-                  {formatStateLabel(state)}
-                </option>
-              ))}
-              {draft.stateCode &&
-                !stateOptions.some(
-                  (state) => state.toLowerCase() === draft.stateCode.toLowerCase(),
-                ) ? (
-                <option value={draft.stateCode}>
-                  {formatStateLabel(draft.stateCode)}
-                </option>
-              ) : null}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8ca1b5]" />
+              value={draft.legalName}
+            />
           </div>
         </div>
 
-        <div className={fieldColClass}>
-          <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
-            Legal Name <span className="text-[#E8402F]">*</span>
-          </label>
-          <Input
-            className="h-[38px] min-w-0 w-full bg-white disabled:bg-white [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff]"
-            onChange={(event) => {
-              setDraft((current) => ({
-                ...current,
-                legalName: event.target.value,
-              }));
-            }}
-            value={draft.legalName}
-          />
-        </div>
-      </div>
+        {draft.requiresCertificate ? (
+          <>
+            <div className="space-y-2">
+              <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
+                Upload GST Certificate <span className="text-[#E8402F]">*</span>
+              </label>
 
-      {draft.requiresCertificate ? (
-        <>
-          <div className="space-y-2">
-            <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
-              Upload GST Certificate <span className="text-[#E8402F]">*</span>
-            </label>
+              <input
+                accept=".png,.jpg,.jpeg,.pdf"
+                className="hidden"
+                onChange={(event) => {
+                  void handleFileChange(event);
+                }}
+                ref={fileInputRef}
+                type="file"
+              />
 
-            <input
-              accept=".png,.jpg,.jpeg,.pdf"
-              className="hidden"
-              onChange={(event) => {
-                void handleFileChange(event);
-              }}
-              ref={fileInputRef}
-              type="file"
-            />
-
-            <div
-              className={`rounded-[8px] border-2 border-dotted bg-[#f9f9f9] p-4 ${
-                fileError ? "border-[#d8787d]" : "border-[#EEEEEE]"
-              }`}
-            >
-              {draft.fileURL && localPreview ? (
-                <div className="relative mx-auto h-[220px] max-w-[420px] rounded-[4px] bg-white p-2">
-                  {localPreview.type === "application/pdf" ? (
-                    <div className="flex h-full flex-col items-center justify-center gap-2 text-[#71859B]">
-                      <FileText className="h-9 w-9 text-[#71859B]" />
-                      <p className="max-w-[280px] truncate text-[13px]">
-                        {localPreview.name}
-                      </p>
-                    </div>
-                  ) : (
-                    <img
-                      alt="GST certificate preview"
-                      className="h-full w-full rounded-[2px] object-contain"
-                      src={localPreview.previewUrl}
-                    />
-                  )}
-                  <button
-                    className="absolute right-2 top-2 text-[#71859B]"
-                    onClick={clearPreview}
-                    type="button"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3 py-4 text-center">
-                  <img alt="" className="size-6" src={uploadFileIcon} />
-                  <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-[100%] tracking-[0px] text-[#71859B]">
-                    {isUploading
-                      ? "Uploading..."
-                      : "Format Supported: PNG, PDF or JPEG up to 2MB"}
-                  </p>
-                  <div className="flex items-center justify-center gap-3">
+              <div
+                className={`rounded-[8px] border-2 border-dotted bg-[#f9f9f9] p-4 ${fileError ? "border-[#d8787d]" : "border-[#EEEEEE]"
+                  }`}
+              >
+                {draft.fileURL && localPreview ? (
+                  <div className="relative mx-auto h-[220px] max-w-[420px] rounded-[4px] bg-white p-2">
+                    {localPreview.type === "application/pdf" ? (
+                      <div className="flex h-full flex-col items-center justify-center gap-2 text-[#71859B]">
+                        <FileText className="h-9 w-9 text-[#71859B]" />
+                        <p className="max-w-[280px] truncate text-[13px]">
+                          {localPreview.name}
+                        </p>
+                      </div>
+                    ) : (
+                      <img
+                        alt="GST certificate preview"
+                        className="h-full w-full rounded-[2px] object-contain"
+                        src={localPreview.previewUrl}
+                      />
+                    )}
                     <button
-                      className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#EEEEEE] bg-white px-[21px] font-['Mulish',sans-serif] text-[14px] font-normal text-[#435160] hover:border-[#c7aa7b] disabled:opacity-60"
-                      disabled={isUploading}
-                      onClick={() => {
-                        setShowCamera(true);
-                      }}
+                      className="absolute right-2 top-2 text-[#71859B]"
+                      onClick={clearPreview}
                       type="button"
                     >
-                      <Camera className="size-4" strokeWidth={1.75} />
-                      Capture
-                    </button>
-                    <button
-                      className="inline-flex h-9 items-center justify-center rounded-[8px] bg-[#93161E] px-[21px] font-['Mulish',sans-serif] text-[14px] font-normal text-white hover:bg-[#7a1319] disabled:opacity-60"
-                      disabled={isUploading}
-                      onClick={() => {
-                        fileInputRef.current?.click();
-                      }}
-                      type="button"
-                    >
-                      Upload
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-4 text-center">
+                    <img alt="" className="size-6" src={uploadFileIcon} />
+                    <p className="text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-[100%] tracking-[0px] text-[#71859B]">
+                      {isUploading
+                        ? "Uploading..."
+                        : "Format Supported: PNG, PDF or JPEG up to 2MB"}
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#EEEEEE] bg-white px-[21px] font-['Mulish',sans-serif] text-[14px] font-normal text-[#435160] hover:border-[#c7aa7b] disabled:opacity-60"
+                        disabled={isUploading}
+                        onClick={() => {
+                          setShowCamera(true);
+                        }}
+                        type="button"
+                      >
+                        <Camera className="size-4" strokeWidth={1.75} />
+                        Capture
+                      </button>
+                      <button
+                        className="inline-flex h-9 items-center justify-center rounded-[8px] bg-[#93161E] px-[21px] font-['Mulish',sans-serif] text-[14px] font-normal text-white hover:bg-[#7a1319] disabled:opacity-60"
+                        disabled={isUploading}
+                        onClick={() => {
+                          fileInputRef.current?.click();
+                        }}
+                        type="button"
+                      >
+                        Upload
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {fileError ? (
+                <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#E8402F]">
+                  {fileError}
+                </p>
+              ) : null}
             </div>
-            {fileError ? (
-              <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#E8402F]">
-                {fileError}
-              </p>
-            ) : null}
-          </div>
-        </>
-      ) : null}
+          </>
+        ) : null}
       </div>
 
       {draft.requiresCertificate ? (
