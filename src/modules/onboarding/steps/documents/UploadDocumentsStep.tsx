@@ -19,7 +19,7 @@ import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import OnboardingStepSkeleton from '../../components/OnboardingStepSkeleton';
 import UploadImageGuidelines from '../../components/UploadImageGuidelines';
 import { useOnboardingStore } from '../../state/onboarding-store';
-import { isPdfDisplaySrc, isPdfFile, pdfSrcToBlob } from './helpers';
+import { getDocumentFileValidationError, isPdfDisplaySrc, isPdfFile, pdfSrcToBlob } from './helpers';
 import { useDocumentsFlow } from './useDocumentsFlow';
 
 const SIGNATURE_GUIDELINE_ITEMS = [
@@ -53,7 +53,7 @@ type UploadDocumentsStepProps = {
 interface Props {
   signatureUploaded: boolean;
   photoUploaded: boolean;
-  isPmsFlow: boolean;
+  showInlineGuidelines: boolean;
   documentRules?: {
     requiresPhoto?: boolean;
     requiresSignature?: boolean;
@@ -85,10 +85,12 @@ interface Props {
   onRemoveAddress?: () => void;
 }
 
-const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 const DOCUMENT_PREVIEW_WIDTH = 219;
 const DOCUMENT_PREVIEW_HEIGHT = 122;
+const DOCUMENT_FILE_ERROR_CLASS =
+  "font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#E8402F]";
+
+type DocumentUploadSlot = 'signature' | 'photo' | 'identity' | 'address';
 
 function filePreviewMime(file: File | null | undefined): string | undefined {
   if (!file) {
@@ -293,6 +295,7 @@ function UploadCard({
   trashIconColor,
   showInlineGuidelines,
   guidelineType,
+  fileError,
   onCaptureClick,
   onUploadClick,
   onViewGuidelinesClick,
@@ -305,16 +308,20 @@ function UploadCard({
   trashIconColor?: string;
   showInlineGuidelines?: boolean;
   guidelineType?: 'signature' | 'photo' | 'document';
+  fileError?: string | null;
   onCaptureClick: () => void;
   onUploadClick: () => void;
   onViewGuidelinesClick: () => void;
   onRemove: () => void;
 }) {
-  const cardCls = 'bg-white flex-1 min-w-px rounded-[8px] border border-[#eee] flex flex-col gap-[12px] p-[14px]';
+  const cardCls = `bg-white w-full flex-1 rounded-[8px] border flex flex-col gap-[12px] p-[14px] ${
+    fileError ? 'border-[#d8787d]' : 'border-[#eee]'
+  }`;
 
   if (uploaded && previewUrl) {
     return (
-      <div className={cardCls}>
+      <div className="flex flex-1 min-w-px flex-col">
+        <div className={cardCls}>
         <div className="flex gap-[4px] items-center shrink-0">
           <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px] whitespace-nowrap">{title}</p>
           <div className="overflow-clip size-[16px] shrink-0">
@@ -333,12 +340,14 @@ function UploadCard({
             <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={cardCls}>
+    <div className="flex flex-1 min-w-px flex-col gap-[4px]">
+      <div className={cardCls}>
       <div className="flex items-center justify-between w-full gap-[12px] shrink-0">
         <div className="flex flex-col gap-[4px] min-w-0">
           <div className="flex gap-[4px] items-center">
@@ -380,6 +389,8 @@ function UploadCard({
           <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
         </button>
       )}
+      </div>
+      {fileError ? <p className={DOCUMENT_FILE_ERROR_CLASS}>{fileError}</p> : null}
     </div>
   );
 }
@@ -394,6 +405,7 @@ function MobileUploadCard({
   trashIconColor,
   showInlineGuidelines,
   guidelineType,
+  fileError,
   onCaptureClick,
   onUploadClick,
   onViewGuidelinesClick,
@@ -406,6 +418,7 @@ function MobileUploadCard({
   trashIconColor?: string;
   showInlineGuidelines?: boolean;
   guidelineType?: 'signature' | 'photo' | 'document';
+  fileError?: string | null;
   onCaptureClick: () => void;
   onUploadClick: () => void;
   onViewGuidelinesClick: () => void;
@@ -437,48 +450,51 @@ function MobileUploadCard({
   }
 
   return (
-    <div className="bg-white rounded-[8px] border border-[#eee] flex flex-col gap-[12px] p-[14px]">
-      <div className="flex flex-col gap-[4px] items-start w-full">
-        <div className="flex gap-[4px] items-center">
-          <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px] whitespace-nowrap">{title}</p>
-          <div className="overflow-clip shrink-0 size-[16px]">
-            <svg className="size-full" fill="none" viewBox="0 0 13 13">
-              <path d={svgPaths.p1835e980} fill="#5A6B7D" />
-            </svg>
+    <div className="flex flex-col gap-[4px]">
+      <div className={`bg-white rounded-[8px] border flex flex-col gap-[12px] p-[14px] ${fileError ? 'border-[#d8787d]' : 'border-[#eee]'}`}>
+        <div className="flex flex-col gap-[4px] items-start w-full">
+          <div className="flex gap-[4px] items-center">
+            <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px] whitespace-nowrap">{title}</p>
+            <div className="overflow-clip shrink-0 size-[16px]">
+              <svg className="size-full" fill="none" viewBox="0 0 13 13">
+                <path d={svgPaths.p1835e980} fill="#5A6B7D" />
+              </svg>
+            </div>
           </div>
+          <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px]">Format Supported: PNG, PDF or JPEG up to 2MB</p>
         </div>
-        <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px]">Format Supported: PNG, PDF or JPEG up to 2MB</p>
-      </div>
 
-      {showInlineGuidelines && guidelineType ? (
-        renderGuidelineContent(guidelineType, 'row')
-      ) : (
-        <button
-          className="inline-flex items-center gap-[4px] self-start font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#93161E]"
-          onClick={onViewGuidelinesClick}
-          type="button"
-        >
-          View upload guidelines
-          <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
-        </button>
-      )}
+        {showInlineGuidelines && guidelineType ? (
+          renderGuidelineContent(guidelineType, 'row')
+        ) : (
+          <button
+            className="inline-flex items-center gap-[4px] self-start font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#93161E]"
+            onClick={onViewGuidelinesClick}
+            type="button"
+          >
+            View upload guidelines
+            <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
+          </button>
+        )}
 
-      <div className="flex gap-[12px] items-center w-full">
-        <div onClick={onCaptureClick} className="flex-1 min-w-px h-[36px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors flex items-center justify-center gap-[8px]">
-          <div className="overflow-clip shrink-0 size-[16px]">
-            <svg className="size-full" fill="none" viewBox="0 0 13 11.5">
-              <path d={svgPaths.pf78bc00} fill="#435160" />
-            </svg>
+        <div className="flex gap-[12px] items-center w-full">
+          <div onClick={onCaptureClick} className="flex-1 min-w-px h-[36px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors flex items-center justify-center gap-[8px]">
+            <div className="overflow-clip shrink-0 size-[16px]">
+              <svg className="size-full" fill="none" viewBox="0 0 13 11.5">
+                <path d={svgPaths.pf78bc00} fill="#435160" />
+              </svg>
+            </div>
+            <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-center text-[#435160] text-[14px] whitespace-nowrap">Capture</p>
           </div>
-          <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-center text-[#435160] text-[14px] whitespace-nowrap">Capture</p>
+          <button
+            onClick={onUploadClick}
+            className="bg-[#93161e] hover:bg-[#7a1319] transition-colors flex-1 min-w-px h-[36px] rounded-[8px] flex items-center justify-center"
+          >
+            <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-center text-white text-[14px] whitespace-nowrap">Upload</p>
+          </button>
         </div>
-        <button
-          onClick={onUploadClick}
-          className="bg-[#93161e] hover:bg-[#7a1319] transition-colors flex-1 min-w-px h-[36px] rounded-[8px] flex items-center justify-center"
-        >
-          <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-center text-white text-[14px] whitespace-nowrap">Upload</p>
-        </button>
       </div>
+      {fileError ? <p className={DOCUMENT_FILE_ERROR_CLASS}>{fileError}</p> : null}
     </div>
   );
 }
@@ -488,7 +504,7 @@ function MobileUploadCard({
 export function UploadDocumentsScreen({
   signatureUploaded,
   photoUploaded,
-  isPmsFlow,
+  showInlineGuidelines,
   identityUploaded = false,
   addressUploaded = false,
   showUploadInfoBanner,
@@ -548,26 +564,29 @@ export function UploadDocumentsScreen({
   const [pendingAddressFile, setPendingAddressFile] = useState<File | null>(null);
   const addressFileInputRef = useRef<HTMLInputElement>(null);
   const [guidelineType, setGuidelineType] = useState<'signature' | 'photo' | 'document' | null>(null);
+  const [fileErrors, setFileErrors] = useState<Record<DocumentUploadSlot, string | null>>({
+    signature: null,
+    photo: null,
+    identity: null,
+    address: null,
+  });
 
-  function validateSelectedFile(file: File, fileLabel: string): boolean {
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      console.warn(`Invalid ${fileLabel} file type selected. Allowed types: PNG, JPEG, PDF.`);
-      return false;
-    }
-
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      console.warn(`Invalid ${fileLabel} file size. Maximum allowed size is 2MB.`);
-      return false;
-    }
-
-    return true;
+  function setSlotFileError(slot: DocumentUploadSlot, message: string | null) {
+    setFileErrors((current) => ({ ...current, [slot]: message }));
   }
 
-  function prepareSignaturePreview(file: File) {
-    if (!validateSelectedFile(file, 'signature')) {
+  function applySelectedFile(file: File, slot: DocumentUploadSlot, onValid: (nextFile: File) => void) {
+    const fileValidationError = getDocumentFileValidationError(file);
+    if (fileValidationError) {
+      setSlotFileError(slot, fileValidationError);
       return;
     }
 
+    setSlotFileError(slot, null);
+    onValid(file);
+  }
+
+  function prepareSignaturePreview(file: File) {
     if (signatureObjectUrl) {
       URL.revokeObjectURL(signatureObjectUrl);
     }
@@ -580,10 +599,6 @@ export function UploadDocumentsScreen({
   }
 
   function preparePhotoPreview(file: File) {
-    if (!validateSelectedFile(file, 'photo')) {
-      return;
-    }
-
     if (photoObjectUrl) {
       URL.revokeObjectURL(photoObjectUrl);
     }
@@ -596,10 +611,6 @@ export function UploadDocumentsScreen({
   }
 
   function prepareIdentityPreview(file: File) {
-    if (!validateSelectedFile(file, 'identity')) {
-      return;
-    }
-
     if (identityObjectUrl) {
       URL.revokeObjectURL(identityObjectUrl);
     }
@@ -612,10 +623,6 @@ export function UploadDocumentsScreen({
   }
 
   function prepareAddressPreview(file: File) {
-    if (!validateSelectedFile(file, 'address')) {
-      return;
-    }
-
     if (addressObjectUrl) {
       URL.revokeObjectURL(addressObjectUrl);
     }
@@ -632,6 +639,19 @@ export function UploadDocumentsScreen({
   }
 
   async function handleCameraSave(file: File) {
+    if (!cameraTarget) {
+      return;
+    }
+
+    const fileValidationError = getDocumentFileValidationError(file);
+    if (fileValidationError) {
+      setSlotFileError(cameraTarget, fileValidationError);
+      setCameraTarget(null);
+      return;
+    }
+
+    setSlotFileError(cameraTarget, null);
+
     if (cameraTarget === 'signature') {
       await onConfirmSignatureUpload(file);
     } else if (cameraTarget === 'photo') {
@@ -676,7 +696,7 @@ export function UploadDocumentsScreen({
       return;
     }
 
-    prepareSignaturePreview(file);
+    applySelectedFile(file, 'signature', prepareSignaturePreview);
     e.target.value = '';
   }
   useEffect(() => {
@@ -744,6 +764,7 @@ export function UploadDocumentsScreen({
     setPendingSignatureFile(null);
     setSignaturePreviewUrl('');
     onRemoveSignature();
+    setSlotFileError('signature', null);
   }
 
   function handlePhotoUploadClick() { triggerInput(photoFileInputRef); }
@@ -753,7 +774,7 @@ export function UploadDocumentsScreen({
       return;
     }
 
-    preparePhotoPreview(file);
+    applySelectedFile(file, 'photo', preparePhotoPreview);
     e.target.value = '';
   }
   function handlePhotoTrash() {
@@ -797,6 +818,7 @@ export function UploadDocumentsScreen({
     setPendingPhotoFile(null);
     setPhotoPreviewUrl('');
     onRemovePhoto();
+    setSlotFileError('photo', null);
   }
 
   function handleIdentityUploadClick() { triggerInput(identityFileInputRef); }
@@ -806,7 +828,7 @@ export function UploadDocumentsScreen({
       return;
     }
 
-    prepareIdentityPreview(file);
+    applySelectedFile(file, 'identity', prepareIdentityPreview);
     e.target.value = '';
   }
   function handleIdentityTrash() {
@@ -847,6 +869,7 @@ export function UploadDocumentsScreen({
     setPendingIdentityFile(null);
     setIdentityPreviewUrl('');
     onRemoveIdentity?.();
+    setSlotFileError('identity', null);
   }
 
   function handleAddressUploadClick() { triggerInput(addressFileInputRef); }
@@ -856,7 +879,7 @@ export function UploadDocumentsScreen({
       return;
     }
 
-    prepareAddressPreview(file);
+    applySelectedFile(file, 'address', prepareAddressPreview);
     e.target.value = '';
   }
   function handleAddressTrash() {
@@ -897,6 +920,7 @@ export function UploadDocumentsScreen({
     setPendingAddressFile(null);
     setAddressPreviewUrl('');
     onRemoveAddress?.();
+    setSlotFileError('address', null);
   }
 
   useEffect(() => {
@@ -988,7 +1012,7 @@ export function UploadDocumentsScreen({
         />
       ) : null}
 
-      {!isPmsFlow && guidelineType ? (
+      {!showInlineGuidelines && guidelineType ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 overflow-y-auto backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)]"
@@ -1064,6 +1088,7 @@ export function UploadDocumentsScreen({
                         title="Proof of Identity"
                         uploaded={identityUploaded}
                         previewUrl={identityPreviewUrl}
+                        fileError={fileErrors.identity}
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
                         onViewGuidelinesClick={() => setGuidelineType('document')}
@@ -1073,6 +1098,7 @@ export function UploadDocumentsScreen({
                         title="Proof of Address"
                         uploaded={addressUploaded}
                         previewUrl={addressPreviewUrl}
+                        fileError={fileErrors.address}
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
                         onViewGuidelinesClick={() => setGuidelineType('document')}
@@ -1086,8 +1112,9 @@ export function UploadDocumentsScreen({
                       uploaded={signatureUploaded}
                       previewUrl={signaturePreviewUrl}
                       trashIconColor="#71859B"
-                      showInlineGuidelines={isPmsFlow}
+                      showInlineGuidelines={showInlineGuidelines}
                       guidelineType="signature"
+                      fileError={fileErrors.signature}
                       onCaptureClick={handleSignatureCaptureClick}
                       onUploadClick={handleSignatureUploadClick}
                       onViewGuidelinesClick={() => setGuidelineType('signature')}
@@ -1098,8 +1125,9 @@ export function UploadDocumentsScreen({
                       uploaded={photoUploaded}
                       previewUrl={photoPreviewUrl}
                       trashIconColor="#71859B"
-                      showInlineGuidelines={isPmsFlow}
+                      showInlineGuidelines={showInlineGuidelines}
                       guidelineType="photo"
+                      fileError={fileErrors.photo}
                       onCaptureClick={handlePhotoCaptureClick}
                       onUploadClick={handlePhotoUploadClick}
                       onViewGuidelinesClick={() => setGuidelineType('photo')}
@@ -1155,6 +1183,7 @@ export function UploadDocumentsScreen({
                         title="Proof of Identity"
                         uploaded={identityUploaded}
                         previewUrl={identityPreviewUrl}
+                        fileError={fileErrors.identity}
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
                         onViewGuidelinesClick={() => setGuidelineType('document')}
@@ -1164,6 +1193,7 @@ export function UploadDocumentsScreen({
                         title="Proof of Address"
                         uploaded={addressUploaded}
                         previewUrl={addressPreviewUrl}
+                        fileError={fileErrors.address}
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
                         onViewGuidelinesClick={() => setGuidelineType('document')}
@@ -1176,8 +1206,9 @@ export function UploadDocumentsScreen({
                     uploaded={signatureUploaded}
                     previewUrl={signaturePreviewUrl}
                     trashIconColor="#71859B"
-                    showInlineGuidelines={isPmsFlow}
+                    showInlineGuidelines={showInlineGuidelines}
                     guidelineType="signature"
+                    fileError={fileErrors.signature}
                     onCaptureClick={handleSignatureCaptureClick}
                     onUploadClick={handleSignatureUploadClick}
                     onViewGuidelinesClick={() => setGuidelineType('signature')}
@@ -1188,8 +1219,9 @@ export function UploadDocumentsScreen({
                     uploaded={photoUploaded}
                     previewUrl={photoPreviewUrl}
                     trashIconColor="#71859B"
-                    showInlineGuidelines={isPmsFlow}
+                    showInlineGuidelines={showInlineGuidelines}
                     guidelineType="photo"
+                    fileError={fileErrors.photo}
                     onCaptureClick={handlePhotoCaptureClick}
                     onUploadClick={handlePhotoUploadClick}
                     onViewGuidelinesClick={() => setGuidelineType('photo')}
@@ -1229,10 +1261,9 @@ const UploadDocumentsStep = ({
   documentRules,
 }: UploadDocumentsStepProps): ReactElement => {
   const { currentFlow, onboardingMethod } = useOnboardingStore();
-  const isPmsFlow = currentFlow.startsWith("pms-");
-  const requiresProofDocs =
-    currentFlow === "aif-individual" &&
-    (onboardingMethod === "MANUAL");
+  const isAifManualFlow = currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
+  const showInlineGuidelines = !isAifManualFlow;
+  const requiresProofDocs = isAifManualFlow;
   const [showUploadInfoBanner, setShowUploadInfoBanner] = useState(true);
   const {
     photoDisplayUrl,
@@ -1315,7 +1346,7 @@ const UploadDocumentsStep = ({
     <UploadDocumentsScreen
       signatureUploaded={signatureUploaded}
       photoUploaded={photoUploaded}
-      isPmsFlow={isPmsFlow}
+      showInlineGuidelines={showInlineGuidelines}
       identityUploaded={identityUploaded}
       addressUploaded={addressUploaded}
       documentRules={resolvedDocumentRules}

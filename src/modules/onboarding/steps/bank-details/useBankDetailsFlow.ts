@@ -4,8 +4,6 @@ import { extractErrorMessage, onboardingApi } from "../../services/onboarding-ap
 import { useOnboardingStore } from "../../state/onboarding-store";
 import {
   CANCELLED_CHEQUE_DOC_META,
-  CHEQUE_ALLOWED_FILE_TYPES,
-  CHEQUE_MAX_FILE_SIZE_BYTES,
   DEFAULT_RPD_VENDOR,
   PENNY_DROP_DEFAULTS,
   QR_DEFAULT_EXPIRY_SECONDS,
@@ -16,7 +14,7 @@ import {
   ACCOUNT_NUMBER_MIN_LENGTH,
   createEmptyBankDetails,
   enrichBankDetailsFromIfsc,
-  isAllowedChequeFile,
+  getChequeFileValidationError,
   isValidBankAccountNumber,
   mapGetBankDetailsToModel,
   mapPennyDropResponseToModel,
@@ -451,6 +449,12 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         rpdVendor: DEFAULT_RPD_VENDOR,
       });
 
+      const initiateStatus = (response.rawStatus || "").trim().toUpperCase();
+      if (initiateStatus.includes("FAIL") || initiateStatus.includes("ERROR")) {
+        setError(response.message || "Unable to generate QR code. Please try again.");
+        return null;
+      }
+
       const session: QrSessionState = {
         reversePennyDropId: response.reversePennyDropId || response.verificationId,
         verificationId: response.verificationId || response.reversePennyDropId,
@@ -592,15 +596,10 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         return { ok: false, message };
       }
 
-      if (!isAllowedChequeFile(file, CHEQUE_ALLOWED_FILE_TYPES)) {
-        const message = "Cancelled cheque must be PNG, JPEG, or PDF.";
-        setError(message);
-        return { ok: false, message };
-      }
-      if (file.size > CHEQUE_MAX_FILE_SIZE_BYTES) {
-        const message = "Cancelled cheque must be 2MB or smaller.";
-        setError(message);
-        return { ok: false, message };
+      const fileValidationError = getChequeFileValidationError(file);
+      if (fileValidationError) {
+        setError(fileValidationError);
+        return { ok: false, message: fileValidationError };
       }
 
       setIsUploadingCheque(true);

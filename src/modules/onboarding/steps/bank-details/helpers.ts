@@ -4,6 +4,11 @@ import type {
   PennyDropAccountInfo,
   PennyDropCallResponse,
 } from "../../services/onboarding-api";
+import {
+  CHEQUE_ALLOWED_FILE_TYPES,
+  CHEQUE_FILE_ERROR_MESSAGE,
+  CHEQUE_MAX_FILE_SIZE_BYTES,
+} from "./constants";
 import type {
   BankAccountType,
   BankDetailsModel,
@@ -89,6 +94,17 @@ export const isAllowedChequeFile = (file: File, allowedMimeTypes: readonly strin
 
   const extension = file.name.split(".").pop()?.trim().toLowerCase() ?? "";
   return (CHEQUE_FILE_EXTENSIONS as readonly string[]).includes(extension);
+};
+
+export const getChequeFileValidationError = (file: File): string | null => {
+  if (
+    !isAllowedChequeFile(file, CHEQUE_ALLOWED_FILE_TYPES) ||
+    file.size > CHEQUE_MAX_FILE_SIZE_BYTES
+  ) {
+    return CHEQUE_FILE_ERROR_MESSAGE;
+  }
+
+  return null;
 };
 
 /** RBI IFSC: 4 letters + 0 + 6 alphanumeric, e.g. HDFC0001234. */
@@ -350,7 +366,7 @@ export const maskBankAccountNumber = (accountNumber: string): string => {
 };
 
 export const mapDocumentOcrToChequeFields = (ocr: DocumentOcrResponse) => ({
-  accountNumber: ocr.accountNumber.trim(),
+  accountNumber: normalizeBankAccountInput(ocr.accountNumber),
   accountHolderName: ocr.name.trim(),
   bankName: ocr.bankName.trim(),
   ifscCode: normalizeIfscInput(ocr.ifscCode),

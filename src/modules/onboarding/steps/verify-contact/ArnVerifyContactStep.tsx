@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
 import { Input } from "../../../../shared/ui/input";
@@ -18,7 +18,14 @@ type ArnVerifyContactStepProps = {
 
 type ContactChannel = "mobile" | "email";
 
-const ARN_FORMAT = /^(?:ARN[\s-]*)?\d{4,10}$/i;
+const ARN_PREFIX = "ARN-";
+const ARN_DIGITS_ONLY = /\D/g;
+const ARN_DIGITS_FORMAT = /^\d{4,10}$/;
+
+const toArnDigits = (value: string): string =>
+  value.replace(/^ARN[\s-]*/i, "").replace(ARN_DIGITS_ONLY, "");
+
+const toFullArnNumber = (digits: string): string => `${ARN_PREFIX}${digits.trim()}`;
 
 const toTenDigitMobile = (value: string): string => {
   return value.replace(/\D/g, "").slice(-10);
@@ -41,7 +48,8 @@ const ArnVerifyContactStep = ({
     setKraArnStatus,
     setKraRegisteredContact,
   } = useOnboardingStore();
-  const [arnValue, setArnValue] = useState(arn ?? "");
+  const arnInputRef = useRef<HTMLInputElement>(null);
+  const [arnValue, setArnValue] = useState(toArnDigits(arn ?? ""));
   const [channel, setChannel] = useState<ContactChannel>(
     inputEmail && !inputMobile ? "email" : "mobile",
   );
@@ -55,14 +63,16 @@ const ArnVerifyContactStep = ({
       return;
     }
 
-    const normalizedArn = arnValue.trim().toUpperCase();
+    const arnDigits = arnValue.trim();
     const normalizedEmail = emailValue.trim();
     const normalizedMobile = toTenDigitMobile(mobileValue);
 
-    if (!normalizedArn || !ARN_FORMAT.test(normalizedArn)) {
+    if (!arnDigits || !ARN_DIGITS_FORMAT.test(arnDigits)) {
       setErrorMessage("Please enter a valid ARN.");
       return;
     }
+
+    const normalizedArn = toFullArnNumber(arnDigits);
 
     if (channel === "mobile" && !isMobileValid(normalizedMobile)) {
       setErrorMessage("Please enter a valid 10-digit mobile number.");
@@ -165,17 +175,42 @@ const ArnVerifyContactStep = ({
           >
             ARN Number <span className="text-[#E8402F]">*</span>
           </label>
-          <Input
-            id="arn-verify-number"
-            onChange={(event) => {
-              setArnValue(event.target.value);
-              if (errorMessage) {
-                setErrorMessage(null);
-              }
+          <div
+            className={cn(
+              "flex h-9 w-full min-w-0 cursor-text items-center rounded-[8px] border border-[#eeeeee] bg-white px-[14px] shadow-none transition-[color,box-shadow]",
+              "focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]",
+              errorMessage &&
+                "border-[#E8402F] focus-within:border-[#E8402F] focus-within:ring-0",
+            )}
+            onClick={() => {
+              arnInputRef.current?.focus();
             }}
-            placeholder="ARN 102030"
-            value={arnValue}
-          />
+          >
+            <span
+              aria-hidden="true"
+              className="shrink-0 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#7F8E9D]"
+            >
+              {ARN_PREFIX}
+            </span>
+            <Input
+              aria-invalid={Boolean(errorMessage)}
+              autoComplete="off"
+              className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 shadow-none aria-invalid:border-transparent aria-invalid:ring-0 focus-visible:border-transparent focus-visible:ring-0"
+              id="arn-verify-number"
+              inputMode="numeric"
+              onChange={(event) => {
+                setArnValue(event.target.value.replace(ARN_DIGITS_ONLY, ""));
+                if (errorMessage) {
+                  setErrorMessage(null);
+                }
+              }}
+              pattern="[0-9]*"
+              placeholder="102030"
+              ref={arnInputRef}
+              spellCheck={false}
+              value={arnValue}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col items-start gap-3">

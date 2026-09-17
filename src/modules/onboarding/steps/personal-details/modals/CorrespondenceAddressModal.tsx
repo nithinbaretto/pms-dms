@@ -217,28 +217,28 @@ const CorrespondenceAddressModal = ({
   return (
     <Dialog onOpenChange={onCancel} open={open}>
       <DialogContent
-        className="hide-scrollbar max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] overflow-y-auto rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]"
+        className="flex max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] flex-col gap-0 overflow-hidden rounded-[16px] border-none bg-white p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]"
         hideClose
       >
-        <div className="bg-white p-6 md:p-8">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
-                  {title ?? (isPermanentMode ? "Permanent Address" : "Correspondence Address")}
-                </h2>
-                <DialogClose
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-xs text-[#435160] opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden  focus:ring-[#93161e]/30"
-                >
-                  <XIcon className="size-[24px]" />
-                  <span className="sr-only">Close</span>
-                </DialogClose>
-              </div>
-              <p className="text-[15px] leading-[22.5px] text-[#435160]">
-                Update the address details.
-              </p>
-            </div>
+        <div className="shrink-0 space-y-2 px-6 pt-6 md:px-8 md:pt-8">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
+              {title ?? (isPermanentMode ? "Permanent Address" : "Correspondence Address")}
+            </h2>
+            <DialogClose
+              className="inline-flex h-6 w-6 items-center justify-center rounded-xs text-[#435160] opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-[#93161e]/30"
+            >
+              <XIcon className="size-[24px]" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          </div>
+          <p className="text-[15px] leading-[22.5px] text-[#435160]">
+            Update the address details.
+          </p>
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 pb-6 md:px-8 md:pb-8">
+          <div className="space-y-4">
             {!isPermanentMode ? (
             <div
               className={cn(

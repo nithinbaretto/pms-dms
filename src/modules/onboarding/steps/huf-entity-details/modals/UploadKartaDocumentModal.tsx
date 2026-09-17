@@ -8,6 +8,7 @@ import CameraCaptureModal from "../../../components/CameraCaptureModal";
 import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
 import {
   KARTA_ALLOWED_FILE_TYPES,
+  KARTA_FILE_ERROR_MESSAGE,
   KARTA_MAX_FILE_SIZE_BYTES,
 } from "../constants";
 import type { KartaDocumentFile, KartaDocumentKind } from "../types";
@@ -56,17 +57,15 @@ const UploadKartaDocumentModal = ({
   }, [draft]);
 
   const processFile = (file: File): void => {
-    const isAllowedType = KARTA_ALLOWED_FILE_TYPES.includes(
-      file.type as (typeof KARTA_ALLOWED_FILE_TYPES)[number],
-    );
+    const mime = (file.type || "").trim().toLowerCase();
+    const extension = file.name.split(".").pop()?.trim().toLowerCase() ?? "";
+    const isAllowedType =
+      KARTA_ALLOWED_FILE_TYPES.includes(mime as (typeof KARTA_ALLOWED_FILE_TYPES)[number]) ||
+      mime === "image/jpg" ||
+      ["png", "jpg", "jpeg", "pdf"].includes(extension);
 
-    if (!isAllowedType) {
-      setError("Format supported: PNG, PDF or JPEG up to 2MB.");
-      return;
-    }
-
-    if (file.size > KARTA_MAX_FILE_SIZE_BYTES) {
-      setError("File must be 2MB or smaller.");
+    if (!isAllowedType || file.size > KARTA_MAX_FILE_SIZE_BYTES) {
+      setError(KARTA_FILE_ERROR_MESSAGE);
       return;
     }
 
@@ -123,7 +122,7 @@ const UploadKartaDocumentModal = ({
               type="file"
             />
 
-            <div className="relative rounded-[8px] border border-dashed border-[#EEEEEE] bg-white p-4">
+            <div className={`relative rounded-[8px] border-2 border-dotted bg-white p-4 ${error ? "border-[#d8787d]" : "border-[#EEEEEE]"}`}>
               {draft ? (
                 <>
                   <button

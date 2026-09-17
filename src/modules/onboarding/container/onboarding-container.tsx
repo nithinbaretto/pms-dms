@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import backgroundImage from "../../../assets/images/background_img.png";
 import logoImage from "../../../assets/logo.png";
+import LegalFooterLinks from "../components/LegalFooterLinks";
 import OnboardingHero from "../components/OnboardingHero";
 import { getFlowConfig, type FlowKey } from "../flow/flow.config";
 import { getScreenForStep } from "../flow/getScreenForStep";
@@ -676,7 +677,7 @@ const OnboardingContainer = (): ReactElement => {
     currentStep === "review-confirm";
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[var(--color-onboarding-background)]">
+    <main className="relative flex min-h-screen flex-col overflow-x-hidden bg-[var(--color-onboarding-background)]">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-60">
         <img
           alt=""
@@ -686,8 +687,8 @@ const OnboardingContainer = (): ReactElement => {
       </div>
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[1440px] px-6 lg:px-[120px] ${
-          isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:py-16"
+        className={`relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-6 lg:px-[120px] ${
+          isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:pt-16 lg:pb-8"
         }`}
       >
         <img
@@ -706,15 +707,21 @@ const OnboardingContainer = (): ReactElement => {
           </div>
         ) : (
           <div className="relative mt-0 min-w-0">
-            <div className="mt-10 min-w-0 max-w-[610px] lg:mt-34">
+            <div className="mt-10 min-w-0 max-w-[610px] lg:mt-34 lg:max-w-[min(610px,calc(100%-544px))]">
               <OnboardingHero />
             </div>
-            <div className="mt-10 w-full min-w-0 max-w-[488px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[488px] lg:-translate-y-1/2 lg:translate-x-6">
+            <div className="mt-10 w-full min-w-0 max-w-[520px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[520px] lg:-translate-y-1/2 lg:translate-x-6">
               {renderStep()}
             </div>
           </div>
         )}
       </div>
+
+      {isOnboardingFormStep ? null : (
+        <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 pb-8 pt-4 lg:px-[120px] lg:pb-10">
+          <LegalFooterLinks />
+        </div>
+      )}
     </main>
   );
 };

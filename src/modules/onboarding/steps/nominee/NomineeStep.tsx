@@ -51,11 +51,8 @@ const NomineeStep = ({
   const [selectedYear, setSelectedYear] = useState((new Date().getFullYear() - 18).toString());
 
   const [showProofDropdown, setShowProofDropdown] = useState(false);
-  const [showRelationshipDropdown, setShowRelationshipDropdown] = useState(false);
   const proofDropdownRef = useRef<HTMLDivElement>(null);
   const proofDropdownMobileRef = useRef<HTMLDivElement>(null);
-  const relationshipDropdownRef = useRef<HTMLDivElement>(null);
-  const relationshipDropdownMobileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsEditMode(initialIsEditMode);
@@ -71,20 +68,13 @@ const NomineeStep = ({
       if (showProofDropdown && !isInside(target, proofDropdownRef, proofDropdownMobileRef)) {
         setShowProofDropdown(false);
       }
-
-      if (
-        showRelationshipDropdown &&
-        !isInside(target, relationshipDropdownRef, relationshipDropdownMobileRef)
-      ) {
-        setShowRelationshipDropdown(false);
-      }
     };
 
     document.addEventListener("click", handleOutsideClick);
     return () => {
       document.removeEventListener("click", handleOutsideClick);
     };
-  }, [showProofDropdown, showRelationshipDropdown]);
+  }, [showProofDropdown]);
 
   const handleSetNomineeOption = (next: "later" | "now") => {
     setOption(next);
@@ -231,10 +221,6 @@ const NomineeStep = ({
         setShowProofDropdown={setShowProofDropdown}
         proofDropdownRef={proofDropdownRef}
         proofDropdownMobileRef={proofDropdownMobileRef}
-        showRelationshipDropdown={showRelationshipDropdown}
-        setShowRelationshipDropdown={setShowRelationshipDropdown}
-        relationshipDropdownRef={relationshipDropdownRef}
-        relationshipDropdownMobileRef={relationshipDropdownMobileRef}
         showDobPicker={showDobPicker}
         dobPickerAnimating={dobPickerAnimating}
         selectedDay={selectedDay}

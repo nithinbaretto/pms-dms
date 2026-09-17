@@ -49,6 +49,7 @@ export const MOBILE_PATTERN = /^\d{10}$/;
 
 export const KARTA_ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "application/pdf"] as const;
 export const KARTA_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+export const KARTA_FILE_ERROR_MESSAGE = "File must be PNG, JPEG or PDF up to 2MB";
 
 export const COPARCENER_RELATIONSHIP_OPTIONS = [
   "Father",

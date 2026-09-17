@@ -4,7 +4,15 @@ import emailOtpSvgPaths from '../../../../assets/figma-svg/svg-ftc9bj5bhu';
 import imgEmptyNominee from '../../../../assets/icons/svg/empty_nominee_icon.svg';
 import { Checkbox } from '../../../../shared/ui/checkbox';
 import { Input } from '../../../../shared/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../../shared/ui/select';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
+import { useOnboardingStore } from '../../state/onboarding-store';
 import { PROOF_NUMBER_MAX_LENGTH, PROOF_NUMBER_PLACEHOLDERS, PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
 
 interface NomineeDetailsScreenProps {
@@ -40,10 +48,6 @@ interface NomineeDetailsScreenProps {
   setShowProofDropdown: (show: boolean) => void;
   proofDropdownRef: RefObject<HTMLDivElement | null>;
   proofDropdownMobileRef: RefObject<HTMLDivElement | null>;
-  showRelationshipDropdown: boolean;
-  setShowRelationshipDropdown: (show: boolean) => void;
-  relationshipDropdownRef: RefObject<HTMLDivElement | null>;
-  relationshipDropdownMobileRef: RefObject<HTMLDivElement | null>;
 
   // DOB picker modal
   showDobPicker: boolean;
@@ -68,6 +72,80 @@ interface NomineeDetailsScreenProps {
   setIsTransitioning: (transitioning: boolean) => void;
   setCurrentStep: (step: string) => void;
   setIsEditMode: (editMode: boolean) => void;
+}
+
+const SELECT_MENU_CLASS =
+  "z-[70] max-h-[200px] overflow-y-scroll rounded-[8px] border border-[#eee] bg-white p-0 shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] [scrollbar-width:thin] [scrollbar-color:#c5cdd6_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c5cdd6] [&_[data-slot=select-scroll-up-button]]:hidden [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-radix-select-viewport]]:h-auto [&_[data-radix-select-viewport]]:max-h-none";
+
+function RelationshipField({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-[4px] flex-1 min-w-[310px] ${className ?? ""}`}>
+      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+        <p className="text-[#231F20]">Relationship with Applicant</p>
+        <p className="text-[#E8402F]">*</p>
+      </div>
+      <Select value={value || undefined} onValueChange={onChange}>
+        <SelectTrigger className="h-[36px] w-full rounded-[8px] border border-[#eee] bg-white px-[14px] font-['Mulish',sans-serif] text-[13px] font-normal text-[#231f20] shadow-none outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] data-[placeholder]:text-[#71859b] [&_svg]:size-[10px] [&_svg]:opacity-100 [&_svg]:text-[#231F20]">
+          <SelectValue placeholder="Select Relationship with Applicant" />
+        </SelectTrigger>
+        <SelectContent position="popper" className={SELECT_MENU_CLASS}>
+          {RELATIONSHIP_OPTIONS.map((relationship) => (
+            <SelectItem
+              key={relationship}
+              value={relationship}
+              className="cursor-pointer py-2 font-['Mulish',sans-serif] text-[13px] text-[#231f20] focus:bg-[#f5f5f5] focus:text-[#231f20]"
+            >
+              {relationship}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function DobSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+}) {
+  return (
+    <div className="flex-1 flex flex-col gap-[8px]">
+      <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
+        {label}
+      </label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-[40px] w-full rounded-[8px] border border-[#eee] bg-white px-[12px] font-['Mulish',sans-serif] text-[13px] font-normal text-[#231f20] shadow-none outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-0 [&_svg]:size-[10px] [&_svg]:opacity-100 [&_svg]:text-[#5A6B7D]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent position="popper" className={SELECT_MENU_CLASS}>
+          {options.map((option) => (
+            <SelectItem
+              key={option}
+              value={option}
+              className="cursor-pointer py-2 font-['Mulish',sans-serif] text-[13px] text-[#231f20] focus:bg-[#f3f4f6] focus:text-[#231f20]"
+            >
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 export function NomineeDetailsScreen({
@@ -98,10 +176,6 @@ export function NomineeDetailsScreen({
   setShowProofDropdown,
   proofDropdownRef,
   proofDropdownMobileRef,
-  showRelationshipDropdown,
-  setShowRelationshipDropdown,
-  relationshipDropdownRef,
-  relationshipDropdownMobileRef,
   showDobPicker,
   dobPickerAnimating,
   selectedDay,
@@ -122,6 +196,9 @@ export function NomineeDetailsScreen({
   setCurrentStep,
   setIsEditMode,
 }: NomineeDetailsScreenProps) {
+  const currentFlow = useOnboardingStore((state) => state.currentFlow);
+  const detailsSourceLabel = currentFlow.startsWith('aif-') ? 'AMFI' : 'APMI';
+  const fetchedDetailsSubtitle = `Your details have been fetched from ${detailsSourceLabel}. Fields shown in grey cannot be changed`;
   const proofTypeKey = nomineeProofType as keyof typeof PROOF_NUMBER_PLACEHOLDERS;
   const proofNumberPlaceholder = PROOF_NUMBER_PLACEHOLDERS[proofTypeKey] ?? 'Enter Proof Number';
   const proofNumberMaxLength = PROOF_NUMBER_MAX_LENGTH[proofTypeKey];
@@ -135,7 +212,7 @@ export function NomineeDetailsScreen({
             {/* Header */}
             <div className="flex flex-col gap-[4px]">
               <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Nominee Details</p>
-              <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">{fetchedDetailsSubtitle}</p>
             </div>
 
             {/* Form Container */}
@@ -147,9 +224,9 @@ export function NomineeDetailsScreen({
             </div>
 
             {/* White Card - Content hugs, no internal scroll */}
-            <div className="w-full overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+            <div className="w-full overflow-visible rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
               {/* Progress Bar - Full width at top */}
-              <div className="h-2 w-full bg-[#e6e7e8]">
+              <div className="h-2 w-full overflow-hidden rounded-t-[16px] bg-[#e6e7e8]">
                 <div className="h-full w-[60%] rounded-r-full bg-[#37b400]" />
               </div>
 
@@ -200,47 +277,11 @@ export function NomineeDetailsScreen({
                       />
                     </div>
 
-                    {/* Relationship with Applicant */}
-                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)] relative" ref={relationshipDropdownRef}>
-                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
-                        <p className="text-[#231F20]">Relationship with Applicant</p>
-                        <p className="text-[#E8402F]">*</p>
-                      </div>
-                      <button
-                        onClick={() => setShowRelationshipDropdown(!showRelationshipDropdown)}
-                        className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative outline-none transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]"
-                      >
-                        <div className="flex items-center justify-between px-[14px] h-full">
-                          <p className={`font-['Mulish',sans-serif] font-normal text-[13px] ${nomineeRelationship ? 'text-[#231f20]' : 'text-[#71859b]'}`}>
-                            {nomineeRelationship || 'Select Relationship with Applicant'}
-                          </p>
-                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
-                            <path d={nomineeFormSvgPaths.p3ea1e500} fill="#231F20" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      {/* Relationship Dropdown */}
-                      {showRelationshipDropdown && (
-                        <div
-                          className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto"
-                          onMouseDown={(event) => event.stopPropagation()}
-                        >
-                          {RELATIONSHIP_OPTIONS.map((relationship) => (
-                            <button
-                              key={relationship}
-                              onClick={() => {
-                                setNomineeRelationship(relationship);
-                                setShowRelationshipDropdown(false);
-                              }}
-                              className="w-full h-[36px] flex items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                            >
-                              <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] whitespace-nowrap">{relationship}</p>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <RelationshipField
+                      value={nomineeRelationship}
+                      onChange={setNomineeRelationship}
+                      className="max-w-[calc(33.333%-11px)]"
+                    />
 
                     {/* Proof of Identity */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)] relative" ref={proofDropdownRef}>
@@ -499,7 +540,7 @@ export function NomineeDetailsScreen({
           {/* Header */}
           <div className="flex flex-col gap-[4px]">
             <p className="font-['Mulish',sans-serif] font-medium leading-[28px] md:leading-[33px] text-[#231f20] text-[20px] md:text-[22px]">Nominee Details</p>
-            <p className="font-['Mulish',sans-serif] font-normal leading-[20px] md:leading-[22.5px] text-[#435160] text-[14px] md:text-[15px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+            <p className="font-['Mulish',sans-serif] font-normal leading-[20px] md:leading-[22.5px] text-[#435160] text-[14px] md:text-[15px]">{fetchedDetailsSubtitle}</p>
           </div>
 
           {/* Form Container */}
@@ -511,9 +552,9 @@ export function NomineeDetailsScreen({
             </div>
 
             {/* White Card */}
-            <div className="w-full overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+            <div className="w-full overflow-visible rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
               {/* Progress Bar - Full width at top */}
-              <div className="h-2 w-full bg-[#e6e7e8]">
+              <div className="h-2 w-full overflow-hidden rounded-t-[16px] bg-[#e6e7e8]">
                 <div className="h-full w-[60%] rounded-r-full bg-[#37b400]" />
               </div>
 
@@ -567,47 +608,10 @@ export function NomineeDetailsScreen({
                       />
                     </div>
 
-                    {/* Relationship with Applicant */}
-                    <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={relationshipDropdownMobileRef}>
-                      <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
-                        <p className="text-[#231F20]">Relationship with Applicant</p>
-                        <p className="text-[#E8402F]">*</p>
-                      </div>
-                      <button
-                        onClick={() => setShowRelationshipDropdown(!showRelationshipDropdown)}
-                        className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative outline-none transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]"
-                      >
-                        <div className="flex items-center justify-between px-[14px] h-full">
-                          <p className={`font-['Mulish',sans-serif] font-normal text-[13px] ${nomineeRelationship ? 'text-[#231f20]' : 'text-[#71859b]'}`}>
-                            {nomineeRelationship || 'Select Relationship with Applicant'}
-                          </p>
-                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
-                            <path d={nomineeFormSvgPaths.p3ea1e500} fill="#231F20" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      {/* Relationship Dropdown */}
-                      {showRelationshipDropdown && (
-                        <div
-                          className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white rounded-[8px] border border-[#e5e5e6] z-50 overflow-hidden shadow-lg max-h-[240px] overflow-y-auto"
-                          onMouseDown={(event) => event.stopPropagation()}
-                        >
-                          {RELATIONSHIP_OPTIONS.map((relationship) => (
-                            <button
-                              key={relationship}
-                              onClick={() => {
-                                setNomineeRelationship(relationship);
-                                setShowRelationshipDropdown(false);
-                              }}
-                              className="w-full h-[36px] flex items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
-                            >
-                              <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] whitespace-nowrap">{relationship}</p>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <RelationshipField
+                      value={nomineeRelationship}
+                      onChange={setNomineeRelationship}
+                    />
 
                     {/* Proof of Identity */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] relative" ref={proofDropdownMobileRef}>
@@ -933,68 +937,24 @@ export function NomineeDetailsScreen({
 
               {/* Date Selectors */}
               <div className="flex gap-[12px]">
-                {/* Day */}
-                <div className="flex-1 flex flex-col gap-[8px]">
-                  <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Day</label>
-                  <div className="relative">
-                  <select
-                    value={selectedDay}
-                    onChange={(e) => setSelectedDay(e.target.value)}
-                    className="bg-white h-[40px] w-full appearance-none rounded-[8px] border border-[#eee] pl-[12px] pr-[32px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none"
-                  >
-                    {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                      <option key={day} value={day.toString().padStart(2, '0')}>
-                        {day.toString().padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                    <svg className="pointer-events-none absolute right-[12px] top-1/2 h-[10px] w-[10px] -translate-y-1/2" fill="none" viewBox="0 0 8.62789 4.87783">
-                      <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Month */}
-                <div className="flex-1 flex flex-col gap-[8px]">
-                  <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Month</label>
-                  <div className="relative">
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="bg-white h-[40px] w-full appearance-none rounded-[8px] border border-[#eee] pl-[12px] pr-[32px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                      <option key={month} value={month.toString().padStart(2, '0')}>
-                        {month.toString().padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                    <svg className="pointer-events-none absolute right-[12px] top-1/2 h-[10px] w-[10px] -translate-y-1/2" fill="none" viewBox="0 0 8.62789 4.87783">
-                      <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Year */}
-                <div className="flex-1 flex flex-col gap-[8px]">
-                  <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Year</label>
-                  <div className="relative">
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    className="bg-white h-[40px] w-full appearance-none rounded-[8px] border border-[#eee] pl-[12px] pr-[32px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none"
-                  >
-                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                      <option key={year} value={year.toString()}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                    <svg className="pointer-events-none absolute right-[12px] top-1/2 h-[10px] w-[10px] -translate-y-1/2" fill="none" viewBox="0 0 8.62789 4.87783">
-                      <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
-                    </svg>
-                  </div>
-                </div>
+                <DobSelect
+                  label="Day"
+                  value={selectedDay}
+                  onChange={setSelectedDay}
+                  options={Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'))}
+                />
+                <DobSelect
+                  label="Month"
+                  value={selectedMonth}
+                  onChange={setSelectedMonth}
+                  options={Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'))}
+                />
+                <DobSelect
+                  label="Year"
+                  value={selectedYear}
+                  onChange={setSelectedYear}
+                  options={Array.from({ length: 100 }, (_, i) => (new Date().getFullYear() - i).toString())}
+                />
               </div>
 
               {/* Save Button */}

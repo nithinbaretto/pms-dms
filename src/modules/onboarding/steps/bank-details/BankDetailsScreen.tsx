@@ -32,6 +32,7 @@ import {
 import {
   ACCOUNT_NUMBER_MAX_LENGTH,
   ACCOUNT_NUMBER_MIN_LENGTH,
+  getChequeFileValidationError,
   IFSC_MAX_LENGTH,
   isValidBankAccountNumber,
   isValidIfscCode,
@@ -127,6 +128,7 @@ const ACCOUNT_NUMBER_PLACEHOLDER = 'Enter Account Number';
 const IFSC_PLACEHOLDER = 'Enter IFSC Code';
 const IFSC_ERROR_MESSAGE = 'Please enter a valid 11-character IFSC code';
 const ACCOUNT_NUMBER_ERROR_MESSAGE = `Please enter a valid account number (${ACCOUNT_NUMBER_MIN_LENGTH}-${ACCOUNT_NUMBER_MAX_LENGTH} digits)`;
+const ACCOUNT_NUMBER_MISMATCH_ERROR_MESSAGE = 'Account numbers do not match';
 
 function IfscInput({
   value,
@@ -158,6 +160,23 @@ function IfscInput({
         </p>
       ) : null}
     </>
+  );
+}
+
+function formatQrCountdown(seconds: number) {
+  const safeSeconds = Math.max(0, seconds);
+  return `${String(Math.floor(safeSeconds / 60)).padStart(2, '0')}:${String(safeSeconds % 60).padStart(2, '0')}`;
+}
+
+function QrPaymentCountdown({ seconds }: { seconds: number }) {
+  return (
+    <div className="flex gap-[6px] items-center justify-center">
+      <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
+      <img src={imgClock} alt="Clock" className="size-[18px]" />
+      <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
+        {formatQrCountdown(seconds)}
+      </p>
+    </div>
   );
 }
 
@@ -375,25 +394,31 @@ export function BankDetailsScreen({
 
   const normalizedIfscCode = manualIfscCode.trim().toUpperCase();
   const normalizedManualAccountNumber = normalizeBankAccountInput(manualAccountNumber);
+  const normalizedReenterAccountNumber = normalizeBankAccountInput(manualErrorReenterAccountNumber);
   const showManualAccountNumberError =
     normalizedManualAccountNumber.length > 0 &&
     !isValidBankAccountNumber(normalizedManualAccountNumber);
+  const showManualReenterAccountNumberError =
+    normalizedReenterAccountNumber.length > 0 &&
+    !isValidBankAccountNumber(normalizedReenterAccountNumber);
+  const showManualReenterAccountMismatchError =
+    isValidBankAccountNumber(normalizedReenterAccountNumber) &&
+    normalizedManualAccountNumber.length > 0 &&
+    normalizedReenterAccountNumber !== normalizedManualAccountNumber;
   const ifscData = ifscMaster[normalizedIfscCode as keyof typeof ifscMaster] ?? ifscMaster.ELDHY6734A;
   const canContinue = bankValidationStatus === 'success';
   const canContinueFromFailedCheque =
     bankValidationStatus === 'failed' && chequeUploaded;
   const isManualErrorFormValid =
-    manualErrorReenterAccountNumber.trim() !== '' &&
-    isValidBankAccountNumber(manualErrorReenterAccountNumber) &&
-    (!manualAccountNumber.trim() ||
-      normalizeBankAccountInput(manualErrorReenterAccountNumber) === normalizedManualAccountNumber) &&
+    isValidBankAccountNumber(normalizedReenterAccountNumber) &&
+    (normalizedManualAccountNumber.length === 0 ||
+      normalizedReenterAccountNumber === normalizedManualAccountNumber) &&
     manualErrorAccountHolderName.trim() !== '' &&
     manualErrorAccountType !== undefined &&
     manualErrorBankBranch.trim() !== '' &&
     isValidIfscCode(manualIfscCode);
   const canContinueFromManualError =
-    bankValidationStatus === 'failed' &&
-    manualErrorChequeUploaded &&
+    (manualErrorChequeUploaded || chequeUploaded) &&
     isManualErrorFormValid;
 
   const closeChangeBankScreen = () => {
@@ -550,6 +575,8 @@ export function BankDetailsScreen({
   const [manualErrorChequePreviewUrl, setManualErrorChequePreviewUrl] = useState('');
   const [pendingChequeFile, setPendingChequeFile] = useState<File | null>(null);
   const [pendingManualErrorChequeFile, setPendingManualErrorChequeFile] = useState<File | null>(null);
+  const [chequeFileError, setChequeFileError] = useState<string | null>(null);
+  const [manualErrorChequeFileError, setManualErrorChequeFileError] = useState<string | null>(null);
 
   const revokePreviewUrl = (url: string) => {
     if (url.startsWith('blob:')) {
@@ -569,6 +596,7 @@ export function BankDetailsScreen({
   const clearChequeSelection = () => {
     setChequeFileSelected(false);
     setPendingChequeFile(null);
+    setChequeFileError(null);
     setChequePreviewUrl((prev) => {
       revokePreviewUrl(prev);
       return '';
@@ -578,45 +606,32 @@ export function BankDetailsScreen({
   const clearManualErrorChequeSelection = () => {
     setManualErrorChequeFileSelected(false);
     setPendingManualErrorChequeFile(null);
+    setManualErrorChequeFileError(null);
     setManualErrorChequePreviewUrl((prev) => {
       revokePreviewUrl(prev);
       return '';
     });
   };
 
-  const handleChequeFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    const nextUrl = URL.createObjectURL(file);
-    setPendingChequeFile(file);
-    setChequePreviewUrl((prev) => {
-      revokePreviewUrl(prev);
-      return nextUrl;
-    });
-    setChequeFileSelected(true);
-    event.target.value = '';
-  };
-
-  const handleManualErrorChequeFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-    const nextUrl = URL.createObjectURL(file);
-    setPendingManualErrorChequeFile(file);
-    setManualErrorChequePreviewUrl((prev) => {
-      revokePreviewUrl(prev);
-      return nextUrl;
-    });
-    setManualErrorChequeFileSelected(true);
-    event.target.value = '';
-  };
-
   const applyChequeCapture = (file: File, target: 'cheque' | 'manualErrorCheque') => {
+    const fileValidationError = getChequeFileValidationError(file);
+    onClearChequeUploadError?.();
+
+    if (fileValidationError) {
+      if (target === 'cheque') {
+        clearChequeSelection();
+        setChequeFileError(fileValidationError);
+        return;
+      }
+
+      clearManualErrorChequeSelection();
+      setManualErrorChequeFileError(fileValidationError);
+      return;
+    }
+
     const nextUrl = URL.createObjectURL(file);
     if (target === 'cheque') {
+      setChequeFileError(null);
       setPendingChequeFile(file);
       setChequePreviewUrl((prev) => {
         revokePreviewUrl(prev);
@@ -626,12 +641,31 @@ export function BankDetailsScreen({
       return;
     }
 
+    setManualErrorChequeFileError(null);
     setPendingManualErrorChequeFile(file);
     setManualErrorChequePreviewUrl((prev) => {
       revokePreviewUrl(prev);
       return nextUrl;
     });
     setManualErrorChequeFileSelected(true);
+  };
+
+  const handleChequeFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    applyChequeCapture(file, 'cheque');
+    event.target.value = '';
+  };
+
+  const handleManualErrorChequeFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    applyChequeCapture(file, 'manualErrorCheque');
+    event.target.value = '';
   };
 
   const handleChequeCameraSave = async (file: File) => {
@@ -801,16 +835,7 @@ export function BankDetailsScreen({
 
                           <QrScanInstructionPills />
 
-                          {/* Timer row remains visible so users can always see the payment countdown label */}
-                          <div className="flex gap-[6px] items-center justify-center">
-                            <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
-                            <img src={imgClock} alt="Clock" className="size-[18px]" />
-                            <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
-                              {qrGenerated && qrTimer > 0
-                                ? `${String(Math.floor(qrTimer / 60)).padStart(2, '0')}:${String(qrTimer % 60).padStart(2, '0')}`
-                                : `${String(Math.floor(QR_DEFAULT_EXPIRY_SECONDS / 60)).padStart(2, '0')}:${String(QR_DEFAULT_EXPIRY_SECONDS % 60).padStart(2, '0')}`}
-                            </p>
-                          </div>
+                          {qrGenerated ? <QrPaymentCountdown seconds={qrTimer} /> : null}
 
                           {/* Error message - shown when timer runs out */}
                           {qrGenerated && qrTimer === 0 && (
@@ -970,16 +995,7 @@ export function BankDetailsScreen({
 
                       <QrScanInstructionPills />
 
-                      {/* Timer row remains visible so users can always see the payment countdown label */}
-                      <div className="flex gap-[6px] items-center justify-center">
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
-                        <img src={imgClock} alt="Clock" className="size-[18px]" />
-                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
-                          {qrGenerated && qrTimer > 0
-                            ? `${String(Math.floor(qrTimer / 60)).padStart(2, '0')}:${String(qrTimer % 60).padStart(2, '0')}`
-                            : `${String(Math.floor(QR_DEFAULT_EXPIRY_SECONDS / 60)).padStart(2, '0')}:${String(QR_DEFAULT_EXPIRY_SECONDS % 60).padStart(2, '0')}`}
-                        </p>
-                      </div>
+                      {qrGenerated ? <QrPaymentCountdown seconds={qrTimer} /> : null}
 
                       {/* Error message - shown when timer runs out */}
                       {qrGenerated && qrTimer === 0 && (
@@ -1212,6 +1228,16 @@ export function BankDetailsScreen({
                         inputMode="numeric"
                         maxLength={ACCOUNT_NUMBER_MAX_LENGTH}
                       />
+                      {showManualReenterAccountNumberError ? (
+                        <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
+                          {ACCOUNT_NUMBER_ERROR_MESSAGE}
+                        </p>
+                      ) : null}
+                      {showManualReenterAccountMismatchError ? (
+                        <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
+                          {ACCOUNT_NUMBER_MISMATCH_ERROR_MESSAGE}
+                        </p>
+                      ) : null}
                     </div>
 
                     {/* Account Holder Name */}
@@ -1394,6 +1420,16 @@ export function BankDetailsScreen({
                       inputMode="numeric"
                       maxLength={ACCOUNT_NUMBER_MAX_LENGTH}
                     />
+                    {showManualReenterAccountNumberError ? (
+                      <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
+                        {ACCOUNT_NUMBER_ERROR_MESSAGE}
+                      </p>
+                    ) : null}
+                    {showManualReenterAccountMismatchError ? (
+                      <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
+                        {ACCOUNT_NUMBER_MISMATCH_ERROR_MESSAGE}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
@@ -1806,7 +1842,7 @@ export function BankDetailsScreen({
                         </div>
                       </div>
                     ) : (
-                      <div className="rounded-[8px] border border-dashed border-[#e5e5e6] bg-white p-4 shrink-0">
+                      <div className={`rounded-[8px] border-2 border-dotted bg-white p-4 shrink-0 ${chequeFileError ? 'border-[#d8787d]' : 'border-[#EEEEEE]'}`}>
                         <div className="flex flex-col items-center gap-3 text-center">
                           <Upload className="size-6 text-[#71859B]" strokeWidth={1.75} />
                           <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px]">
@@ -1836,13 +1872,18 @@ export function BankDetailsScreen({
                         </div>
                       </div>
                     )}
+                    {chequeFileError ? (
+                      <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#E8402F]">
+                        {chequeFileError}
+                      </p>
+                    ) : null}
 
                     {/* Upload Image Guidelines — only before a file is selected */}
                     {!chequeFileSelected && <ChequeUploadGuidelines />}
 
                     {/* Action Buttons */}
-                    {chequeUploadError ? (
-                      <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#93161e] w-full">
+                    {!chequeFileError && chequeUploadError ? (
+                      <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#E8402F] w-full">
                         {chequeUploadError}
                       </p>
                     ) : null}
@@ -2059,7 +2100,7 @@ export function BankDetailsScreen({
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-[8px] border border-dashed border-[#e5e5e6] bg-white p-4 shrink-0">
+                  <div className={`rounded-[8px] border-2 border-dotted bg-white p-4 shrink-0 ${manualErrorChequeFileError ? 'border-[#d8787d]' : 'border-[#EEEEEE]'}`}>
                     <div className="flex flex-col items-center gap-3 text-center">
                       <Upload className="size-6 text-[#71859B]" strokeWidth={1.75} />
                       <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#71859b] text-[13px]">
@@ -2089,13 +2130,18 @@ export function BankDetailsScreen({
                     </div>
                   </div>
                 )}
+                {manualErrorChequeFileError ? (
+                  <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#E8402F]">
+                    {manualErrorChequeFileError}
+                  </p>
+                ) : null}
 
                 {/* Upload Image Guidelines — only before a file is selected */}
                 {!manualErrorChequeFileSelected && <ChequeUploadGuidelines />}
 
                 {/* Bottom Buttons */}
-                {chequeUploadError ? (
-                  <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#93161e] w-full">
+                {!manualErrorChequeFileError && chequeUploadError ? (
+                  <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#E8402F] w-full">
                     {chequeUploadError}
                   </p>
                 ) : null}

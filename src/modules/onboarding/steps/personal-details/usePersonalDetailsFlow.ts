@@ -34,6 +34,7 @@ type UsePersonalDetailsFlowResult = {
   isManualFlow: boolean;
   isArnFlow: boolean;
   isKraFlow: boolean;
+  isAifFlow: boolean;
   /** Contact fields stay locked until both email and mobile are verified. */
   emailLockedFromEntry: boolean;
   mobileLockedFromEntry: boolean;
@@ -67,9 +68,10 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     setInputMobile,
     setPersonalDetails,
   } = useOnboardingStore();
-  const isManualFlow = currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
-  const isArnFlow = currentFlow === "aif-individual" && onboardingMethod === "ARN";
-  const isKraFlow = currentFlow === "aif-individual" && onboardingMethod === "KRA";
+  const isAifFlow = currentFlow === "aif-individual";
+  const isManualFlow = isAifFlow && onboardingMethod === "MANUAL";
+  const isArnFlow = isAifFlow && onboardingMethod === "ARN";
+  const isKraFlow = isAifFlow && onboardingMethod === "KRA";
 
   const [data, setData] = useState<PersonalDetailsModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -563,6 +565,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     isManualFlow,
     isArnFlow,
     isKraFlow,
+    isAifFlow,
     emailLockedFromEntry: isManualFlow ? false : !contactFieldsUnlocked,
     mobileLockedFromEntry: isManualFlow ? false : !contactFieldsUnlocked,
     fetchDetails,

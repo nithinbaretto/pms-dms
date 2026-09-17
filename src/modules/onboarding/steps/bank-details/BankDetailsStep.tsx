@@ -22,6 +22,7 @@ import {
   isValidBankAccountNumber,
   isValidIfscCode,
   mapDocumentOcrToChequeFields,
+  normalizeBankAccountInput,
 } from "./helpers";
 import type { BankDetailsModel } from "./types";
 import { useBankDetailsFlow } from "./useBankDetailsFlow";
@@ -284,17 +285,23 @@ const BankDetailsStep = ({
       bankValidationStatus === "failed" &&
       chequeUploaded &&
       Boolean(cancelledChequeUrl.trim());
-    const canContinueManualError = canContinueWithCheque && showManualValidationError;
+    const reenteredAccountNumber = normalizeBankAccountInput(manualErrorReenterAccountNumber);
+    const originalAccountNumber = normalizeBankAccountInput(manualAccountNumber);
+    const canContinueManualError =
+      showManualValidationError &&
+      chequeUploaded &&
+      Boolean(cancelledChequeUrl.trim()) &&
+      isValidBankAccountNumber(reenteredAccountNumber) &&
+      (originalAccountNumber.length === 0 || reenteredAccountNumber === originalAccountNumber) &&
+      isValidIfscCode(manualIfscCode.trim() || data.ifscCode);
 
-    if (!canContinueMain && !canContinueWithCheque) {
+    if (!canContinueMain && !canContinueWithCheque && !canContinueManualError) {
       return;
     }
 
-    if (canContinueManualError && !isValidIfscCode(manualIfscCode.trim() || data.ifscCode)) {
-      return;
-    }
+    const useManualCheque = canContinueWithCheque || canContinueManualError;
 
-    if (canContinueWithCheque && !cancelledChequeUrl.trim()) {
+    if (useManualCheque && !cancelledChequeUrl.trim()) {
       setChequeUploadError("Please upload a cancelled cheque to continue.");
       return;
     }
@@ -302,10 +309,10 @@ const BankDetailsStep = ({
     const detailsOverride = canContinueManualError ? buildManualOverrideModel() : undefined;
 
     const result = await saveBankDetails({
-      cancelledCheque: canContinueWithCheque ? cancelledChequeUrl.trim() : "",
+      cancelledCheque: useManualCheque ? cancelledChequeUrl.trim() : "",
       isBankVerifiedOverride: bankValidationStatus === "success" ? true : false,
       details: detailsOverride,
-      verificationTypeOverride: canContinueWithCheque ? "Manual" : undefined,
+      verificationTypeOverride: useManualCheque ? "Manual" : undefined,
     });
 
     if (!result) {
@@ -337,8 +344,8 @@ const BankDetailsStep = ({
       if (result.ocr) {
         const ocrFields = mapDocumentOcrToChequeFields(result.ocr);
         if (ocrFields.accountNumber) {
-          setManualAccountNumber(ocrFields.accountNumber);
-          setManualErrorReenterAccountNumber(ocrFields.accountNumber);
+          setManualAccountNumber(normalizeBankAccountInput(ocrFields.accountNumber));
+          setManualErrorReenterAccountNumber("");
         }
         if (ocrFields.accountHolderName) {
           setManualErrorAccountHolderName(ocrFields.accountHolderName);
@@ -451,9 +458,9 @@ const BankDetailsStep = ({
   };
 
   const handleQrGenerate = async () => {
+    setQrGenerated(false);
     const session = await initiateQrPayment();
     if (!session) {
-      setQrGenerated(false);
       return;
     }
 

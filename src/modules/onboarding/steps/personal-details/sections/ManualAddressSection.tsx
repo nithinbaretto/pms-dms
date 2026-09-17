@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { Checkbox } from "../../../../../shared/ui/checkbox";
 import { cn } from "../../../../../shared/ui/utils";
 import type { Address } from "../types";
 
@@ -8,6 +9,8 @@ type ManualAddressSectionProps = {
   correspondenceAddress: Address;
   onEditPermanentAddress: () => void;
   onEditCorrespondenceAddress: () => void;
+  sameAsPermanent?: boolean;
+  onSameAsPermanentChange?: (sameAsPermanent: boolean) => void;
 };
 
 const formatSingleLineAddress = (address: Address): string => {
@@ -67,6 +70,8 @@ const ManualAddressSection = ({
   correspondenceAddress,
   onEditPermanentAddress,
   onEditCorrespondenceAddress,
+  sameAsPermanent = false,
+  onSameAsPermanentChange,
 }: ManualAddressSectionProps): ReactElement => {
   return (
     <section className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
@@ -77,13 +82,28 @@ const ManualAddressSection = ({
         onEdit={onEditPermanentAddress}
         placeholder="Enter Permanent Address"
       />
-      <AddressDisplayField
-        address={correspondenceAddress}
-        id="manual-correspondence-address"
-        label="Correspondence Address"
-        onEdit={onEditCorrespondenceAddress}
-        placeholder="Enter Correspondence Address"
-      />
+      <div className="space-y-2">
+        <AddressDisplayField
+          address={correspondenceAddress}
+          id="manual-correspondence-address"
+          label="Correspondence Address"
+          onEdit={onEditCorrespondenceAddress}
+          placeholder="Enter Correspondence Address"
+        />
+        <label className="flex items-center gap-2">
+          <Checkbox
+            checked={sameAsPermanent}
+            className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
+            iconClassName="size-[10px]"
+            onCheckedChange={(checked) => {
+              onSameAsPermanentChange?.(Boolean(checked));
+            }}
+          />
+          <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
+            Same as permanent address
+          </span>
+        </label>
+      </div>
       <div aria-hidden="true" className="hidden lg:block" />
     </section>
   );

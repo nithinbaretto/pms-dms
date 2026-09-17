@@ -172,7 +172,7 @@ const OnboardingMethodStep = ({
                     <img alt="" className="size-4" src={icon} />
                   </span>
 
-                  <span className="min-w-0 flex-1">
+                  <span className="flex min-w-0 flex-1 flex-col gap-1.5">
                     <span className="flex items-center gap-1.5">
                       <span className="shrink-0 font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#435160]">
                         {title}
@@ -183,7 +183,7 @@ const OnboardingMethodStep = ({
                         </span>
                       ) : null}
                     </span>
-                    <span className="mt-0.5 block whitespace-nowrap font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#5A6B7D]">
+                    <span className="block whitespace-nowrap font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#5A6B7D]">
                       {subtitle}
                     </span>
                   </span>

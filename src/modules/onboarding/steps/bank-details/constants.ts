@@ -24,3 +24,4 @@ export const CANCELLED_CHEQUE_DOC_META = {
 
 export const CHEQUE_ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "application/pdf"] as const;
 export const CHEQUE_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+export const CHEQUE_FILE_ERROR_MESSAGE = "File must be PNG, JPEG or PDF up to 2MB";

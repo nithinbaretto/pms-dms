@@ -38,6 +38,7 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
     isManualFlow,
     isArnFlow,
     isKraFlow,
+    isAifFlow,
     emailLockedFromEntry,
     mobileLockedFromEntry,
     setNameValue,
@@ -164,7 +165,11 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
                   onEditPermanentAddress={() => {
                     setAddressEditTarget("permanent");
                   }}
+                  onSameAsPermanentChange={(sameAsPermanent) => {
+                    saveCorrespondenceAddress(data.correspondenceAddress, sameAsPermanent);
+                  }}
                   permanentAddress={data.permanentAddress}
+                  sameAsPermanent={data.isCorrespoingSameAsPermanent}
                 />
               ) : (
                 <AddressSection
@@ -177,7 +182,16 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
 
                     setAddressEditTarget("correspondence");
                   }}
+                  onSameAsPermanentChange={
+                    isAifFlow
+                      ? (sameAsPermanent) => {
+                          saveCorrespondenceAddress(data.correspondenceAddress, sameAsPermanent);
+                        }
+                      : undefined
+                  }
                   permanentAddress={data.permanentAddress}
+                  sameAsPermanent={data.isCorrespoingSameAsPermanent}
+                  showSameAsPermanent={isAifFlow}
                 />
               )}
             </div>

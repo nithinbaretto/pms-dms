@@ -4,7 +4,13 @@ import type { UploadedDocumentItem } from "../../services/onboarding-api";
 import { onboardingApi } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import { DOCUMENT_META } from "./constants";
-import { extractFileNameFromUrl, isPdfBase64, resolveDocumentFormat, toDisplaySrc } from "./helpers";
+import {
+  extractFileNameFromUrl,
+  getDocumentFileValidationError,
+  isPdfBase64,
+  resolveDocumentFormat,
+  toDisplaySrc,
+} from "./helpers";
 import type { DocumentKind } from "./types";
 
 type UseDocumentsFlowOptions = {
@@ -202,6 +208,12 @@ export const useDocumentsFlow = ({
       const label = KIND_LABEL[kind];
       if (!leadId || !resolvedPan) {
         setError(`Unable to upload ${label.toLowerCase()}. Missing lead or PAN information.`);
+        return false;
+      }
+
+      const fileValidationError = getDocumentFileValidationError(file);
+      if (fileValidationError) {
+        setError(fileValidationError);
         return false;
       }
 

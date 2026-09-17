@@ -3,10 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Check,
-  ChevronDown,
-  FileText,
   Loader2,
   Trash2,
+  XIcon,
 } from "lucide-react";
 
 import documentIcon from "../../../../../assets/icons/document.png";
@@ -18,10 +17,18 @@ import gstGuideline4 from "../../../../../assets/images/guidlines_img_4.png";
 import { Button } from "../../../../../shared/ui/button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogTitle,
 } from "../../../../../shared/ui/dialog";
 import { Input } from "../../../../../shared/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../../../shared/ui/select";
 import { MAX_GST_CERTIFICATE_BYTES } from "../constants";
 import { abbreviateStateName, formatStateLabel } from "../helpers";
 import type { ManualGstDraft, ValidateGstResult } from "../types";
@@ -32,6 +39,15 @@ import {
 } from "../validation";
 import CameraCaptureModal from "../../../components/CameraCaptureModal";
 import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
+
+const SELECT_MENU_CLASS =
+  "z-[70] max-h-[200px] overflow-y-scroll rounded-[8px] border border-[#eee] bg-white p-0 shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] [scrollbar-width:thin] [scrollbar-color:#c5cdd6_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c5cdd6] [&_[data-slot=select-scroll-up-button]]:hidden [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-radix-select-viewport]]:h-auto [&_[data-radix-select-viewport]]:max-h-none";
+
+const isPdfPreview = (name: string, type: string): boolean =>
+  type === "application/pdf" || name.toLowerCase().endsWith(".pdf");
+
+const withPdfViewerParams = (src: string): string =>
+  `${src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&zoom=page-width`;
 
 const GST_GUIDELINE_ITEMS = [
   { src: gstGuideline4, label: "Clear & Complete", good: true },
@@ -212,9 +228,10 @@ const AddGstModal = ({
       URL.revokeObjectURL(localPreview.previewUrl);
     }
 
+    const isPdf = isPdfPreview(selectedFile.name, selectedFile.type);
     setLocalPreview({
       name: selectedFile.name,
-      type: selectedFile.type,
+      type: isPdf ? "application/pdf" : selectedFile.type,
       previewUrl: URL.createObjectURL(selectedFile),
     });
 
@@ -319,35 +336,42 @@ const AddGstModal = ({
             <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
               State <span className="text-[#E8402F]">*</span>
             </label>
-            <div className="relative">
-              <select
-                className="h-[38px] w-full appearance-none rounded-[8px] border border-[#e5e5e6] bg-white px-3 pr-9 text-[13px] text-[#231f20] outline-none"
-                onChange={(event) => {
-                  setDraft((current) => ({
-                    ...current,
-                    stateCode: event.target.value,
-                  }));
-                }}
-                value={draft.stateCode}
-              >
-                <option value="">Select state</option>
+            <Select
+              onValueChange={(value) => {
+                setDraft((current) => ({
+                  ...current,
+                  stateCode: value,
+                }));
+              }}
+              value={draft.stateCode || undefined}
+            >
+              <SelectTrigger className="h-[38px] w-full rounded-[8px] border border-[#e5e5e6] bg-white px-3 font-['Mulish',sans-serif] text-[13px] font-normal text-[#231f20] shadow-none outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-0 data-[placeholder]:text-[#71859b] [&_svg]:size-4 [&_svg]:opacity-100 [&_svg]:text-[#8ca1b5]">
+                <SelectValue placeholder="Select state" />
+              </SelectTrigger>
+              <SelectContent position="popper" className={SELECT_MENU_CLASS}>
                 {stateOptions.map((state) => (
-                  <option key={state} value={state}>
+                  <SelectItem
+                    key={state}
+                    value={state}
+                    className="cursor-pointer py-2 font-['Mulish',sans-serif] text-[13px] text-[#231f20] focus:bg-[#f5f5f5] focus:text-[#231f20]"
+                  >
                     {formatStateLabel(state)}
-                  </option>
+                  </SelectItem>
                 ))}
                 {draft.stateCode &&
                 !stateOptions.some(
                   (state) =>
                     state.toLowerCase() === draft.stateCode.toLowerCase(),
                 ) ? (
-                  <option value={draft.stateCode}>
+                  <SelectItem
+                    value={draft.stateCode}
+                    className="cursor-pointer py-2 font-['Mulish',sans-serif] text-[13px] text-[#231f20] focus:bg-[#f5f5f5] focus:text-[#231f20]"
+                  >
                     {formatStateLabel(draft.stateCode)}
-                  </option>
+                  </SelectItem>
                 ) : null}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8ca1b5]" />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="w-full space-y-1">
@@ -386,32 +410,34 @@ const AddGstModal = ({
               />
 
               <div
-                className={`rounded-[8px] border-2 border-dotted bg-[#f9f9f9] p-4 ${
+                className={`rounded-[8px] border-2 border-dotted bg-white p-4 ${
                   fileError ? "border-[#d8787d]" : "border-[#EEEEEE]"
                 }`}
               >
                 {draft.fileURL && localPreview ? (
-                  <div className="relative mx-auto h-[220px] max-w-[420px] rounded-[4px] bg-white p-2">
-                    {localPreview.type === "application/pdf" ? (
-                      <div className="flex h-full flex-col items-center justify-center gap-2 text-[#71859B]">
-                        <FileText className="h-9 w-9 text-[#71859B]" />
-                        <p className="max-w-[280px] truncate text-[13px]">
-                          {localPreview.name}
-                        </p>
-                      </div>
-                    ) : (
-                      <img
-                        alt="GST certificate preview"
-                        className="h-full w-full rounded-[2px] object-contain"
-                        src={localPreview.previewUrl}
-                      />
-                    )}
+                  <div className="flex w-full items-start gap-4">
+                    <div className="relative h-[220px] min-w-0 flex-1 overflow-hidden bg-white">
+                      {isPdfPreview(localPreview.name, localPreview.type) ? (
+                        <iframe
+                          className="h-full w-full border-0 bg-white"
+                          src={withPdfViewerParams(localPreview.previewUrl)}
+                          title="GST certificate preview"
+                        />
+                      ) : (
+                        <img
+                          alt="GST certificate preview"
+                          className="h-full w-full object-contain"
+                          src={localPreview.previewUrl}
+                        />
+                      )}
+                    </div>
                     <button
-                      className="absolute right-2 top-2 text-[#71859B]"
+                      aria-label="Remove GST certificate"
+                      className="mt-1 size-6 shrink-0 text-[#71859B] hover:opacity-70"
                       onClick={clearPreview}
                       type="button"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="size-full" strokeWidth={1.75} />
                     </button>
                   </div>
                 ) : (
@@ -496,13 +522,20 @@ const AddGstModal = ({
         }}
         open={open && !showCamera}
       >
-        <DialogContent className="hide-scrollbar h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] gap-0 overflow-y-auto rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]">
-          <div className="p-6">
-            <div className="mb-4">
-              <DialogTitle className="pr-8 font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] !text-[#435160]">
-                Add GST
-              </DialogTitle>
-            </div>
+        <DialogContent
+          className="flex h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] flex-col gap-0 overflow-hidden rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]"
+          hideClose
+        >
+          <div className="flex shrink-0 items-start justify-between gap-3 px-6 pt-6">
+            <DialogTitle className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] !text-[#435160]">
+              Add GST
+            </DialogTitle>
+            <DialogClose className="inline-flex size-[24px] shrink-0 items-center justify-center text-[#435160] hover:opacity-70 focus:outline-hidden">
+              <XIcon className="size-[24px]" strokeWidth={1.5} />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          </div>
+          <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-4">
             {view === "list" ? (
               <div className="space-y-5">
                 <div className="space-y-3">

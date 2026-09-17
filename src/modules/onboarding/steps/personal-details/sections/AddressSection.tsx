@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 
 import editIcon from "../../../../../assets/icons/edit_icon.png";
+import { Checkbox } from "../../../../../shared/ui/checkbox";
 import type { Address } from "../types";
 
 type AddressSectionProps = {
@@ -8,6 +9,9 @@ type AddressSectionProps = {
   correspondenceAddress: Address;
   canEditCorrespondenceAddress?: boolean;
   onEditCorrespondenceAddress: () => void;
+  showSameAsPermanent?: boolean;
+  sameAsPermanent?: boolean;
+  onSameAsPermanentChange?: (sameAsPermanent: boolean) => void;
 };
 
 const formatAddress = (address: Address): string => {
@@ -27,6 +31,9 @@ const AddressSection = ({
   correspondenceAddress,
   canEditCorrespondenceAddress = true,
   onEditCorrespondenceAddress,
+  showSameAsPermanent = false,
+  sameAsPermanent = false,
+  onSameAsPermanentChange,
 }: AddressSectionProps): ReactElement => {
   return (
     <section className="space-y-3 border-t border-[#e6e7e8] pt-6">
@@ -61,6 +68,22 @@ const AddressSection = ({
               {formatAddress(correspondenceAddress) || "Enter Correspondence Address"}
             </span>
           </div>
+          {showSameAsPermanent ? (
+            <label className="flex items-center gap-2">
+              <Checkbox
+                checked={sameAsPermanent}
+                className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
+                disabled={!canEditCorrespondenceAddress}
+                iconClassName="size-[10px]"
+                onCheckedChange={(checked) => {
+                  onSameAsPermanentChange?.(Boolean(checked));
+                }}
+              />
+              <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
+                Same as permanent address
+              </span>
+            </label>
+          ) : null}
         </div>
 
         <div aria-hidden="true" className="hidden lg:block" />

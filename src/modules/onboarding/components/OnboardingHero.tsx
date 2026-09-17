@@ -9,8 +9,8 @@ const heroStats = [
 
 const OnboardingHero = (): ReactElement => {
   return (
-    <section className="max-w-[610px] space-y-8">
-      <div className="flex flex-col">
+    <section className="w-full max-w-[610px] space-y-8">
+      <div className="flex min-w-0 flex-col">
         <h1 className="font-['Mulish',sans-serif] text-[40px] font-semibold leading-[43.7px] tracking-[-0.95px] text-[var(--color-onboarding-heading-strong)]">
           <span>Grow Your </span>
           <span className="text-[var(--color-onboarding-accent)]">Practice </span>
@@ -21,9 +21,8 @@ const OnboardingHero = (): ReactElement => {
 
         <div className="mt-4 h-[2px] w-10 shrink-0 rounded-full bg-[var(--color-onboarding-accent)]" />
 
-        <p className="max-w-[600px] pt-5 font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
+        <p className="w-full pt-5 font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
           Join thousands of distributors earning more with a trusted fund house. Empanel in
-          <br />
           minutes - go live in days.
         </p>
       </div>

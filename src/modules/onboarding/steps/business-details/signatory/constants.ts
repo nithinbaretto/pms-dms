@@ -6,6 +6,12 @@ import type { BusinessEntityType } from "./types";
  */
 export const SHOW_PROPRIETORSHIP_SIGNATORY = false;
 
+/** Individual / Sole Proprietorship toggle on Business Details (AIF; also when signatory journey is on). */
+export const isBusinessEntityTypeSelectionEnabled = (
+  productCategories: readonly string[],
+): boolean =>
+  productCategories.includes("AIF") || SHOW_PROPRIETORSHIP_SIGNATORY;
+
 export const ENTITY_TYPE_OPTIONS: BusinessEntityType[] = ["Individual", "Sole Proprietorship"];
 
 export const DEFAULT_BUSINESS_ENTITY_TYPE: BusinessEntityType = "Sole Proprietorship";
@@ -31,3 +37,4 @@ export const NAME_PATTERN = /^[A-Za-z]+(?:[ .'][A-Za-z]+)*$/;
 
 export const SIGNATORY_ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "application/pdf"] as const;
 export const SIGNATORY_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+export const SIGNATORY_FILE_ERROR_MESSAGE = "File must be PNG, JPEG or PDF up to 2MB";

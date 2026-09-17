@@ -1,3 +1,32 @@
+import {
+  ALLOWED_FILE_TYPES,
+  DOCUMENT_FILE_ERROR_MESSAGE,
+  MAX_FILE_SIZE_BYTES,
+} from "./constants";
+
+const DOCUMENT_FILE_EXTENSIONS = ["png", "jpg", "jpeg", "pdf"] as const;
+
+export const isAllowedDocumentFile = (file: File): boolean => {
+  const mime = (file.type || "").trim().toLowerCase();
+  if (
+    (ALLOWED_FILE_TYPES as readonly string[]).includes(mime) ||
+    mime === "image/jpg"
+  ) {
+    return true;
+  }
+
+  const extension = file.name.split(".").pop()?.trim().toLowerCase() ?? "";
+  return (DOCUMENT_FILE_EXTENSIONS as readonly string[]).includes(extension);
+};
+
+export const getDocumentFileValidationError = (file: File): string | null => {
+  if (!isAllowedDocumentFile(file) || file.size > MAX_FILE_SIZE_BYTES) {
+    return DOCUMENT_FILE_ERROR_MESSAGE;
+  }
+
+  return null;
+};
+
 /** Extract a usable file name from a blob/storage URL. */
 export const extractFileNameFromUrl = (url: string, fallback = "document"): string => {
   const trimmed = url.trim();

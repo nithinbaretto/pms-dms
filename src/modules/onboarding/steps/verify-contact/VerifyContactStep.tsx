@@ -1,9 +1,10 @@
 import type { ReactElement } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Button } from "../../../../shared/ui/button";
 import { Input } from "../../../../shared/ui/input";
+import { cn } from "../../../../shared/ui/utils";
 import SupportFooter from "../../components/SupportFooter";
 
 type VerifyContactStepProps = {
@@ -27,9 +28,16 @@ type FormErrors = {
   contact?: string;
 };
 
-const ARN_FORMAT = /^(?:ARN-?)?\d{4,10}$/i;
+const ARN_PREFIX = "ARN-";
+const ARN_DIGITS_ONLY = /\D/g;
+const ARN_DIGITS_FORMAT = /^\d{4,10}$/;
 const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_FORMAT = /^[6-9]\d{9}$/;
+
+const toArnDigits = (value: string): string =>
+  value.replace(/^ARN[\s-]*/i, "").replace(ARN_DIGITS_ONLY, "");
+
+const toFullArnNumber = (digits: string): string => `${ARN_PREFIX}${digits.trim()}`;
 
 const VerifyContactStep = ({
   panNumber,
@@ -44,14 +52,15 @@ const VerifyContactStep = ({
   onManualJourney,
   onContinue,
 }: VerifyContactStepProps): ReactElement => {
-  const [arnValue, setArnValue] = useState(arn ?? "");
+  const arnInputRef = useRef<HTMLInputElement>(null);
+  const [arnValue, setArnValue] = useState(toArnDigits(arn ?? ""));
   const [emailValue, setEmailValue] = useState(email ?? "");
   const [mobileValue, setMobileValue] = useState(mobile ?? "");
   const [validationErrors, setValidationErrors] = useState<FormErrors>({});
 
   const validateForm = (): FormErrors => {
     const errors: FormErrors = {};
-    const normalizedArn = arnValue.trim();
+    const arnDigits = arnValue.trim();
     const normalizedEmail = emailValue.trim();
     const normalizedMobile = mobileValue.trim();
 
@@ -59,7 +68,7 @@ const VerifyContactStep = ({
       errors.contact = "Please enter Email or Mobile";
     }
 
-    if (normalizedArn && !ARN_FORMAT.test(normalizedArn)) {
+    if (arnDigits && !ARN_DIGITS_FORMAT.test(arnDigits)) {
       errors.arn = "Please enter a valid ARN";
     }
 
@@ -84,8 +93,10 @@ const VerifyContactStep = ({
 
     setValidationErrors({});
 
+    const arnDigits = arnValue.trim();
+
     onContinue({
-      arn: arnValue.trim() ? arnValue.trim().toUpperCase() : null,
+      arn: arnDigits ? toFullArnNumber(arnDigits) : null,
       email: emailValue.trim() ? emailValue.trim() : null,
       mobile: mobileValue.trim() ? mobileValue.trim() : null,
     });
@@ -119,17 +130,42 @@ const VerifyContactStep = ({
             ARN Number*
           </label>
 
-          <Input
-            id="verify-arn-number"
-            onChange={(event) => {
-              setArnValue(event.target.value);
-              if (validationErrors.arn) {
-                setValidationErrors((current) => ({ ...current, arn: undefined }));
-              }
+          <div
+            className={cn(
+              "flex h-9 w-full min-w-0 cursor-text items-center rounded-[8px] border border-[#eeeeee] bg-white px-[14px] shadow-none transition-[color,box-shadow]",
+              "focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]",
+              validationErrors.arn &&
+                "border-[#E8402F] focus-within:border-[#E8402F] focus-within:ring-0",
+            )}
+            onClick={() => {
+              arnInputRef.current?.focus();
             }}
-            placeholder="ARN 102030"
-            value={arnValue}
-          />
+          >
+            <span
+              aria-hidden="true"
+              className="shrink-0 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#7F8E9D]"
+            >
+              {ARN_PREFIX}
+            </span>
+            <Input
+              aria-invalid={Boolean(validationErrors.arn)}
+              autoComplete="off"
+              className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 shadow-none aria-invalid:border-transparent aria-invalid:ring-0 focus-visible:border-transparent focus-visible:ring-0"
+              id="verify-arn-number"
+              inputMode="numeric"
+              onChange={(event) => {
+                setArnValue(event.target.value.replace(ARN_DIGITS_ONLY, ""));
+                if (validationErrors.arn) {
+                  setValidationErrors((current) => ({ ...current, arn: undefined }));
+                }
+              }}
+              pattern="[0-9]*"
+              placeholder="102030"
+              ref={arnInputRef}
+              spellCheck={false}
+              value={arnValue}
+            />
+          </div>
           {validationErrors.arn ? (
             <p className="text-xs text-[var(--color-onboarding-danger)]">{validationErrors.arn}</p>
           ) : null}

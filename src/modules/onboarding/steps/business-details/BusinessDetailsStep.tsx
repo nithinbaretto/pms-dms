@@ -13,6 +13,7 @@ import EntityTypeSection from "./sections/EntityTypeSection";
 import GstSelectionSection from "./sections/GstSelectionSection";
 import {
   DEFAULT_BUSINESS_ENTITY_TYPE,
+  isBusinessEntityTypeSelectionEnabled,
   SHOW_PROPRIETORSHIP_SIGNATORY,
 } from "./signatory/constants";
 import { isSignatoryStepComplete } from "./signatory/helpers";
@@ -31,6 +32,8 @@ const BusinessDetailsStep = ({
   isEditMode = false,
 }: BusinessDetailsStepProps): ReactElement => {
   const setStep = useOnboardingStore((state) => state.setStep);
+  const productCategories = useOnboardingStore((state) => state.productCategories);
+  const showEntityTypeSection = isBusinessEntityTypeSelectionEnabled(productCategories);
 
   const {
     records,
@@ -110,12 +113,15 @@ const BusinessDetailsStep = ({
 
           <div className="px-4 pb-4 pt-6 md:px-6 md:pb-6">
             <div className="space-y-5">
-              {SHOW_PROPRIETORSHIP_SIGNATORY ? (
+              {showEntityTypeSection ? (
                 <>
                   <EntityTypeSection onChange={setEntityType} value={entityType} />
-
                   <div className="h-px bg-[#e5e5e6]" />
+                </>
+              ) : null}
 
+              {SHOW_PROPRIETORSHIP_SIGNATORY ? (
+                <>
                   <AuthorizedSignatorySection
                     anyCount={anySignatoryCount}
                     mode={signatoryMode}

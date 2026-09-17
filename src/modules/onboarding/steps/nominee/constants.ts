@@ -5,7 +5,6 @@ export const RELATIONSHIP_OPTIONS = [
   "Mother",
   "Son",
   "Daughter",
-  "Spouse",
   "Wife",
   "Husband",
   "Brother",
