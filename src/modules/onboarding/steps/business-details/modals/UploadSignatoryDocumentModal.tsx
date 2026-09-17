@@ -1,6 +1,6 @@
 import type { ChangeEvent, ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, ChevronRight, Upload, X } from "lucide-react";
 
 import imgSignGuideline1 from "../../../../../assets/images/sign_guidelines_1.png";
 import imgSignGuideline2 from "../../../../../assets/images/sign_guidelines_2.png";
@@ -34,36 +34,7 @@ const SignatureGuidelines = (): ReactElement => {
     { src: imgSignGuideline4, label: "Poor lighting / Glare", good: false },
   ];
 
-  return (
-    <div className="flex w-full flex-col gap-[11px]">
-      <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[18px] text-[#231F20]">
-        Upload image guidelines
-      </p>
-      <div className="grid grid-cols-2 gap-4">
-        {items.map((item) => (
-          <div
-            className={`relative flex flex-col items-center justify-center gap-2 rounded-[8px] px-2 py-3 ${
-              item.good ? "bg-[#eeffe5]" : "bg-[#fff0e5]"
-            }`}
-            key={item.label}
-          >
-            <img
-              alt={item.label}
-              className="h-[72px] w-full max-w-[188px] object-contain"
-              src={item.src}
-            />
-            <p
-              className={`font-['Mulish',sans-serif] text-[9px] font-normal leading-[1.1] ${
-                item.good ? "text-[#37b400]" : "text-[#e8402f]"
-              }`}
-            >
-              {item.label}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <UploadImageGuidelines items={items} showTitle={false} />;
 };
 
 const UploadSignatoryDocumentContent = ({
@@ -75,6 +46,7 @@ const UploadSignatoryDocumentContent = ({
   const [draft, setDraft] = useState<SignatoryDocumentFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -128,7 +100,7 @@ const UploadSignatoryDocumentContent = ({
         }}
         open
       >
-        <DialogContent className="max-h-[calc(100vh-48px)] w-[calc(100%-2rem)] max-w-[640px] overflow-y-auto rounded-[16px] border-0 p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] [&>button.absolute]:hidden">
+        <DialogContent className="hide-scrollbar max-h-[calc(100vh-48px)] w-[calc(100%-2rem)] max-w-[640px] overflow-y-auto rounded-[16px] border-0 p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] [&>button.absolute]:hidden">
           <div className="relative space-y-5 bg-white p-6">
             <div className="flex items-start justify-between gap-4 pr-8">
               <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
@@ -219,7 +191,18 @@ const UploadSignatoryDocumentContent = ({
               </p>
             ) : null}
 
-            {!draft ? kind === "signature" ? <SignatureGuidelines /> : <UploadImageGuidelines /> : null}
+            {!draft ? (
+              <button
+                className="inline-flex items-center gap-[4px] self-start font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#93161E]"
+                onClick={() => {
+                  setShowGuidelines(true);
+                }}
+                type="button"
+              >
+                View upload guidelines
+                <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
+              </button>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-4">
               <button
@@ -247,6 +230,37 @@ const UploadSignatoryDocumentContent = ({
                 Save
               </button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setShowGuidelines(false);
+          }
+        }}
+        open={showGuidelines}
+      >
+        <DialogContent className="hide-scrollbar max-h-[calc(100vh-48px)] w-[calc(100%-2rem)] max-w-[679.5px] overflow-y-auto rounded-[16px] border-0 p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] [&>button.absolute]:hidden">
+          <div className="relative space-y-5 bg-white p-6 md:p-8">
+            <div className="pr-8">
+              <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
+                Upload guidelines
+              </h2>
+            </div>
+            <button
+              aria-label="Close"
+              className="absolute right-6 top-6 flex size-6 items-center justify-center text-[#435160] hover:opacity-70 md:right-8 md:top-8"
+              onClick={() => {
+                setShowGuidelines(false);
+              }}
+              type="button"
+            >
+              <X className="size-6" strokeWidth={1.5} />
+            </button>
+
+            {kind === "signature" ? <SignatureGuidelines /> : <UploadImageGuidelines showTitle={false} />}
           </div>
         </DialogContent>
       </Dialog>

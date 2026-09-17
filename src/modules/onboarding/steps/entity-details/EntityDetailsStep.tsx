@@ -48,8 +48,11 @@ const EntityDetailsStep = ({
   return (
     <section className="w-full rounded-2xl bg-[var(--color-onboarding-surface)] p-6 shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)] lg:p-8">
       <div className="space-y-5">
-        <header className="space-y-2">
-          <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
+        <header className="space-y-0">
+          <h2
+            className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal !text-[var(--color-onboarding-heading)]"
+            style={{ marginBottom: "8px" }}
+          >
             Welcome back
           </h2>
 

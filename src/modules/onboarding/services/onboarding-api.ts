@@ -11,6 +11,7 @@ export type VerifyAprnResponse = {
   success: boolean;
   validationStatus: boolean;
   message?: string;
+  warningMessage?: string;
   email?: string | null;
   mobile?: string | null;
   aprnStatus: boolean;
@@ -201,6 +202,7 @@ export type GstInItem = {
   gstInState: string;
   isSelected: boolean;
   fileURL: string;
+  requiresCertificate?: boolean;
 };
 
 export type BusinessDetailsResponse = {
@@ -249,8 +251,8 @@ export type DocumentOcrResponse = {
   bankName: string;
   accountNumber: string;
   ifscCode: string;
-  accountType: string;
   branchAddress: string;
+  accountType: string;
 };
 
 export type DownloadFileRequest = {
@@ -526,6 +528,7 @@ export type ReviewDetailsResponse = {
   leadId: string;
   applicationStatus: string;
   nextInfoSection: string;
+  isSubmit: boolean;
   personal: ReviewPersonalSection;
   business: ReviewBusinessSection;
   bank: ReviewBankSection;
@@ -541,6 +544,37 @@ export type CreateApplicationResponse = {
   name: string;
   primaryContactNumber: string;
   primaryEmail: string;
+};
+
+export type CreateEsignRequest = {
+  email: string;
+  leadId: string;
+  mobile: string;
+  name: string;
+  panNumber: string;
+};
+
+export type CreateEsignResponse = {
+  message: string;
+  referenceId: string;
+  documentId: string;
+  irn: string;
+  signUrl: string;
+};
+
+export type GetEsignStatusRequest = CreateEsignRequest & {
+  esignDocumentId: string;
+};
+
+export type GetEsignStatusResponse = {
+  message: string;
+  referenceId: string;
+  documentId: string;
+  irn: string;
+  signUrl: string;
+  signed: boolean;
+  rejected: boolean;
+  expired: boolean;
 };
 
 type PanValidationApiResponse = {
@@ -711,6 +745,7 @@ type GstInItemApi = {
   isSelected?: boolean;
   fileURL?: string;
   fileUrl?: string;
+  documents?: unknown;
 };
 
 type GetBusinessDetailsApiResponse = {
@@ -760,6 +795,26 @@ type SaveGstDetailsApiResponse = {
   Application_status?: string;
   application_status?: string;
   nextInfoSection?: string;
+};
+
+type SaveGstDocumentApiRequest = {
+  documentName: string;
+  documentType: string;
+  documentUrl: string;
+};
+
+type SaveGstInItemApiRequest = {
+  gstInId: string;
+  gstInName: string;
+  gstInState: string;
+  isSelected: boolean;
+  documents: SaveGstDocumentApiRequest | null;
+};
+
+type SaveGstDetailsApiRequest = {
+  leadId: string;
+  selectedBranch: string;
+  gstInDetails: SaveGstInItemApiRequest[];
 };
 
 type GetNomineeDetailsApiResponse = {
@@ -893,6 +948,10 @@ const API_ENDPOINTS = {
     withBase("/dms-api/application/getApplicationReviewDetails"),
   createApplication:
     import.meta.env.VITE_PMS_CREATE_APPLICATION_URL ?? withBase("/dms-api/application/createApplication"),
+  createEsign:
+    import.meta.env.VITE_PMS_CREATE_ESIGN_URL ?? withBase("/esign/create"),
+  getEsignStatus:
+    import.meta.env.VITE_PMS_GET_ESIGN_STATUS_URL ?? withBase("/esign/getEsignStatus"),
   generatePdf:
     import.meta.env.VITE_PMS_GENERATE_PDF_URL ?? withBase("/dms-api/pdf/generate"),
   getBankDetails:
@@ -1172,6 +1231,7 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
       "application_status",
     ]),
     nextInfoSection: pickString(payload, ["nextInfoSection"]),
+    isSubmit: pickBoolean(payload, ["isSubmit"]),
     personal: {
       name: pickString(personalSource, ["name", "applicantName", "fullName"]),
       panNumber: pickString(personalSource, ["panNumber", "pan"]),
@@ -1289,6 +1349,59 @@ const normalizePanValidationResponse = (rawData: unknown): ValidatePanResponse =
   };
 };
 
+const extractMessageTextFromMessages = (value: unknown): string | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  for (const item of value) {
+    if (!isRecord(item)) {
+      continue;
+    }
+
+    const messageText =
+      asStringOrNull(item.messageText) ??
+      asStringOrNull(item.message) ??
+      asStringOrNull(item.Message);
+
+    if (messageText) {
+      return messageText;
+    }
+  }
+
+  return undefined;
+};
+
+const extractMessageTextByType = (value: unknown, targetType: string): string | undefined => {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const normalizedTargetType = targetType.trim().toUpperCase();
+
+  for (const item of value) {
+    if (!isRecord(item)) {
+      continue;
+    }
+
+    const messageType = asStringOrNull(item.messageType)?.toUpperCase();
+    if (messageType !== normalizedTargetType) {
+      continue;
+    }
+
+    const messageText =
+      asStringOrNull(item.messageText) ??
+      asStringOrNull(item.message) ??
+      asStringOrNull(item.Message);
+
+    if (messageText) {
+      return messageText;
+    }
+  }
+
+  return undefined;
+};
+
 const extractErrorMessage = (error: unknown): string | undefined => {
   if (!isRecord(error)) {
     return undefined;
@@ -1300,8 +1413,10 @@ const extractErrorMessage = (error: unknown): string | undefined => {
   const messageFromPayload =
     asStringOrNull(payload.message) ??
     asStringOrNull(payload.Message) ??
+    asStringOrNull(payload.messageText) ??
     asStringOrNull(payload.errorMessage) ??
-    asStringOrNull(payload.error);
+    asStringOrNull(payload.error) ??
+    extractMessageTextFromMessages(payload.messages);
   if (messageFromPayload) {
     return messageFromPayload;
   }
@@ -1378,6 +1493,9 @@ export const onboardingApi = {
       aprnStatusFlag === true ||
       aprnStatusText === "success" ||
       (aprnStatusFlag === undefined && aprnStatusText == null);
+    const warningMessage =
+      extractMessageTextByType(data.messages, "WARNING") ??
+      extractMessageTextByType(envelope.messages, "WARNING");
 
     return {
       success: envelopeSuccess && validationStatus && aprnStatus,
@@ -1385,8 +1503,13 @@ export const onboardingApi = {
       message:
         asStringOrNull(data.message) ??
         asStringOrNull(data.Message) ??
+        asStringOrNull(data.messageText) ??
         asStringOrNull(envelope.message) ??
+        asStringOrNull(envelope.messageText) ??
+        extractMessageTextFromMessages(data.messages) ??
+        extractMessageTextFromMessages(envelope.messages) ??
         undefined,
+      warningMessage,
       email: asStringOrNull(data.email),
       mobile: toLastTenMobileDigits(data.mobile),
       aprnStatus,
@@ -1676,13 +1799,26 @@ export const onboardingApi = {
 
     return {
       selectedBranch: asStringOrNull(data.selectedBranch) ?? "",
-      gstInDetails: rawList.map((item) => ({
-        gstInId: asStringOrNull(item.gstInId) ?? "",
-        gstInName: asStringOrNull(item.gstInName) ?? "",
-        gstInState: asStringOrNull(item.gstInState) ?? "",
-        isSelected: asBooleanOrUndefined(item.isSelected) ?? false,
-        fileURL: asStringOrNull(item.fileURL) ?? asStringOrNull(item.fileUrl) ?? "",
-      })),
+      gstInDetails: rawList.map((item) => {
+        const documentSource = isRecord(item.documents) ? item.documents : null;
+        const documentUrl =
+          asStringOrNull(item.documents) ??
+          asStringOrNull(documentSource?.documentUrl) ??
+          asStringOrNull(documentSource?.fileURL) ??
+          asStringOrNull(documentSource?.fileUrl) ??
+          "";
+        const fileURL =
+          asStringOrNull(item.fileURL) ?? asStringOrNull(item.fileUrl) ?? documentUrl;
+
+        return {
+          gstInId: asStringOrNull(item.gstInId) ?? "",
+          gstInName: asStringOrNull(item.gstInName) ?? "",
+          gstInState: asStringOrNull(item.gstInState) ?? "",
+          isSelected: asBooleanOrUndefined(item.isSelected) ?? false,
+          fileURL,
+          requiresCertificate: Boolean(documentUrl.trim()),
+        };
+      }),
     };
   },
 
@@ -1786,26 +1922,14 @@ export const onboardingApi = {
     }
 
     const data = extractPayload(response);
-    const nested = isRecord(data.data) ? data.data : data;
-    const source = nested;
 
     return {
-      name: pickString(source, ["name", "accountHolderName", "accountHolder", "Name"]),
-      bankName: pickString(source, ["bankName", "BankName", "bank"]),
-      accountNumber:
-        asTextOrNull(source.accountNumber) ??
-        asTextOrNull(source.AccountNumber) ??
-        pickString(source, ["accountNumber", "AccountNumber", "accountNo"]),
-      ifscCode: pickString(source, ["ifscCode", "ifsc", "IFSCCode", "IFSC"]).toUpperCase(),
-      accountType: pickString(source, ["accountType", "AccountType", "acctType"]),
-      branchAddress: pickString(source, [
-        "branchAddress",
-        "bankAddress",
-        "branchName",
-        "branch",
-        "address",
-        "branchNameAndAddress",
-      ]),
+      name: pickString(data, ["name", "accountHolderName"]),
+      bankName: pickString(data, ["bankName"]),
+      accountNumber: pickString(data, ["accountNumber"]),
+      ifscCode: pickString(data, ["ifscCode", "ifsc", "IFSCCode"]).toUpperCase(),
+      branchAddress: pickString(data, ["branchAddress", "bankAddress", "BankAddress"]),
+      accountType: pickString(data, ["accountType"]),
     };
   },
 
@@ -1885,16 +2009,28 @@ export const onboardingApi = {
   },
 
   async saveGstDetails(request: SaveGstDetailsRequest): Promise<SaveGstDetailsResponse> {
-    const payload: SaveGstDetailsRequest = {
+    const payload: SaveGstDetailsApiRequest = {
       leadId: request.leadId,
       selectedBranch: request.selectedBranch.trim(),
-      gstInDetails: request.gstInDetails.map((item) => ({
-        gstInId: item.gstInId.trim().toUpperCase(),
-        gstInName: item.gstInName.trim(),
-        gstInState: item.gstInState.trim(),
-        isSelected: item.isSelected,
-        fileURL: item.fileURL.trim(),
-      })),
+      gstInDetails: request.gstInDetails.map((item) => {
+        const gstInId = item.gstInId.trim().toUpperCase();
+        const fileURL = item.fileURL.trim();
+        const documents = item.requiresCertificate && fileURL
+          ? {
+              documentName: "GST Document",
+              documentType: `GST_${gstInId}`,
+              documentUrl: fileURL,
+            }
+          : null;
+
+        return {
+          gstInId,
+          gstInName: item.gstInName.trim(),
+          gstInState: item.gstInState.trim(),
+          isSelected: item.isSelected,
+          documents,
+        };
+      }),
     };
 
     const response = await apiPost<SaveGstDetailsApiResponse>(API_ENDPOINTS.saveGstDetails, payload);
@@ -2074,6 +2210,70 @@ export const onboardingApi = {
       name: asStringOrNull(data.name) ?? "",
       primaryContactNumber: asStringOrNull(data.primaryContactNumber) ?? "",
       primaryEmail: asStringOrNull(data.primaryEmail) ?? "",
+    };
+  },
+  async createEsign(request: CreateEsignRequest): Promise<CreateEsignResponse> {
+    const payload: CreateEsignRequest = {
+      email: request.email.trim(),
+      leadId: request.leadId.trim(),
+      mobile: request.mobile.trim(),
+      name: request.name.trim(),
+      panNumber: request.panNumber.trim().toUpperCase(),
+    };
+
+    const response = await apiPost<Record<string, unknown>>(API_ENDPOINTS.createEsign, payload);
+    const root = asRecord(response);
+    const data = asRecord(root.data);
+    const success = asRecord(data.success);
+    const successData = asRecord(success.data);
+    const esignData = asRecord(successData.data);
+    const invitees = Array.isArray(esignData.invitees) ? esignData.invitees : [];
+    const firstInvitee = invitees.length > 0 ? asRecord(invitees[0]) : {};
+
+    return {
+      message: asStringOrNull(success.responseMessage) ?? "E-sign request created successfully",
+      referenceId: asStringOrNull(successData.referenceId) ?? "",
+      documentId: asStringOrNull(esignData.documentId) ?? "",
+      irn: asStringOrNull(esignData.irn) ?? "",
+      signUrl: asStringOrNull(firstInvitee.signUrl) ?? "",
+    };
+  },
+
+  async getEsignStatus(request: GetEsignStatusRequest): Promise<GetEsignStatusResponse> {
+    const payload: GetEsignStatusRequest = {
+      email: request.email.trim(),
+      leadId: request.leadId.trim(),
+      mobile: request.mobile.trim(),
+      name: request.name.trim(),
+      panNumber: request.panNumber.trim().toUpperCase(),
+      esignDocumentId: request.esignDocumentId.trim(),
+    };
+
+    const response = await apiPost<Record<string, unknown>>(API_ENDPOINTS.getEsignStatus, payload);
+    const root = asRecord(response);
+    const data = asRecord(root.data);
+    const success = asRecord(data.success);
+    const successData = asRecord(success.data);
+    const esignData = asRecord(successData.data);
+    const requests = Array.isArray(esignData.requests) ? esignData.requests : [];
+
+    const signerRecord =
+      requests.find((item) => {
+        const signer = asRecord(item);
+        const signerEmail = asStringOrNull(signer.email);
+        return signerEmail ? signerEmail.toLowerCase() === payload.email.toLowerCase() : false;
+      }) ?? requests[0];
+    const signer = asRecord(signerRecord);
+
+    return {
+      message: asStringOrNull(success.responseMessage) ?? "Transaction status fetched successfully",
+      referenceId: asStringOrNull(successData.referenceId) ?? "",
+      documentId: asStringOrNull(esignData.documentId) ?? "",
+      irn: asStringOrNull(esignData.irn) ?? "",
+      signUrl: asStringOrNull(signer.signUrl) ?? "",
+      signed: asBooleanOrUndefined(signer.signed) ?? false,
+      rejected: asBooleanOrUndefined(signer.rejected) ?? false,
+      expired: asBooleanOrUndefined(signer.expired) ?? false,
     };
   },
 

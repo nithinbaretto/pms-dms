@@ -26,6 +26,8 @@ type UsePersonalDetailsFlowResult = {
   isSendingOtp: boolean;
   isVerifyingOtp: boolean;
   error: string | null;
+  contactErrorChannel: VerificationChannel | null;
+  contactErrorMessage: string | null;
   otpChannel: VerificationChannel | null;
   otpModalOpen: boolean;
   canSave: boolean;
@@ -57,8 +59,6 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     onboardingMethod,
     kraDataSource,
     arn,
-    emailVerifiedFromEntry,
-    mobileVerifiedFromEntry,
     setEmailVerified,
     setMobileVerified,
     setEmailVerifiedAt,
@@ -77,6 +77,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contactErrorChannel, setContactErrorChannel] = useState<VerificationChannel | null>(null);
+  const [contactErrorMessage, setContactErrorMessage] = useState<string | null>(null);
   const [otpChannel, setOtpChannel] = useState<VerificationChannel | null>(null);
   const [otpModalOpen, setOtpModalOpen] = useState(false);
   const [contactFieldsUnlocked, setContactFieldsUnlocked] = useState(false);
@@ -223,6 +225,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         normalizeEmailForCompare(value) === verifiedEmailBaselineRef.current;
 
       setEmailVerified(matchesBaseline);
+      setContactErrorChannel((current) => (current === "email" ? null : current));
+      setContactErrorMessage((current) => (contactErrorChannel === "email" ? null : current));
       setData((current) => {
         if (!current) {
           return current;
@@ -237,7 +241,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         };
       });
     },
-    [contactFieldsUnlocked, isManualFlow, setEmailVerified],
+    [contactErrorChannel, contactFieldsUnlocked, isManualFlow, setEmailVerified],
   );
 
   const setMobileValue = useCallback(
@@ -252,6 +256,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         normalizeMobileForCompare(digits) === verifiedMobileBaselineRef.current;
 
       setMobileVerified(matchesBaseline);
+      setContactErrorChannel((current) => (current === "mobile" ? null : current));
+      setContactErrorMessage((current) => (contactErrorChannel === "mobile" ? null : current));
       setData((current) => {
         if (!current) {
           return current;
@@ -266,7 +272,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         };
       });
     },
-    [contactFieldsUnlocked, isManualFlow, setMobileVerified],
+    [contactErrorChannel, contactFieldsUnlocked, isManualFlow, setMobileVerified],
   );
 
   const sendChannelOtp = useCallback(
@@ -276,16 +282,21 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         return false;
       }
 
+      setContactErrorChannel(null);
+      setContactErrorMessage(null);
+
       const email = model.email.value.trim();
       const mobile = model.mobile.value.trim();
 
       if (channel === "email" && !isEmailValid(email)) {
-        setError("Please enter a valid email before verifying.");
+        setContactErrorChannel("email");
+        setContactErrorMessage("Please enter a valid email before verifying.");
         return false;
       }
 
       if (channel === "mobile" && !isMobileValid(mobile)) {
-        setError("Please enter a valid 10-digit mobile before verifying.");
+        setContactErrorChannel("mobile");
+        setContactErrorMessage("Please enter a valid 10-digit mobile before verifying.");
         return false;
       }
 
@@ -303,13 +314,17 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         });
 
         if (!response.success) {
-          setError(response.message || "Unable to send OTP. Please try again.");
+          setContactErrorChannel(channel);
+          setContactErrorMessage(response.message || "Unable to send OTP. Please try again.");
           return false;
         }
 
+        setContactErrorChannel(null);
+        setContactErrorMessage(null);
         return true;
       } catch {
-        setError("Unable to send OTP. Please try again.");
+        setContactErrorChannel(channel);
+        setContactErrorMessage("Unable to send OTP. Please try again.");
         return false;
       } finally {
         setIsSendingOtp(false);
@@ -540,6 +555,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     isSendingOtp,
     isVerifyingOtp,
     error,
+    contactErrorChannel,
+    contactErrorMessage,
     otpChannel,
     otpModalOpen,
     canSave,

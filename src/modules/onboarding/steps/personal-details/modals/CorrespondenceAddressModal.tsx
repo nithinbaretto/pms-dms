@@ -7,11 +7,11 @@ import {
   MarkerF,
   useLoadScript,
 } from "@react-google-maps/api";
-import { Loader2, MapPin, Search } from "lucide-react";
+import { Loader2, MapPin, Search, XIcon } from "lucide-react";
 
 import { Button } from "../../../../../shared/ui/button";
 import { Checkbox } from "../../../../../shared/ui/checkbox";
-import { Dialog, DialogContent } from "../../../../../shared/ui/dialog";
+import { Dialog, DialogClose, DialogContent } from "../../../../../shared/ui/dialog";
 import { Input } from "../../../../../shared/ui/input";
 import { cn } from "../../../../../shared/ui/utils";
 import locationIcon from "../../../../../assets/icons/svg/Location.svg";
@@ -216,13 +216,24 @@ const CorrespondenceAddressModal = ({
 
   return (
     <Dialog onOpenChange={onCancel} open={open}>
-      <DialogContent className="max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] overflow-y-auto rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]">
+      <DialogContent
+        className="hide-scrollbar max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-[590px] overflow-y-auto rounded-[16px] border-none p-0 shadow-[4px_4px_20px_rgba(0,0,0,0.12)]"
+        hideClose
+      >
         <div className="bg-white p-6 md:p-8">
           <div className="space-y-4">
             <div className="space-y-2">
-              <h2 className="text-[22px] leading-[33px] font-medium text-[#435160]">
-                {title ?? (isPermanentMode ? "Permanent Address" : "Correspondence Address")}
-              </h2>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
+                  {title ?? (isPermanentMode ? "Permanent Address" : "Correspondence Address")}
+                </h2>
+                <DialogClose
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-xs text-[#435160] opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden  focus:ring-[#93161e]/30"
+                >
+                  <XIcon className="size-[24px]" />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </div>
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 Update the address details.
               </p>

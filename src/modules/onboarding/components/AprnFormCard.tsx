@@ -16,6 +16,7 @@ type AprnFormCardProps = {
   productLabel: string;
   value: string;
   errorMessage: string | null;
+  warningMessage: string | null;
   showRiaVariant: boolean;
   empanelmentType: EmpanelmentType;
   isSubmitting?: boolean;
@@ -30,6 +31,7 @@ const AprnFormCard = ({
   productLabel,
   value,
   errorMessage,
+  warningMessage,
   showRiaVariant,
   empanelmentType,
   isSubmitting = false,
@@ -144,6 +146,8 @@ const AprnFormCard = ({
 
             {errorMessage ? (
               <p className="text-xs text-[var(--color-onboarding-danger)]">{errorMessage}</p>
+            ) : warningMessage ? (
+              <p className="text-xs text-[var(--color-onboarding-danger)]">{warningMessage}</p>
             ) : null}
           </div>
         </div>

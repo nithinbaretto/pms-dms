@@ -237,6 +237,7 @@ const OnboardingContainer = (): ReactElement => {
     if (currentStep === "personal-details") {
       return (
         <PersonalDetailsStep
+          isEditMode={isEditMode}
           onContinue={(details, routedStep) => {
             setPersonalDetails(details);
             if (isEditMode) {
@@ -390,6 +391,11 @@ const OnboardingContainer = (): ReactElement => {
             // Placeholder route for Digilocker journey.
             window.alert(`${onboardingMethod} journey will be available in the next release.`);
           }}
+          onEditPan={() => {
+            setOnboardingMethodError(null);
+            setPanEntryError(null);
+            setStep("entity-details");
+          }}
           onEmpanelmentTypeChange={setEmpanelmentType}
           onMethodChange={(value) => {
             setOnboardingMethod(value);
@@ -511,6 +517,7 @@ const OnboardingContainer = (): ReactElement => {
     if (currentStep === "business-details") {
       return (
         <BusinessDetailsStep
+          isEditMode={isEditMode}
           onBack={prevStep}
           onContinue={(routedStep) => {
             if (isEditMode) {
@@ -659,27 +666,44 @@ const OnboardingContainer = (): ReactElement => {
     );
   };
 
+  const isOnboardingFormStep =
+    (currentStep === "huf-entity-details" && isHufEntityJourney()) ||
+    currentStep === "personal-details" ||
+    currentStep === "business-details" ||
+    currentStep === "bank-details" ||
+    currentStep === "nominee-details" ||
+    currentStep === "upload-documents" ||
+    currentStep === "review-confirm";
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[var(--color-onboarding-background)]">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[810px] w-[1440px] -translate-x-1/2 -translate-y-1/2 opacity-60">
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            alt=""
-            className="absolute left-[27.29%] top-[-2.35%] h-[107.16%] w-[90.41%] max-w-none"
-            src={backgroundImage}
-          />
-        </div>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-60">
+        <img
+          alt=""
+          className="absolute right-0 top-1/2 h-[110vh] w-auto max-w-none -translate-y-1/2"
+          src={backgroundImage}
+        />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-8 lg:px-[120px] lg:py-16">
+      <div
+        className={`relative z-10 mx-auto w-full max-w-[1440px] px-6 lg:px-[120px] ${
+          isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:py-16"
+        }`}
+      >
         <img
           alt="ICICI Prudential Alternate Investments"
           className="h-[56px] w-[115px] object-contain object-left"
           src={logoImage}
         />
 
-        {(currentStep === "huf-entity-details" && isHufEntityJourney()) || currentStep === "personal-details" || currentStep === "business-details" || currentStep === "bank-details" || currentStep === "nominee-details" || currentStep === "upload-documents" || currentStep === "review-confirm" ? (
-          <div className="mt-6 pb-28 lg:mt-10 lg:pb-24">{renderStep()}</div>
+        {isOnboardingFormStep ? (
+          <div
+            className={`mt-8 lg:mt-15 ${
+              currentStep === "upload-documents" ? "pb-0 lg:pb-0" : "pb-20 lg:pb-12"
+            }`}
+          >
+            {renderStep()}
+          </div>
         ) : (
           <div className="relative mt-0 min-w-0">
             <div className="mt-10 min-w-0 max-w-[610px] lg:mt-34">

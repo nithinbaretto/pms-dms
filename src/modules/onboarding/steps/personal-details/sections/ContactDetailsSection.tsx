@@ -15,6 +15,8 @@ type ContactDetailsSectionProps = {
   isSendingOtp?: boolean;
   /** Manual AIF only — PMS Individual omits this so UI stays unchanged. */
   showMobileVerifyHint?: boolean;
+  mobileErrorMessage?: string | null;
+  emailErrorMessage?: string | null;
   onMobileChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onStartVerify: (channel: "mobile" | "email") => void;
@@ -27,27 +29,34 @@ const ContactDetailsSection = ({
   emailLocked = false,
   isSendingOtp = false,
   showMobileVerifyHint = false,
+  mobileErrorMessage,
+  emailErrorMessage,
   onMobileChange,
   onEmailChange,
   onStartVerify,
 }: ContactDetailsSectionProps): ReactElement => {
   const isEmailInvalid = !email.verified;
   const showMobileHint = showMobileVerifyHint && !mobile.verified;
+  const mobileHelperMessage = mobileErrorMessage ?? (showMobileHint ? "Please verify your mobile number." : null);
+  const emailHelperMessage = emailErrorMessage ?? (isEmailInvalid ? "Please verify your email." : null);
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal text-[#231F20]">
+      <h2
+        className="font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal"
+        style={{ color: "var(--color-onboarding-heading-strong)" }}
+      >
         Contact details
       </h2>
 
-      <div className="grid w-full max-w-[860px] grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
+      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         <div className="space-y-1">
           <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
             Mobile Number <span className="text-[#E8402F]">*</span>
           </label>
           <div
             className={`flex h-9 items-center rounded-[8px] border bg-white pr-2 ${
-              showMobileHint ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
+              mobileHelperMessage ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
             }`}
           >
             <div className="flex h-full items-center gap-1 bg-[#f5f5f5] px-2 text-right font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#71859B]">
@@ -78,9 +87,9 @@ const ContactDetailsSection = ({
               </Button>
             )}
           </div>
-          {showMobileHint ? (
+          {mobileHelperMessage ? (
             <p className="text-xs leading-[18px] text-[var(--color-onboarding-danger)]">
-              Please verify your mobile number.
+              {mobileHelperMessage}
             </p>
           ) : null}
         </div>
@@ -91,7 +100,7 @@ const ContactDetailsSection = ({
           </label>
           <div
             className={`flex h-9 items-center rounded-[8px] border bg-white pr-1 ${
-              isEmailInvalid ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
+              emailHelperMessage ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
             }`}
           >
             <Input
@@ -118,10 +127,12 @@ const ContactDetailsSection = ({
               </Button>
             )}
           </div>
-          {isEmailInvalid ? (
-            <p className="text-xs leading-[18px] text-[var(--color-onboarding-danger)]">Please verify your email.</p>
+          {emailHelperMessage ? (
+            <p className="text-xs leading-[18px] text-[var(--color-onboarding-danger)]">{emailHelperMessage}</p>
           ) : null}
         </div>
+
+        <div aria-hidden="true" className="hidden lg:block" />
       </div>
     </section>
   );

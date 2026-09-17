@@ -30,15 +30,16 @@ const GstSelectionSection = ({
   onUploadForRecord,
 }: GstSelectionSectionProps): ReactElement => {
   const selectedCount = records.filter((record) => record.selected).length;
+  const isAllSelected = records.length > 0 && selectedCount === records.length;
 
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-[860px]">
+        <div className="flex max-w-[860px] flex-col gap-[4px]">
           <h2 className="text-[16px] font-medium leading-[24px] tracking-normal text-[#231f20]">
             GST Details
           </h2>
-          <p className="mt-1 text-[12px] font-medium leading-none tracking-normal text-[#435160]">
+          <p className="text-[12px] font-medium leading-none tracking-normal text-[#435160]">
             {GST_DESCRIPTION}
           </p>
         </div>
@@ -64,7 +65,7 @@ const GstSelectionSection = ({
               onClick={onSelectAll}
               type="button"
             >
-              Select All
+              {isAllSelected ? "Deselect All" : "Select All"}
             </button>
           </div>
 
@@ -88,7 +89,7 @@ const GstSelectionSection = ({
             <p className="text-[16px] font-medium leading-[24px] text-[#231f20]">
               {GST_EMPTY_TITLE}
             </p>
-            <p className="max-w-[440px] text-[13px] leading-[19.5px] text-[#71859b]">
+            <p className="max-w-none whitespace-nowrap text-[13px] leading-[19.5px] text-[#71859b]">
               {GST_EMPTY_DESCRIPTION}
             </p>
           </div>

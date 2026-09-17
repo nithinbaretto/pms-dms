@@ -47,7 +47,7 @@ const AddressDisplayField = ({
         className={cn(
           "w-full text-left font-['Mulish',sans-serif] text-[14px] font-normal tracking-normal",
           hasValue
-            ? "flex min-h-[76px] items-start rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] p-3 leading-[21px] text-[#231F20]"
+            ? "flex min-h-[76px] items-center rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] px-3 text-[13px] leading-[19.5px] text-[#5A6B7D]"
             : "flex h-9 items-center overflow-hidden rounded-[8px] border border-[#eeeeee] bg-white px-[14px] leading-none text-[#71859B]",
         )}
         id={id}
@@ -69,7 +69,7 @@ const ManualAddressSection = ({
   onEditCorrespondenceAddress,
 }: ManualAddressSectionProps): ReactElement => {
   return (
-    <section className="grid w-full max-w-[860px] grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
+    <section className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
       <AddressDisplayField
         address={permanentAddress}
         id="manual-permanent-address"
@@ -84,6 +84,7 @@ const ManualAddressSection = ({
         onEdit={onEditCorrespondenceAddress}
         placeholder="Enter Correspondence Address"
       />
+      <div aria-hidden="true" className="hidden lg:block" />
     </section>
   );
 };

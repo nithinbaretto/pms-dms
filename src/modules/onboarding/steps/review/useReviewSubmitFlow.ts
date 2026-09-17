@@ -5,6 +5,11 @@ import { useOnboardingStore } from "../../state/onboarding-store";
 import { REVIEW_SECTION_STEP } from "./constants";
 import type { CreateApplicationResponse, ReviewDetailsResponse, ReviewSectionId } from "./types";
 
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+
 type UseReviewSubmitFlowResult = {
   review: ReviewDetailsResponse | null;
   isLoading: boolean;
@@ -81,7 +86,7 @@ export const useReviewSubmitFlow = (
   );
 
   const submitApplication = useCallback(async (): Promise<CreateApplicationResponse | null> => {
-    if (!leadId || isSubmitting) {
+    if (!leadId || isSubmitting || !review) {
       return null;
     }
 
@@ -90,19 +95,75 @@ export const useReviewSubmitFlow = (
     setSubmitMessage(null);
 
     try {
-      const response = await onboardingApi.createApplication(leadId);
-      setSubmitMessage(response.message || "Application submitted successfully");
-      setSubmissionResult(response);
-      setIsSubmitted(true);
-      return response;
+      if (review.isSubmit) {
+        const response = await onboardingApi.createApplication(leadId);
+        setSubmitMessage(response.message || "Application submitted successfully");
+        setSubmissionResult(response);
+        setIsSubmitted(true);
+        return response;
+      }
+
+      const esignPayload = {
+        email: review.personal.email.trim(),
+        leadId,
+        mobile: review.personal.mobile.trim(),
+        name: review.personal.name.trim(),
+        panNumber: review.personal.panNumber.trim().toUpperCase(),
+      };
+
+      if (!esignPayload.email || !esignPayload.mobile || !esignPayload.name || !esignPayload.panNumber) {
+        setError("Unable to initiate e-sign. Missing personal details.");
+        return null;
+      }
+
+      const esignCreate = await onboardingApi.createEsign(esignPayload);
+      if (!esignCreate.documentId) {
+        setError("Unable to initiate e-sign. Missing e-sign document information.");
+        return null;
+      }
+
+      if (esignCreate.signUrl) {
+        window.open(esignCreate.signUrl, "_blank", "noopener,noreferrer");
+      }
+
+      const maxPollAttempts = 75;
+      for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+        await sleep(4000);
+
+        const status = await onboardingApi.getEsignStatus({
+          ...esignPayload,
+          esignDocumentId: esignCreate.documentId,
+        });
+
+        if (status.signed) {
+          const response = await onboardingApi.createApplication(leadId);
+          setSubmitMessage(response.message || "Application submitted successfully");
+          setSubmissionResult(response);
+          setIsSubmitted(true);
+          return response;
+        }
+
+        if (status.rejected) {
+          setError("E-sign request was rejected.");
+          return null;
+        }
+
+        if (status.expired) {
+          setError("E-sign request has expired. Please try again.");
+          return null;
+        }
+      }
+
+      setError("E-sign is taking longer than expected. Please try again.");
+      return null;
     } catch {
-      setError("Unable to submit application. Please try again.");
+      setError("Unable to complete submission. Please try again.");
       setSubmissionResult(null);
       return null;
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, leadId]);
+  }, [isSubmitting, leadId, review]);
 
   useEffect(() => {
     void loadReview();

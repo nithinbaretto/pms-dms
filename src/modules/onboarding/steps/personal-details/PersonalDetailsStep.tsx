@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import OnboardingStepFooter from "../../components/OnboardingStepFooter";
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
+import { useOnboardingStore } from "../../state/onboarding-store";
 import { ENTITY_TYPE_OPTIONS } from "./constants";
 import CorrespondenceAddressModal from "./modals/CorrespondenceAddressModal";
 import OtpVerificationModal from "./modals/OtpVerificationModal";
@@ -16,9 +17,12 @@ import { usePersonalDetailsFlow } from "./usePersonalDetailsFlow";
 
 type PersonalDetailsStepProps = {
   onContinue: (value: PersonalDetailsModel, nextStep?: string | null) => void;
+  isEditMode?: boolean;
 };
 
-const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactElement => {
+const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetailsStepProps): ReactElement => {
+  const setStep = useOnboardingStore((state) => state.setStep);
+
   const {
     data,
     isLoading,
@@ -26,6 +30,8 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
     isSendingOtp,
     isVerifyingOtp,
     error,
+    contactErrorChannel,
+    contactErrorMessage,
     otpChannel,
     otpModalOpen,
     canSave,
@@ -81,6 +87,14 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
 
   const nextLabel = data.nextInfoSection?.trim() || "Business Details";
   const canEditAddress = isManualFlow || (data.email.verified && data.mobile.verified);
+  const mobileContactError =
+    contactErrorChannel === "mobile" && !otpModalOpen ? contactErrorMessage : null;
+  const emailContactError =
+    contactErrorChannel === "email" && !otpModalOpen ? contactErrorMessage : null;
+  const shouldShowGlobalError =
+    Boolean(error) &&
+    !otpModalOpen &&
+    !(contactErrorChannel && contactErrorMessage && error === contactErrorMessage);
 
   return (
     <>
@@ -108,65 +122,68 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
             <div className="h-full w-[20%] rounded-r-full bg-[#37b400]" />
           </div>
 
-          <div className="space-y-6 p-4 md:p-6">
-            {isManualFlow ? (
-              <ManualIdentitySection
-                onDobChange={setDobValue}
-                onNameChange={setNameValue}
-                summary={data.personalDetails}
-              />
-            ) : (
-              <EntitySummarySection
-                entityTypeOptions={ENTITY_TYPE_OPTIONS}
-                onEntityTypeSelect={handleEntityTypeSelect}
-                showArn={isArnFlow}
-                showRegistration={!isKraFlow}
-                summary={data.personalDetails}
-              />
-            )}
+          <div className="p-4 md:p-6">
+            <div className="space-y-6">
+              {isManualFlow ? (
+                <ManualIdentitySection
+                  onDobChange={setDobValue}
+                  onNameChange={setNameValue}
+                  summary={data.personalDetails}
+                />
+              ) : (
+                <EntitySummarySection
+                  entityTypeOptions={ENTITY_TYPE_OPTIONS}
+                  onEntityTypeSelect={handleEntityTypeSelect}
+                  showArn={isArnFlow}
+                  showRegistration={!isKraFlow}
+                  summary={data.personalDetails}
+                />
+              )}
 
-            <ContactDetailsSection
-              email={data.email}
-              emailLocked={emailLockedFromEntry}
-              isSendingOtp={isSendingOtp}
-              mobile={data.mobile}
-              mobileLocked={mobileLockedFromEntry}
-              onEmailChange={setEmailValue}
-              onMobileChange={setMobileValue}
-              onStartVerify={(channel) => {
-                void startOtpForChannel(channel);
-              }}
-              showMobileVerifyHint={isManualFlow}
-            />
-
-            {isManualFlow ? (
-              <ManualAddressSection
-                correspondenceAddress={data.correspondenceAddress}
-                onEditCorrespondenceAddress={() => {
-                  setAddressEditTarget("correspondence");
+              <ContactDetailsSection
+                email={data.email}
+                emailLocked={emailLockedFromEntry}
+                isSendingOtp={isSendingOtp}
+                mobile={data.mobile}
+                mobileLocked={mobileLockedFromEntry}
+                onEmailChange={setEmailValue}
+                onMobileChange={setMobileValue}
+                onStartVerify={(channel) => {
+                  void startOtpForChannel(channel);
                 }}
-                onEditPermanentAddress={() => {
-                  setAddressEditTarget("permanent");
-                }}
-                permanentAddress={data.permanentAddress}
+                mobileErrorMessage={mobileContactError}
+                emailErrorMessage={emailContactError}
               />
-            ) : (
-              <AddressSection
-                canEditCorrespondenceAddress={canEditAddress}
-                correspondenceAddress={data.correspondenceAddress}
-                onEditCorrespondenceAddress={() => {
-                  if (!canEditAddress) {
-                    return;
-                  }
 
-                  setAddressEditTarget("correspondence");
-                }}
-                permanentAddress={data.permanentAddress}
-              />
-            )}
+              {isManualFlow ? (
+                <ManualAddressSection
+                  correspondenceAddress={data.correspondenceAddress}
+                  onEditCorrespondenceAddress={() => {
+                    setAddressEditTarget("correspondence");
+                  }}
+                  onEditPermanentAddress={() => {
+                    setAddressEditTarget("permanent");
+                  }}
+                  permanentAddress={data.permanentAddress}
+                />
+              ) : (
+                <AddressSection
+                  canEditCorrespondenceAddress={canEditAddress}
+                  correspondenceAddress={data.correspondenceAddress}
+                  onEditCorrespondenceAddress={() => {
+                    if (!canEditAddress) {
+                      return;
+                    }
 
-            {error && !otpModalOpen ? (
-              <p className="text-sm text-[var(--color-onboarding-danger)]">{error}</p>
+                    setAddressEditTarget("correspondence");
+                  }}
+                  permanentAddress={data.permanentAddress}
+                />
+              )}
+            </div>
+
+            {shouldShowGlobalError ? (
+              <p className="mt-2 text-[13px] leading-[18px] text-[var(--color-onboarding-danger)]">{error}</p>
             ) : null}
           </div>
         </section>
@@ -174,7 +191,12 @@ const PersonalDetailsStep = ({ onContinue }: PersonalDetailsStepProps): ReactEle
 
       <OnboardingStepFooter
         nextLabel={nextLabel}
+        nextClickable={isEditMode}
+        onNextClick={() => {
+          setStep("business-details");
+        }}
         showPrevious={false}
+        continueLabel={isEditMode ? "Go to Review" : "Continue"}
         continueDisabled={!canSave}
         isLoading={isSaving}
         loadingLabel="Saving..."

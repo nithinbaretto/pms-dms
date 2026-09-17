@@ -3,6 +3,7 @@ import { ArrowRight, Loader2 } from "lucide-react";
 
 import arnIcon from "../../../../assets/icons/svg/ARN.svg";
 import digilockerIcon from "../../../../assets/icons/svg/digilocker.svg";
+import editIcon from "../../../../assets/icons/svg/edit.svg";
 import kraIcon from "../../../../assets/icons/svg/kra.svg";
 import manualIcon from "../../../../assets/icons/svg/manual.svg";
 import { Button } from "../../../../shared/ui/button";
@@ -18,6 +19,7 @@ type OnboardingMethodStepProps = {
   onMethodChange: (value: OnboardingMethod) => void;
   onBack: () => void;
   onContinue: () => void;
+  onEditPan?: () => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
 };
@@ -66,6 +68,7 @@ const OnboardingMethodStep = ({
   onMethodChange,
   onBack,
   onContinue,
+  onEditPan,
   isSubmitting = false,
   errorMessage = null,
 }: OnboardingMethodStepProps): ReactElement => {
@@ -79,10 +82,17 @@ const OnboardingMethodStep = ({
             </h2>
 
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-onboarding-pill-background)] px-2 py-1 text-xs font-medium text-[var(--color-onboarding-primary)]">
+              <button
+                aria-label="Edit PAN"
+                className="inline-flex h-[26px] items-center gap-2 rounded-full bg-[rgba(147,22,30,0.06)] px-2 py-1 font-['Mulish',sans-serif] text-[12px] font-medium leading-[18px] tracking-normal text-[#93161E] transition-opacity hover:opacity-80 disabled:opacity-50"
+                disabled={isSubmitting}
+                onClick={onEditPan}
+                type="button"
+              >
                 PAN : {panNumber}
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-onboarding-pill-background)] px-2 py-1 text-xs font-medium text-[var(--color-onboarding-primary)]">
+                <img alt="" className="size-[14px] shrink-0" src={editIcon} />
+              </button>
+              <span className="inline-flex h-[26px] items-center rounded-full bg-[rgba(147,22,30,0.06)] px-2 py-1 font-['Mulish',sans-serif] text-[12px] font-medium leading-[18px] tracking-normal text-[#93161E]">
                 AIF
               </span>
             </div>

@@ -1,6 +1,6 @@
 import type { ChangeEvent, ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, ChevronRight, Upload, X } from "lucide-react";
 
 import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import { Dialog, DialogContent } from "../../../../../shared/ui/dialog";
@@ -35,6 +35,7 @@ const UploadKartaDocumentModal = ({
   const [draft, setDraft] = useState<KartaDocumentFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [showGuidelines, setShowGuidelines] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -189,7 +190,18 @@ const UploadKartaDocumentModal = ({
               </p>
             ) : null}
 
-            {!draft && kind !== "signature" ? <UploadImageGuidelines /> : null}
+            {!draft ? (
+              <button
+                className="inline-flex items-center gap-[4px] self-start font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#93161E]"
+                onClick={() => {
+                  setShowGuidelines(true);
+                }}
+                type="button"
+              >
+                View upload guidelines
+                <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
+              </button>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-4">
               <button
@@ -217,6 +229,37 @@ const UploadKartaDocumentModal = ({
                 Save
               </button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setShowGuidelines(false);
+          }
+        }}
+        open={showGuidelines}
+      >
+        <DialogContent className="hide-scrollbar max-h-[calc(100vh-48px)] w-[calc(100%-2rem)] max-w-[679.5px] overflow-y-auto rounded-[16px] border-0 p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] [&>button.absolute]:hidden">
+          <div className="relative space-y-5 bg-white p-6 md:p-8">
+            <div className="pr-8">
+              <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
+                Upload guidelines
+              </h2>
+            </div>
+            <button
+              aria-label="Close"
+              className="absolute right-6 top-6 flex size-6 items-center justify-center text-[#435160] hover:opacity-70 md:right-8 md:top-8"
+              onClick={() => {
+                setShowGuidelines(false);
+              }}
+              type="button"
+            >
+              <X className="size-6" strokeWidth={1.5} />
+            </button>
+
+            <UploadImageGuidelines showTitle={false} />
           </div>
         </DialogContent>
       </Dialog>

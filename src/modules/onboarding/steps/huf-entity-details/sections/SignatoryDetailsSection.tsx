@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Check, ChevronDown, Plus } from "lucide-react";
 
-import editIcon from "../../../../../assets/icons/edit_icon.png";
+import editIcon from "../../../../../assets/icons/svg/edit.svg";
 import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import noSignatoryImg from "../../../../../assets/images/no_signatory.png";
 import { formatMobileDisplay } from "../helpers";

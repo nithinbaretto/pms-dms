@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Plus } from "lucide-react";
 
-import editIcon from "../../../../../assets/icons/edit_icon.png";
+import editIcon from "../../../../../assets/icons/svg/edit.svg";
 import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import noKartaImg from "../../../../../assets/images/no_karta.png";
 import KartaPersonAvatar from "../components/KartaPersonAvatar";

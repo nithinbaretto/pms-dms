@@ -40,6 +40,7 @@ const AprnVerificationStep = ({
   const [aprnNumber, setAprnNumber] = useState("");
   const [empanelmentType, setEmpanelmentType] = useState<EmpanelmentType>("Distributor");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const hasAifCategory = productCategories.includes("AIF");
   const [variant, setVariant] = useState<AprnStepVariant>(
@@ -73,12 +74,14 @@ const AprnVerificationStep = ({
 
     if (validationError) {
       setErrorMessage(validationError);
+      setWarningMessage(null);
       setVariant("error");
       return;
     }
 
     if (!leadId || !panNumber.trim()) {
       setErrorMessage("Unable to verify APRN. Please restart onboarding.");
+      setWarningMessage(null);
       setVariant("error");
       return;
     }
@@ -98,6 +101,7 @@ const AprnVerificationStep = ({
 
       if (!response.success || response.validationStatus !== true) {
         setErrorMessage(backendMessage || "Please enter valid APRN Number");
+        setWarningMessage(null);
         setVariant("error");
         return;
       }
@@ -108,6 +112,7 @@ const AprnVerificationStep = ({
 
       if (!email || !mobile) {
         setErrorMessage("Unable to send OTP. Email or mobile not available from APMI.");
+        setWarningMessage(null);
         setVariant("error");
         return;
       }
@@ -127,11 +132,13 @@ const AprnVerificationStep = ({
 
         if (!otpResponse.success) {
           setErrorMessage(otpResponse.message || "Unable to send OTP. Please try again.");
+          setWarningMessage(null);
           setVariant("error");
           return;
         }
       } catch {
         setErrorMessage("Unable to send OTP. Please try again.");
+        setWarningMessage(null);
         setVariant("error");
         return;
       }
@@ -144,10 +151,18 @@ const AprnVerificationStep = ({
       setLeadId(resolvedLeadId);
       setArn(normalizedAprn);
       setErrorMessage(null);
+      setWarningMessage(response.warningMessage?.trim() || null);
       setVariant(hasAifCategory ? "riaVariant" : "default");
+
+      // For APRN success flow, hold for 4 seconds before OTP redirection.
+      await new Promise((resolve) => {
+        setTimeout(resolve, 4000);
+      });
+
       onContinue();
     } catch (error) {
       setErrorMessage(extractErrorMessage(error) || "Please enter valid APRN Number");
+      setWarningMessage(null);
       setVariant("error");
     } finally {
       setIsSubmitting(false);
@@ -158,10 +173,12 @@ const AprnVerificationStep = ({
     <AprnFormCard
       empanelmentType={empanelmentType}
       errorMessage={errorMessage}
+      warningMessage={warningMessage}
       isSubmitting={isSubmitting}
       onBack={onBack}
       onChange={(next) => {
         setAprnNumber(next);
+        setWarningMessage(null);
 
         if (errorMessage) {
           setErrorMessage(null);

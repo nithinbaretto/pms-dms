@@ -16,12 +16,20 @@ import gstGuideline2 from "../../../../../assets/images/guidlines_img_2.png";
 import gstGuideline3 from "../../../../../assets/images/guidlines_img_3.png";
 import gstGuideline4 from "../../../../../assets/images/guidlines_img_4.png";
 import { Button } from "../../../../../shared/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "../../../../../shared/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "../../../../../shared/ui/dialog";
 import { Input } from "../../../../../shared/ui/input";
 import { MAX_GST_CERTIFICATE_BYTES } from "../constants";
 import { abbreviateStateName, formatStateLabel } from "../helpers";
 import type { ManualGstDraft, ValidateGstResult } from "../types";
-import { formatGstName, isDuplicateGstNumber, isValidGstNumber } from "../validation";
+import {
+  formatGstName,
+  isDuplicateGstNumber,
+  isValidGstNumber,
+} from "../validation";
 import CameraCaptureModal from "../../../components/CameraCaptureModal";
 import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
 
@@ -221,7 +229,9 @@ const AddGstModal = ({
     setDraft((current) => ({ ...current, fileURL }));
   };
 
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
+  const handleFileChange = async (
+    event: ChangeEvent<HTMLInputElement>,
+  ): Promise<void> => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) {
       return;
@@ -251,8 +261,11 @@ const AddGstModal = ({
       <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
         GST Number <span className="text-[#E8402F]">*</span>
       </label>
-      <div className={`flex h-[38px] overflow-hidden rounded-[8px] bg-white ${formatError ? "border border-[#d8787d]" : "border border-[#e5e5e6]"
-        }`}>
+      <div
+        className={`flex h-[38px] overflow-hidden rounded-[8px] bg-white ${
+          formatError ? "border border-[#d8787d]" : "border border-[#e5e5e6]"
+        }`}
+      >
         <Input
           className="h-full flex-1 rounded-none border-0 bg-transparent px-3 uppercase shadow-none focus-visible:border-transparent focus-visible:ring-0 disabled:bg-transparent"
           disabled={gstNumberLocked}
@@ -298,19 +311,11 @@ const AddGstModal = ({
     </div>
   );
 
-  const isSideBySideFields = isAddingAnother;
-  const fieldColClass = isSideBySideFields
-    ? "min-w-0 w-1/2 space-y-1"
-    : "w-full space-y-1";
   const manualDetailsFields = (
     <>
       <div className="flex flex-col gap-3">
-        <div
-          className={
-            isSideBySideFields ? "flex w-full flex-nowrap gap-3" : "contents"
-          }
-        >
-          <div className={fieldColClass}>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="w-full space-y-1">
             <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
               State <span className="text-[#E8402F]">*</span>
             </label>
@@ -332,9 +337,10 @@ const AddGstModal = ({
                   </option>
                 ))}
                 {draft.stateCode &&
-                  !stateOptions.some(
-                    (state) => state.toLowerCase() === draft.stateCode.toLowerCase(),
-                  ) ? (
+                !stateOptions.some(
+                  (state) =>
+                    state.toLowerCase() === draft.stateCode.toLowerCase(),
+                ) ? (
                   <option value={draft.stateCode}>
                     {formatStateLabel(draft.stateCode)}
                   </option>
@@ -344,7 +350,7 @@ const AddGstModal = ({
             </div>
           </div>
 
-          <div className={fieldColClass}>
+          <div className="w-full space-y-1">
             <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
               Legal Name <span className="text-[#E8402F]">*</span>
             </label>
@@ -356,6 +362,7 @@ const AddGstModal = ({
                   legalName: event.target.value,
                 }));
               }}
+              placeholder="Enter Legal Name"
               value={draft.legalName}
             />
           </div>
@@ -379,8 +386,9 @@ const AddGstModal = ({
               />
 
               <div
-                className={`rounded-[8px] border-2 border-dotted bg-[#f9f9f9] p-4 ${fileError ? "border-[#d8787d]" : "border-[#EEEEEE]"
-                  }`}
+                className={`rounded-[8px] border-2 border-dotted bg-[#f9f9f9] p-4 ${
+                  fileError ? "border-[#d8787d]" : "border-[#EEEEEE]"
+                }`}
               >
                 {draft.fileURL && localPreview ? (
                   <div className="relative mx-auto h-[220px] max-w-[420px] rounded-[4px] bg-white p-2">
@@ -455,10 +463,11 @@ const AddGstModal = ({
       ) : null}
 
       <Button
-        className={`h-[42px] w-full rounded-[8px] text-[14px] leading-[21px] ${canContinue || isUploading
-          ? "bg-[#aa1722] text-white hover:bg-[#93161e]"
-          : "bg-[#d9d9d9] text-[#71859b] hover:bg-[#d9d9d9]"
-          }`}
+        className={`h-[42px] w-full rounded-[8px] text-[14px] leading-[21px] ${
+          canContinue || isUploading
+            ? "bg-[#aa1722] text-white hover:bg-[#93161e]"
+            : "bg-[#d9d9d9] text-[#71859b] hover:bg-[#d9d9d9]"
+        }`}
         disabled={!canContinue || isUploading}
         onClick={() => {
           addDraftToPending(draft);
@@ -487,7 +496,7 @@ const AddGstModal = ({
         }}
         open={open && !showCamera}
       >
-        <DialogContent className="h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] gap-0 overflow-y-auto rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]">
+        <DialogContent className="hide-scrollbar h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] gap-0 overflow-y-auto rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]">
           <div className="p-6">
             <div className="mb-4">
               <DialogTitle className="pr-8 font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] !text-[#435160]">
@@ -505,7 +514,10 @@ const AddGstModal = ({
                         key={item.gstNumber}
                       >
                         <span className="mt-0.5 mr-2 flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-[3.5px] bg-[#93161E]">
-                          <Check className="h-[9px] w-[9px] text-white" strokeWidth={3} />
+                          <Check
+                            className="h-[9px] w-[9px] text-white"
+                            strokeWidth={3}
+                          />
                         </span>
                         <div className="flex min-w-0 flex-1 flex-col gap-2">
                           <p className="truncate font-['Mulish',sans-serif] text-[14px] font-medium leading-[100%] tracking-[0px] text-[#231F20]">
@@ -518,7 +530,11 @@ const AddGstModal = ({
                         </div>
                         <div className="ml-3 flex shrink-0 items-center gap-2 self-center">
                           {item.requiresCertificate ? (
-                            <img alt="" className="h-[11px] w-[11px]" src={documentIcon} />
+                            <img
+                              alt=""
+                              className="h-[11px] w-[11px]"
+                              src={documentIcon}
+                            />
                           ) : null}
                           <button
                             aria-label="Remove GST"
@@ -530,12 +546,19 @@ const AddGstModal = ({
                               setPendingDrafts(next);
                               if (next.length === 0) {
                                 setIsAddingAnother(false);
-                                setView("fetch");
+                                setView(
+                                  isAddingAnother && draft.requiresCertificate
+                                    ? "manual"
+                                    : "fetch",
+                                );
                               }
                             }}
                             type="button"
                           >
-                            <Trash2 className="h-[13px] w-[12px]" strokeWidth={1.75} />
+                            <Trash2
+                              className="h-[13px] w-[12px]"
+                              strokeWidth={1.75}
+                            />
                           </button>
                         </div>
                       </div>
@@ -546,7 +569,7 @@ const AddGstModal = ({
                 {isAddingAnother ? (
                   <>
                     <div className="h-px bg-[#EEEEEE]" />
-                    <div className="w-1/2">{gstNumberField}</div>
+                    <div className="w-full">{gstNumberField}</div>
                     {draft.requiresCertificate ? (
                       manualDetailsFields
                     ) : (

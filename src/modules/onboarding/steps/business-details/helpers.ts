@@ -5,6 +5,7 @@ import { formatGstName } from "./validation";
 
 export const mapGstInItemToRecord = (item: GstInItem, index: number): GstRecord => {
   const gstNumber = item.gstInId.trim().toUpperCase();
+  const normalizedFileURL = item.fileURL.trim();
   const registrationStatus: GstRegistrationStatus = gstNumber ? "Registered" : "Unregistered";
 
   return {
@@ -13,10 +14,10 @@ export const mapGstInItemToRecord = (item: GstInItem, index: number): GstRecord 
     stateCode: item.gstInState.trim(),
     legalName: formatGstName(item.gstInName),
     selected: item.isSelected,
-    fileURL: item.fileURL.trim(),
+    fileURL: normalizedFileURL,
     registrationStatus,
-    // Prefetched from getBusinessDetails — certificate not required.
-    requiresCertificate: false,
+    // Preserve manual-upload rows after revisit so save payload keeps documents.
+    requiresCertificate: item.requiresCertificate ?? Boolean(normalizedFileURL),
   };
 };
 
@@ -27,6 +28,7 @@ export const mapRecordToGstInItem = (record: GstRecord): GstInItem => {
     gstInState: record.stateCode.trim(),
     isSelected: record.selected,
     fileURL: record.fileURL.trim(),
+    requiresCertificate: record.requiresCertificate,
   };
 };
 

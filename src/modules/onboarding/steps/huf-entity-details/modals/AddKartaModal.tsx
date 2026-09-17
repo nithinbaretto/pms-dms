@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Loader2, Upload, X } from "lucide-react";
 
-import editIcon from "../../../../../assets/icons/edit_icon.png";
+import editIcon from "../../../../../assets/icons/svg/edit.svg";
 import identityIcon from "../../../../../assets/icons/svg/identity.svg";
 import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import { Checkbox } from "../../../../../shared/ui/checkbox";

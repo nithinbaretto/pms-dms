@@ -35,7 +35,7 @@ const NextLabel = ({
     <button
       type="button"
       onClick={onNextClick}
-      className={`font-['Mulish',sans-serif] text-[13px] font-normal leading-[19.5px] text-[#e8402f] underline underline-offset-2 hover:opacity-80 ${className ?? ""}`}
+      className={`font-['Mulish',sans-serif] text-[13px] font-normal leading-[19.5px] text-[#93161e] underline underline-offset-2 hover:opacity-80 ${className ?? ""}`}
     >
       Next: {nextLabel}
     </button>
@@ -48,10 +48,10 @@ const NextLabel = ({
   );
 
 /**
- * Shared onboarding step footer.
- * - Mobile: stacked Figma layout — Next label above, then [Previous] [Continue]
- * - Desktop: original web layout — Previous left, Next + Continue right
- */
+* Shared onboarding step footer.
+* - Mobile: stacked Figma layout — Next label above, then [Previous] [Continue]
+* - Desktop: original web layout — Previous left, Next + Continue right
+*/
 const OnboardingStepFooter = ({
   nextLabel,
   onNextClick,
@@ -78,7 +78,7 @@ const OnboardingStepFooter = ({
         type="button"
         onClick={onPrevious}
         disabled={previousDisabled || isLoading}
-        className={`flex items-center justify-center rounded-[8px] border border-[#eee] bg-white transition-colors hover:border-[#c7aa7b] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+        className={`flex items-center justify-center rounded-[8px] border border-[#eee] bg-white transition-colors hover:border-[#c7aa7b] focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
       >
         <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-[21px] text-[#435160]">
           {previousLabel}
@@ -95,7 +95,7 @@ const OnboardingStepFooter = ({
         !continueDisabled || isLoading
           ? "bg-[#93161e] hover:bg-[#7a1319] cursor-pointer"
           : "bg-[#e5e5e6] cursor-not-allowed"
-      } ${isLoading ? "cursor-not-allowed" : ""} ${className}`}
+      } border border-transparent focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${isLoading ? "cursor-not-allowed" : ""} ${className}`}
     >
       {continueContent ? (
         continueContent
@@ -126,9 +126,9 @@ const OnboardingStepFooter = ({
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)]">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white pr-[var(--removed-body-scroll-bar-size)] shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)]">
       {/* Mobile — stacked Figma layout */}
-      <div className="mx-auto flex w-full flex-col items-start gap-2 px-4 py-3 sm:px-5 lg:hidden">
+      <div className="mx-auto flex w-full flex-col items-start gap-2 px-6 py-3 lg:hidden">
         {nextLabel ? (
           <NextLabel
             nextLabel={nextLabel}
@@ -145,7 +145,7 @@ const OnboardingStepFooter = ({
       </div>
 
       {/* Desktop — original horizontal layout */}
-      <div className="mx-auto hidden h-16 w-full max-w-[1440px] items-center justify-between px-[60px] xl:px-[120px] lg:flex">
+      <div className="mx-auto hidden h-16 w-full max-w-[1440px] items-center justify-between px-[120px] xl:px-[120px] lg:flex">
         {showPrevious ? (
           renderPrevious("h-9 w-[180px]")
         ) : (
@@ -169,3 +169,4 @@ const OnboardingStepFooter = ({
 };
 
 export default OnboardingStepFooter;
+ 

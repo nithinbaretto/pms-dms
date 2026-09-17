@@ -12,6 +12,10 @@ type GuidelineItem = {
   good: boolean;
 };
 
+const GUIDELINE_SUCCESS_COLOR = "#37B400";
+const GUIDELINE_ALERT_COLOR = "#E8402F";
+const GUIDELINE_STATUS_ICON_SIZE = 8.32;
+
 const GUIDELINE_ITEMS: GuidelineItem[] = [
   { src: guideline1, label: "Clear & Complete", good: true },
   { src: guideline2, label: "Blurry / Out of focus", good: false },
@@ -19,11 +23,23 @@ const GUIDELINE_ITEMS: GuidelineItem[] = [
   { src: guideline4, label: "Poor lighting / Glare", good: false },
 ];
 
-const StatusIcon = ({ good, size }: { good: boolean; size: number }): ReactElement => {
-  const color = good ? "#37B400" : "#E8402F";
+const StatusIcon = ({
+  good,
+  size,
+}: {
+  good: boolean;
+  size: number;
+}): ReactElement => {
+  const color = good ? GUIDELINE_SUCCESS_COLOR : GUIDELINE_ALERT_COLOR;
 
   return (
-    <svg className="shrink-0" fill="none" height={size} viewBox="0 0 18 18" width={size}>
+    <svg
+      className="shrink-0"
+      fill="none"
+      height={size}
+      viewBox="0 0 18 18"
+      width={size}
+    >
       <circle cx="9" cy="9" fill={color} r="9" />
       {good ? (
         <path
@@ -64,19 +80,16 @@ const GuidelineTile = ({
             className="block h-[120px] w-full object-cover object-center"
             src={src}
           />
-          <div className="flex items-center justify-center gap-1">
-            <StatusIcon good={good} size={9} />
-            <p
-              className={`font-['Mulish',sans-serif] text-[6.58px] font-normal leading-[110%] tracking-[0px] whitespace-nowrap ${
-                good ? "text-[#37B400]" : "text-[#E8402F]"
-              }`}
-            >
-              {label}
-            </p>
-          </div>
-        </div>
-        <div className="mt-2 flex h-4 items-center justify-center">
-          <StatusIcon good={good} size={16} />
+          <p
+            className={`font-['Mulish',sans-serif] text-[6.58px] font-normal leading-[110%] tracking-[0px] whitespace-nowrap ${
+              good ? "text-[#37B400]" : "text-[#E8402F]"
+            }`}
+          >
+            <span className="inline-flex items-center gap-[4px]">
+              <StatusIcon good={good} size={GUIDELINE_STATUS_ICON_SIZE} />
+              <span>{label}</span>
+            </span>
+          </p>
         </div>
       </div>
     );
@@ -99,7 +112,7 @@ const GuidelineTile = ({
         />
       </div>
       <div className="flex items-center gap-1">
-        <StatusIcon good={good} size={14} />
+        <StatusIcon good={good} size={GUIDELINE_STATUS_ICON_SIZE} />
         <p
           className={`font-['Mulish',sans-serif] text-[6.58px] font-normal leading-[110%] tracking-[0px] whitespace-nowrap ${
             good ? "text-[#37B400]" : "text-[#E8402F]"
@@ -134,7 +147,7 @@ const UploadImageGuidelines = ({
       ) : null}
       <div
         className={
-            layout === "row"
+          layout === "row"
             ? "grid grid-cols-4 gap-2 rounded-[4px] bg-[#f5f5f5] p-2"
             : "grid grid-cols-2 gap-4"
         }

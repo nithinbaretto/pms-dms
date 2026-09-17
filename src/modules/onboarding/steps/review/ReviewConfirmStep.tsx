@@ -7,7 +7,9 @@ import modalSvgPaths from "../../../../assets/figma-svg/svg-kmnbjcgk4j";
 import imgBgImg from "../../../../assets/images/background_img.png";
 import imgSuccessTick from "../../../../assets/images/success_right_tick.png";
 import imgLogo from "../../../../assets/logo.png";
-import editIcon from "../../../../assets/icons/edit_icon.png";
+import editIcon from "../../../../assets/icons/svg/edit.svg";
+import docIcon from "../../../../assets/icons/svg/doc.svg";
+import eyeIcon from "../../../../assets/icons/svg/eye.svg";
 import OnboardingStepFooter from "../../components/OnboardingStepFooter";
 import { OnboardingContentSkeleton } from "../../components/OnboardingStepSkeleton";
 import { onboardingApi } from "../../services/onboarding-api";
@@ -42,30 +44,6 @@ type ReviewDocumentCardProps = {
   onView: (storageUrl: string) => void;
 };
 
-const FileTypeBadge = ({ type }: { type: string }): ReactElement => (
-  <div className="relative size-[28px] shrink-0" aria-hidden>
-    <svg className="size-full" fill="none" viewBox="0 0 28 28">
-      <path
-        d="M7 2.5h9.5L23 9v16.5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4.5a2 2 0 0 1 2-2Z"
-        fill="#E8402F"
-      />
-      <path d="M16.5 2.5V9H23" fill="#C62828" />
-    </svg>
-    <span className="absolute bottom-[4px] left-1/2 -translate-x-1/2 font-['Mulish',sans-serif] text-[6px] font-bold leading-none text-white uppercase">
-      {type}
-    </span>
-  </div>
-);
-
-const EyeIcon = (): ReactElement => (
-  <svg className="size-[18px] shrink-0" fill="none" viewBox="0 0 15 10" aria-hidden>
-    <path
-      d="M7.5 0C4.375 0 1.6875 1.9375 0.625 4.75C1.6875 7.5625 4.375 9.5 7.5 9.5C10.625 9.5 13.3125 7.5625 14.375 4.75C13.3125 1.9375 10.625 0 7.5 0ZM7.5 8C5.84375 8 4.5 6.65625 4.5 5C4.5 3.34375 5.84375 2 7.5 2C9.15625 2 10.5 3.34375 10.5 5C10.5 6.65625 9.15625 8 7.5 8ZM7.5 3.25C6.53125 3.25 5.75 4.03125 5.75 5C5.75 5.96875 6.53125 6.75 7.5 6.75C8.46875 6.75 9.25 5.96875 9.25 5C9.25 4.03125 8.46875 3.25 7.5 3.25Z"
-      fill="#93161E"
-    />
-  </svg>
-);
-
 const ReviewDocumentCard = ({
   label,
   storageUrl,
@@ -76,8 +54,13 @@ const ReviewDocumentCard = ({
   const typeLabel = fileTypeLabelFromUrl(storageUrl) || "PDF";
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-[12px] rounded-[8px] border border-[#EEEEEE] bg-white px-[12px] py-[10px]">
-      <FileTypeBadge type={typeLabel} />
+    <div className="flex min-w-0 items-center gap-[12px] rounded-[8px] border border-[#EEEEEE] bg-white px-[12px] py-[10px]">
+      <img
+        src={docIcon}
+        alt=""
+        aria-hidden
+        className="size-[24px] shrink-0"
+      />
       <p className="min-w-0 flex-1 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#231F20]">
         {label}
       </p>
@@ -87,9 +70,13 @@ const ReviewDocumentCard = ({
         onClick={() => onView(storageUrl)}
         className="flex size-[24px] shrink-0 items-center justify-center hover:opacity-70 transition-opacity disabled:opacity-40"
         aria-label={`View ${label}`}
-        title={`View ${label}`}
+        title={`View ${label} (${typeLabel})`}
       >
-        {isLoading ? <Loader2 className="size-4 animate-spin text-[#93161e]" /> : <EyeIcon />}
+        {isLoading ? (
+          <Loader2 className="size-4 animate-spin text-[#93161e]" />
+        ) : (
+          <img src={eyeIcon} alt="" aria-hidden className="size-[18px] shrink-0" />
+        )}
       </button>
     </div>
   );
@@ -131,7 +118,7 @@ const TicketCard = ({ label, value, tone, onCopy, copied }: TicketCardProps): Re
         <button
           type="button"
           onClick={onCopy}
-          className="absolute top-1/2 right-[12px] flex size-[24px] -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#71859b] shadow-[0px_1px_2px_rgba(0,0,0,0.06)] transition-colors hover:text-[#435160]"
+          className="absolute top-1/2 right-[12px] flex size-[24px] -translate-y-1/2 items-center justify-center self-center rounded-full bg-white text-[#71859b] shadow-[0px_1px_2px_rgba(0,0,0,0.06)] transition-colors hover:text-[#435160]"
           aria-label={copied ? "Copied" : "Copy application ID"}
           title={copied ? "Copied" : "Copy"}
         >
@@ -211,8 +198,8 @@ function SuccessScreen({ result }: SuccessScreenProps): ReactElement {
 
   return (
     <div className="fixed inset-0 z-50 flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#fffaf6] animate-[fadeIn_0.3s_ease-out]">
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-60">
-        <img alt="" className="absolute top-0 left-[30%] h-full w-auto max-w-none" src={imgBgImg} />
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-60">
+        <img alt="" className="absolute right-0 top-1/2 h-[110vh] w-auto max-w-none -translate-y-1/2" src={imgBgImg} />
       </div>
 
       <div className="relative z-20 shrink-0 px-[20px] pt-[20px] md:px-[40px] md:pt-[24px] lg:px-[60px] lg:pt-[40px] xl:px-[120px] xl:pt-[48px]">
@@ -228,12 +215,14 @@ function SuccessScreen({ result }: SuccessScreenProps): ReactElement {
           <div className="flex flex-col items-center gap-[20px] px-[20px] py-[28px] md:gap-[16px] md:px-[32px] md:py-[32px]">
             <SuccessCheckIcon />
 
-            <div className="flex w-full max-w-[460px] flex-col items-center gap-[8px] text-center">
+            <div className="flex w-full max-w-[620px] flex-col items-center gap-[8px] text-center">
               <h1 className="font-['Mulish',sans-serif] text-[18px] font-semibold leading-[27px] text-[#231f20] md:text-[22px] md:leading-[33px]">
                 Application Submitted for Review
               </h1>
-              <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-center text-[#435160]">
-                A confirmation SMS/Email has been sent to your registered contact details
+              <p className="w-full font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-center text-[#435160] md:whitespace-nowrap">
+                A confirmation SMS/Email has been sent
+                <br className="md:hidden" />
+                to your registered contact details
               </p>
             </div>
 
@@ -286,17 +275,6 @@ type SectionCardProps = {
   children: ReactNode;
 };
 
-const editIconMaskStyle = {
-  WebkitMaskImage: `url(${editIcon})`,
-  maskImage: `url(${editIcon})`,
-  WebkitMaskSize: "contain",
-  maskSize: "contain",
-  WebkitMaskRepeat: "no-repeat",
-  maskRepeat: "no-repeat",
-  WebkitMaskPosition: "center",
-  maskPosition: "center",
-} as const;
-
 const SectionCard = ({ sectionId, onEdit, children }: SectionCardProps): ReactElement => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -312,7 +290,7 @@ const SectionCard = ({ sectionId, onEdit, children }: SectionCardProps): ReactEl
             onClick={() => onEdit(sectionId)}
             className="inline-flex h-[29px] items-center justify-center gap-[6px] px-[12px] rounded-[8px] border border-[#eee] bg-white font-['Mulish',sans-serif] text-[13px] font-normal leading-none tracking-normal text-[#435160]"
           >
-            <span aria-hidden className="size-[14px] shrink-0 bg-[#435160]" style={editIconMaskStyle} />
+            <img alt="" aria-hidden className="size-[14px] shrink-0" src={editIcon} />
             Edit
           </button>
           <button
@@ -369,6 +347,10 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
   const handleSubmit = (): void => {
     void submitApplication();
   };
+
+  const isDirectSubmit = review?.isSubmit ?? true;
+  const continueLabel = isDirectSubmit ? "Submit" : "Proceed to E-sign";
+  const continueLoadingLabel = isDirectSubmit ? "Submitting..." : "Proceeding to E-sign...";
 
   const closePreview = (): void => {
     setIsPreviewOpen(false);
@@ -631,7 +613,7 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
 
                 <SectionCard sectionId="documents" onEdit={handleEdit}>
                   {review?.documents.signatureUploaded || review?.documents.photoUploaded ? (
-                    <div className="flex flex-col gap-[12px] sm:flex-row sm:gap-[16px]">
+                    <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4 lg:gap-[16px]">
                       {review.documents.signatureUploaded ? (
                         <ReviewDocumentCard
                           label="Specimen Signature"
@@ -677,11 +659,11 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
       <OnboardingStepFooter
         onPrevious={onBack}
         previousDisabled={isSubmitting || isDownloadingForm}
-        continueLabel="Submit"
-        hideContinueArrow
+        continueLabel={continueLabel}
+        hideContinueArrow={isDirectSubmit}
         continueDisabled={isLoading || !review}
         isLoading={isSubmitting}
-        loadingLabel="Submitting..."
+        loadingLabel={continueLoadingLabel}
         onContinue={handleSubmit}
         beforeContinue={
           <button
@@ -760,7 +742,7 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
           <div className="relative bg-white rounded-[16px] shadow-[4px_4px_20px_rgba(0,0,0,0.12)] w-[470px] max-w-[90vw] p-[24px] flex flex-col items-center gap-[16px]">
             <div className="size-[52px] rounded-full border-[6px] border-[#e5e5e6] border-t-[#93161e] animate-spin" />
             <p className="font-['Mulish',sans-serif] text-[20px] leading-[30px] text-[#435160] text-center">
-              Submitting application...
+              {isDirectSubmit ? "Submitting application..." : "Proceeding to E-sign..."}
             </p>
           </div>
         </div>

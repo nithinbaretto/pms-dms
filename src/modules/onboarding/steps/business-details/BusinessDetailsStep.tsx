@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import OnboardingStepFooter from "../../components/OnboardingStepFooter";
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
+import { useOnboardingStore } from "../../state/onboarding-store";
 import AddGstModal from "./modals/AddGstModal";
 import AddSignatoryModal from "./modals/AddSignatoryModal";
 import ViewSignatoryDocumentsModal from "./modals/ViewSignatoryDocumentsModal";
@@ -21,12 +22,16 @@ import { useBusinessDetailsFlow } from "./useBusinessDetailsFlow";
 type BusinessDetailsStepProps = {
   onBack: () => void;
   onContinue: (nextStep?: string | null) => void;
+  isEditMode?: boolean;
 };
 
 const BusinessDetailsStep = ({
   onBack,
   onContinue,
+  isEditMode = false,
 }: BusinessDetailsStepProps): ReactElement => {
+  const setStep = useOnboardingStore((state) => state.setStep);
+
   const {
     records,
     selectedBranch,
@@ -79,13 +84,13 @@ const BusinessDetailsStep = ({
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[1240px] space-y-3 pb-28 lg:pb-24">
+      <div className="mx-auto w-full max-w-[1240px] space-y-3">
         <section className="space-y-3">
           <header className="space-y-1">
             <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">
               Business Details
             </h1>
-            {SHOW_PROPRIETORSHIP_SIGNATORY || records.length > 0 ? (
+            {(SHOW_PROPRIETORSHIP_SIGNATORY || records.length >= 0)? (
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 Your details have been fetched from APMI. Fields shown in grey cannot be changed
               </p>
@@ -103,88 +108,95 @@ const BusinessDetailsStep = ({
             <div className="h-full w-[20%] rounded-r-full bg-[#37b400]" />
           </div>
 
-          <div className="space-y-5 px-4 pb-4 pt-6 md:px-6 md:pb-6">
-            {SHOW_PROPRIETORSHIP_SIGNATORY ? (
-              <>
-                <EntityTypeSection onChange={setEntityType} value={entityType} />
+          <div className="px-4 pb-4 pt-6 md:px-6 md:pb-6">
+            <div className="space-y-5">
+              {SHOW_PROPRIETORSHIP_SIGNATORY ? (
+                <>
+                  <EntityTypeSection onChange={setEntityType} value={entityType} />
 
-                <div className="h-px bg-[#e5e5e6]" />
+                  <div className="h-px bg-[#e5e5e6]" />
 
-                <AuthorizedSignatorySection
-                  anyCount={anySignatoryCount}
-                  mode={signatoryMode}
-                  onAdd={() => {
-                    setEditingSignatory(null);
-                    setSignatoryModalOpen(true);
-                  }}
-                  onAnyCountChange={setAnySignatoryCount}
-                  onEdit={(signatory) => {
-                    setEditingSignatory(signatory);
-                    setSignatoryModalOpen(true);
-                  }}
-                  onModeChange={(nextMode) => {
-                    setSignatoryMode(nextMode);
-                    if (nextMode === "jointly") {
-                      setSignatories((current) => current.map((item) => ({ ...item, selected: true })));
-                    }
-                  }}
-                  onRemove={(id) => {
-                    setSignatories((current) => {
-                      const next = current.filter((item) => item.id !== id);
-                      setAnySignatoryCount((count) => Math.min(count, Math.max(next.length, 1)));
-                      return next;
-                    });
-                  }}
-                  onToggleSelected={(id) => {
-                    if (signatoryMode === "jointly") {
-                      return;
-                    }
-                    setSignatories((current) => {
-                      const next = current.map((item) =>
-                        item.id === id ? { ...item, selected: !item.selected } : item,
-                      );
-                      const selectedCount = next.filter((item) => item.selected).length;
-                      setAnySignatoryCount((count) => Math.min(count, Math.max(selectedCount, 1)));
-                      return next;
-                    });
-                  }}
-                  onView={setViewingSignatory}
-                  signatories={signatories}
-                />
+                  <AuthorizedSignatorySection
+                    anyCount={anySignatoryCount}
+                    mode={signatoryMode}
+                    onAdd={() => {
+                      setEditingSignatory(null);
+                      setSignatoryModalOpen(true);
+                    }}
+                    onAnyCountChange={setAnySignatoryCount}
+                    onEdit={(signatory) => {
+                      setEditingSignatory(signatory);
+                      setSignatoryModalOpen(true);
+                    }}
+                    onModeChange={(nextMode) => {
+                      setSignatoryMode(nextMode);
+                      if (nextMode === "jointly") {
+                        setSignatories((current) => current.map((item) => ({ ...item, selected: true })));
+                      }
+                    }}
+                    onRemove={(id) => {
+                      setSignatories((current) => {
+                        const next = current.filter((item) => item.id !== id);
+                        setAnySignatoryCount((count) => Math.min(count, Math.max(next.length, 1)));
+                        return next;
+                      });
+                    }}
+                    onToggleSelected={(id) => {
+                      if (signatoryMode === "jointly") {
+                        return;
+                      }
+                      setSignatories((current) => {
+                        const next = current.map((item) =>
+                          item.id === id ? { ...item, selected: !item.selected } : item,
+                        );
+                        const selectedCount = next.filter((item) => item.selected).length;
+                        setAnySignatoryCount((count) => Math.min(count, Math.max(selectedCount, 1)));
+                        return next;
+                      });
+                    }}
+                    onView={setViewingSignatory}
+                    signatories={signatories}
+                  />
 
-                <div className="h-px bg-[#e5e5e6]" />
-              </>
-            ) : null}
+                  <div className="h-px bg-[#e5e5e6]" />
+                </>
+              ) : null}
 
-            <GstSelectionSection
-              isUploading={isUploading}
-              mode={records.length > 0 ? "selection" : "empty"}
-              onOpenAddGst={openAddGstModal}
-              onSelectAll={selectAllGst}
-              onToggleRecord={toggleGstSelection}
-              onUploadForRecord={(id, file) => {
-                void uploadGstDocumentForRecord(id, file);
-              }}
-              records={records}
-            />
+              <GstSelectionSection
+                isUploading={isUploading}
+                mode={records.length > 0 ? "selection" : "empty"}
+                onOpenAddGst={openAddGstModal}
+                onSelectAll={selectAllGst}
+                onToggleRecord={toggleGstSelection}
+                onUploadForRecord={(id, file) => {
+                  void uploadGstDocumentForRecord(id, file);
+                }}
+                records={records}
+              />
 
-            <div className="h-px bg-[#e5e5e6]" />
+              <div className="h-px bg-[#e5e5e6]" />
 
-            <BranchSelectionSection
-              onSelectBranch={selectBranch}
-              options={branchOptions}
-              selectedBranch={selectedBranch}
-            />
+              <BranchSelectionSection
+                onSelectBranch={selectBranch}
+                options={branchOptions}
+                selectedBranch={selectedBranch}
+              />
+            </div>
 
-            {error ? <p className="text-sm text-[#e2585f]">{error}</p> : null}
+            {error ? <p className="mt-2 text-[13px] leading-[18px] text-[#e2585f]">{error}</p> : null}
           </div>
         </section>
       </div>
 
       <OnboardingStepFooter
         nextLabel="Bank Details"
+        nextClickable={isEditMode}
+        onNextClick={() => {
+          setStep("bank-details");
+        }}
         onPrevious={onBack}
         previousDisabled={isSaving}
+        continueLabel={isEditMode ? "Go to Review" : "Continue"}
         continueDisabled={!canContinueWithSignatory}
         isLoading={isSaving}
         loadingLabel="Saving..."

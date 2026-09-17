@@ -96,6 +96,17 @@ export const IFSC_FORMAT = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
 export const IFSC_MAX_LENGTH = 11;
 
+export const ACCOUNT_NUMBER_MIN_LENGTH = 8;
+export const ACCOUNT_NUMBER_MAX_LENGTH = 18;
+
+export const normalizeBankAccountInput = (value: string): string =>
+  value.replace(/\D/g, "").slice(0, ACCOUNT_NUMBER_MAX_LENGTH);
+
+export const isValidBankAccountNumber = (value: string): boolean => {
+  const digits = normalizeBankAccountInput(value);
+  return digits.length >= ACCOUNT_NUMBER_MIN_LENGTH && digits.length <= ACCOUNT_NUMBER_MAX_LENGTH;
+};
+
 export const normalizeIfscInput = (value: string): string =>
   value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, IFSC_MAX_LENGTH);
 

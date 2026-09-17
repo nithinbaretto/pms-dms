@@ -11,8 +11,18 @@ import {
   toDisplaySrc,
 } from "../documents/helpers";
 import { BankDetailsScreen } from "./BankDetailsScreen";
-import { BANK_DETAILS_PROGRESS_PERCENT, BANK_DETAILS_STEP_LABEL } from "./constants";
-import { formatAccountTypeLabel, formatBranchDisplay, isValidIfscCode, mapDocumentOcrToChequeFields } from "./helpers";
+import {
+  BANK_DETAILS_PROGRESS_PERCENT,
+  BANK_DETAILS_STEP_LABEL,
+  QR_DEFAULT_EXPIRY_SECONDS,
+} from "./constants";
+import {
+  formatAccountTypeLabel,
+  formatBranchDisplay,
+  isValidBankAccountNumber,
+  isValidIfscCode,
+  mapDocumentOcrToChequeFields,
+} from "./helpers";
 import type { BankDetailsModel } from "./types";
 import { useBankDetailsFlow } from "./useBankDetailsFlow";
 
@@ -80,7 +90,7 @@ const BankDetailsStep = ({
   const [showChangeBankScreen, setShowChangeBankScreen] = useState(false);
   const [changeBankTab, setChangeBankTab] = useState<"qr" | "manual">("qr");
   const [qrGenerated, setQrGenerated] = useState(false);
-  const [qrTimer, setQrTimer] = useState(213);
+  const [qrTimer, setQrTimer] = useState(QR_DEFAULT_EXPIRY_SECONDS);
 
   const [showLoadingModal, setShowLoadingModal] = useState(false);
   const [loadingModalAnimating, setLoadingModalAnimating] = useState(false);
@@ -99,6 +109,7 @@ const BankDetailsStep = ({
   const [manualErrorBankBranch, setManualErrorBankBranch] = useState("");
 
   const [manualErrorChequeUploaded, setManualErrorChequeUploaded] = useState(false);
+  const [manualErrorChequeOcrFailed, setManualErrorChequeOcrFailed] = useState(true);
   const [showManualErrorChequeModal, setShowManualErrorChequeModal] = useState(false);
   const [manualErrorChequeModalAnimating, setManualErrorChequeModalAnimating] = useState(false);
   const [manualErrorChequeFileSelected, setManualErrorChequeFileSelected] = useState(false);
@@ -140,7 +151,7 @@ const BankDetailsStep = ({
     stopQrPolling();
     setShowChangeBankScreen(false);
     setQrGenerated(false);
-    setQrTimer(213);
+    setQrTimer(QR_DEFAULT_EXPIRY_SECONDS);
     setManualBankValidating(false);
     setShowLoadingModal(false);
     setLoadingModalAnimating(false);
@@ -305,9 +316,9 @@ const BankDetailsStep = ({
   };
 
   const handleUploadCancelledCheque = useCallback(
-    async (file: File): Promise<boolean> => {
+    async (file: File, options?: { runOcr?: boolean }): Promise<boolean> => {
       setChequeUploadError(null);
-      const result = await uploadCancelledCheque(file);
+      const result = await uploadCancelledCheque(file, { runOcr: options?.runOcr === true });
       if (!result.ok) {
         setChequeUploadError(result.message);
         return false;
@@ -319,6 +330,7 @@ const BankDetailsStep = ({
       );
       setChequeUploaded(true);
       setManualErrorChequeUploaded(true);
+      setManualErrorChequeOcrFailed(!result.ocr);
       setChequePreviewDisplayUrl("");
       setChequePreviewError(null);
 
@@ -407,7 +419,7 @@ const BankDetailsStep = ({
   ]);
 
   const handleManualValidate = async () => {
-    if (!isValidIfscCode(manualIfscCode)) {
+    if (!isValidBankAccountNumber(manualAccountNumber) || !isValidIfscCode(manualIfscCode)) {
       return;
     }
 
@@ -428,6 +440,7 @@ const BankDetailsStep = ({
 
     // Leave fields blank until cancelled-cheque OCR returns values.
     setShowManualValidationError(true);
+    setManualErrorChequeOcrFailed(true);
     clearChequeUploadState();
     setManualErrorReenterAccountNumber("");
     setManualErrorAccountHolderName("");
@@ -445,7 +458,7 @@ const BankDetailsStep = ({
     }
 
     setQrGenerated(true);
-    setQrTimer(session.expiresInSeconds || 600);
+    setQrTimer(session.expiresInSeconds || QR_DEFAULT_EXPIRY_SECONDS);
   };
 
   const handleQrPayment = async () => {
@@ -528,6 +541,7 @@ const BankDetailsStep = ({
         manualErrorBankBranch={manualErrorBankBranch}
         manualErrorChequeFileSelected={manualErrorChequeFileSelected}
         manualErrorChequeModalAnimating={manualErrorChequeModalAnimating}
+        manualErrorChequeOcrFailed={manualErrorChequeOcrFailed}
         manualErrorChequeUploaded={manualErrorChequeUploaded}
         manualErrorReenterAccountNumber={manualErrorReenterAccountNumber}
         manualIfscCode={manualIfscCode}

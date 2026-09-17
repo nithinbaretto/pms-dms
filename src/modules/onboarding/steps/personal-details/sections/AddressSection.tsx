@@ -30,15 +30,15 @@ const AddressSection = ({
 }: AddressSectionProps): ReactElement => {
   return (
     <section className="space-y-3 border-t border-[#e6e7e8] pt-6">
-      <div className="grid w-full max-w-[860px] grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6">
+      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-2">
           <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
             Permanent Address <span className="text-[#E8402F]">*</span>
           </p>
-          <div className="min-h-[76px] rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] p-3 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#231F20]">
-            {formatAddress(permanentAddress) || (
-              <span className="text-[#71859B]">Enter Permanent Address</span>
-            )}
+          <div className="flex min-h-[76px] items-center rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] px-3 font-['Mulish',sans-serif] text-[13px] font-normal leading-[19.5px] tracking-normal text-[#5A6B7D]">
+            <span className="line-clamp-2 whitespace-pre-wrap break-words">
+              {formatAddress(permanentAddress) || "Enter Permanent Address"}
+            </span>
           </div>
         </div>
 
@@ -56,12 +56,14 @@ const AddressSection = ({
               <img alt="" className="h-3 w-3" src={editIcon} /> Edit
             </button>
           </div>
-          <div className="min-h-[76px] rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] p-3 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#231F20]">
-            {formatAddress(correspondenceAddress) || (
-              <span className="text-[#71859B]">Enter Correspondence Address</span>
-            )}
+          <div className="flex min-h-[76px] items-center rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] px-3 font-['Mulish',sans-serif] text-[13px] font-normal leading-[19.5px] tracking-normal text-[#5A6B7D]">
+            <span className="line-clamp-2 whitespace-pre-wrap break-words">
+              {formatAddress(correspondenceAddress) || "Enter Correspondence Address"}
+            </span>
           </div>
         </div>
+
+        <div aria-hidden="true" className="hidden lg:block" />
       </div>
     </section>
   );

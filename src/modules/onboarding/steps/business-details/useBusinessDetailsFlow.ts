@@ -176,7 +176,10 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
   }, []);
 
   const selectAllGst = useCallback((): void => {
-    setRecords((current) => current.map((record) => ({ ...record, selected: true })));
+    setRecords((current) => {
+      const allSelected = current.length > 0 && current.every((record) => record.selected);
+      return current.map((record) => ({ ...record, selected: !allSelected }));
+    });
   }, []);
 
   const removeGstEntry = useCallback((id: string): void => {

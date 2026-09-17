@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 
-import editIcon from "../../../../assets/icons/edit_icon.png";
+import editIcon from "../../../../assets/icons/svg/edit.svg";
 import { Button } from "../../../../shared/ui/button";
 import ProductCategoryCard from "../../components/ProductCategoryCard";
 import SupportFooter from "../../components/SupportFooter";
@@ -71,7 +71,7 @@ const BusinessCategoryStep = ({
               PAN : {panNumber}
               <img
                 alt=""
-                className="size-[11px] shrink-0"
+                className="size-[14px] shrink-0"
                 src={editIcon}
               />
             </button>

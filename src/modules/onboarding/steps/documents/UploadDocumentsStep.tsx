@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import type { ChangeEvent, ReactElement } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { ChevronRight, Info, X } from 'lucide-react';
 
 import svgPaths from '../../../../assets/figma-svg/svg-fcmqq9l0qc';
 import modalSvgPaths from '../../../../assets/figma-svg/svg-kmnbjcgk4j';
@@ -21,6 +22,20 @@ import { useOnboardingStore } from '../../state/onboarding-store';
 import { isPdfDisplaySrc, isPdfFile, pdfSrcToBlob } from './helpers';
 import { useDocumentsFlow } from './useDocumentsFlow';
 
+const SIGNATURE_GUIDELINE_ITEMS = [
+  { src: imgSignGuideline1, label: 'Clear & Complete', good: true },
+  { src: imgSignGuideline2, label: 'Half cut / Incomplete', good: false },
+  { src: imgSignGuideline3, label: 'Blurry / Out of focus', good: false },
+  { src: imgSignGuideline4, label: 'Poor lighting / Glare', good: false },
+];
+
+const PHOTO_GUIDELINE_ITEMS = [
+  { src: imgPhotoGuideline1, label: 'Clear & Complete', good: true },
+  { src: imgPhotoGuideline2, label: 'Half cut / Incomplete', good: false },
+  { src: imgPhotoGuideline3, label: 'Blurry / Out of focus', good: false },
+  { src: imgPhotoGuideline4, label: 'Poor lighting / Glare', good: false },
+];
+
 type UploadDocumentsStepProps = {
   onBack: () => void;
   onContinue: () => void;
@@ -38,6 +53,7 @@ type UploadDocumentsStepProps = {
 interface Props {
   signatureUploaded: boolean;
   photoUploaded: boolean;
+  isPmsFlow: boolean;
   documentRules?: {
     requiresPhoto?: boolean;
     requiresSignature?: boolean;
@@ -84,12 +100,12 @@ function filePreviewMime(file: File | null | undefined): string | undefined {
   return file.type || undefined;
 }
 
-function TrashIcon({ className }: { className?: string }) {
+function TrashIcon({ className, color = '#71859B' }: { className?: string; color?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M20.25 4.5H16.5V3.75C16.5 3.15326 16.2629 2.58097 15.841 2.15901C15.419 1.73705 14.8467 1.5 14.25 1.5H9.75C9.15326 1.5 8.58097 1.73705 8.15901 2.15901C7.73705 2.58097 7.5 3.15326 7.5 3.75V4.5H3.75C3.55109 4.5 3.36032 4.57902 3.21967 4.71967C3.07902 4.86032 3 5.05109 3 5.25C3 5.44891 3.07902 5.63968 3.21967 5.78033C3.36032 5.92098 3.55109 6 3.75 6H4.5V19.5C4.5 19.8978 4.65804 20.2794 4.93934 20.5607C5.22064 20.842 5.60218 21 6 21H18C18.3978 21 18.7794 20.842 19.0607 20.5607C19.342 20.2794 19.5 19.8978 19.5 19.5V6H20.25C20.4489 6 20.6397 5.92098 20.7803 5.78033C20.921 5.63968 21 5.44891 21 5.25C21 5.05109 20.921 4.86032 20.7803 4.71967C20.6397 4.57902 20.4489 4.5 20.25 4.5ZM9 3.75C9 3.55109 9.07902 3.36032 9.21967 3.21967C9.36032 3.07902 9.55109 3 9.75 3H14.25C14.4489 3 14.6397 3.07902 14.7803 3.21967C14.921 3.36032 15 3.55109 15 3.75V4.5H9V3.75ZM18 19.5H6V6H18V19.5ZM10.5 9.75V15.75C10.5 15.9489 10.421 16.1397 10.2803 16.2803C10.1397 16.421 9.94891 16.5 9.75 16.5C9.55109 16.5 9.36032 16.421 9.21967 16.2803C9.07902 16.1397 9 15.9489 9 15.75V9.75C9 9.55109 9.07902 9.36032 9.21967 9.21967C9.36032 9.07902 9.55109 9 9.75 9C9.94891 9 10.1397 9.07902 10.2803 9.21967C10.421 9.36032 10.5 9.55109 10.5 9.75ZM15 9.75V15.75C15 15.9489 14.921 16.1397 14.7803 16.2803C14.6397 16.421 14.4489 16.5 14.25 16.5C14.0511 16.5 13.8603 16.421 13.7197 16.2803C13.579 16.1397 13.5 15.9489 13.5 15.75V9.75C13.5 9.55109 13.579 9.36032 13.7197 9.21967C13.8603 9.07902 14.0511 9 14.25 9C14.4489 9 14.6397 9.07902 14.7803 9.21967C14.921 9.36032 15 9.55109 15 9.75Z"
-        fill="#93161E"
+        fill={color}
       />
     </svg>
   );
@@ -228,6 +244,7 @@ function UploadSignatureModal({
   title,
   previewUrl,
   mimeType,
+  trashIconColor,
   onTrash,
   onCancel,
   onSave,
@@ -235,6 +252,7 @@ function UploadSignatureModal({
   title: string;
   previewUrl: string;
   mimeType?: string;
+  trashIconColor?: string;
   onTrash: () => void;
   onCancel: () => void;
   onSave: () => void;
@@ -247,7 +265,7 @@ function UploadSignatureModal({
             <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
           <button onClick={onTrash} className="overflow-clip size-[24px] shrink-0 hover:opacity-70 transition-opacity mt-[4px]" title="Remove">
-            <TrashIcon className="size-full" />
+            <TrashIcon className="size-full" color={trashIconColor} />
           </button>
         </div>
       </div>
@@ -255,107 +273,14 @@ function UploadSignatureModal({
   );
 }
 
-/* ─── Guideline Strip ────────────────────────────────────────────────────── */
-
-function GuidelinePreview({ src, alt }: { src: string; alt: string }) {
-  return (
-    <div className="absolute inset-0 overflow-hidden rounded-[2px] bg-white">
-      <img alt={alt} className="absolute inset-0 w-full h-full object-cover" src={src} />
-    </div>
-  );
-}
-
-function OverlayStatusIcon({ variant }: { variant: 'good' | 'bad' }) {
-  const isGood = variant === 'good';
-  return (
-    <div className="absolute left-1/2 top-full z-10 size-[9.75px] -translate-x-1/2 -mt-[-20px] overflow-clip pointer-events-none">
-      <svg className="size-full" fill="none" viewBox="0 0 9.75 9.75">
-        <path d={isGood ? svgPaths.p3fa6ec00 : svgPaths.pe3f6400} fill={isGood ? '#37B400' : '#E8402F'} />
-      </svg>
-    </div>
-  );
-}
-
-function GoodTile({ src }: { src: string }) {
-  return (
-    <div className="bg-[#eeffe5] flex-1 min-w-px relative rounded-[5.851px]">
-      <div className="flex items-center justify-center p-[5.851px] size-full">
-        <div className="flex flex-col gap-[5.851px] items-center justify-center relative w-full">
-          <div className="relative w-full" style={{ aspectRatio: '141/115' }}>
-            <GuidelinePreview src={src} alt="Clear document" />
-            <OverlayStatusIcon variant="good" />
-          </div>
-          <div className="flex gap-[2.926px] items-center">
-            <svg className="size-[10.24px] shrink-0" fill="none" viewBox="0 0 8.32 8.32">
-              <path d={svgPaths.p3d2cfb00} fill="#37B400" />
-            </svg>
-            <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#37b400] text-[6.583px] whitespace-nowrap">Clear &amp; Complete</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BadTile({ label, src }: { label: string; src: string }) {
-  return (
-    <div className="bg-[#fff0e5] flex-1 min-w-px relative rounded-[5.851px]">
-      <div className="flex items-center justify-center p-[5.851px] size-full">
-        <div className="flex flex-col gap-[5.851px] items-center justify-center relative w-full">
-          <div className="relative w-full" style={{ aspectRatio: '141/115' }}>
-            <GuidelinePreview src={src} alt={label} />
-            <OverlayStatusIcon variant="bad" />
-          </div>
-          <div className="flex gap-[2.926px] items-center">
-            <svg className="size-[10.24px] shrink-0" fill="none" viewBox="0 0 8.32 8.32">
-              <path d={svgPaths.p1450c700} fill="#E8402F" />
-            </svg>
-            <p className="font-['Mulish',sans-serif] font-normal leading-[1.1] text-[#e8402f] text-[6.583px] whitespace-nowrap">{label}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SignatureGuidelineStrip() {
-  return (
-    <div className="bg-[#f5f5f5] rounded-[4px] w-full shrink-0">
-      <div className="flex gap-[8px] items-stretch p-[8px]">
-        <GoodTile src={imgSignGuideline1} />
-        <BadTile label="Half cut / Incomplete" src={imgSignGuideline2} />
-        <BadTile label="Blurry / Out of focus" src={imgSignGuideline3} />
-        <BadTile label="Poor lighting / Glare" src={imgSignGuideline4} />
-      </div>
-    </div>
-  );
-}
-
-function PhotoGuidelineStrip() {
-  return (
-    <div className="bg-[#f5f5f5] rounded-[4px] w-full shrink-0">
-      <div className="flex gap-[8px] items-stretch p-[8px]">
-        <GoodTile src={imgPhotoGuideline1} />
-        <BadTile label="Half cut / Incomplete" src={imgPhotoGuideline2} />
-        <BadTile label="Blurry / Out of focus" src={imgPhotoGuideline3} />
-        <BadTile label="Poor lighting / Glare" src={imgPhotoGuideline4} />
-      </div>
-    </div>
-  );
-}
-
-function DocumentGuidelineStrip() {
-  return <UploadImageGuidelines showTitle={false} />;
-}
-
-function renderGuidelineStrip(cardType: 'signature' | 'photo' | 'document') {
+function renderGuidelineContent(cardType: 'signature' | 'photo' | 'document', layout: 'grid' | 'row' = 'grid') {
   if (cardType === 'signature') {
-    return <SignatureGuidelineStrip />;
+    return <UploadImageGuidelines items={SIGNATURE_GUIDELINE_ITEMS} layout={layout} showTitle={false} />;
   }
   if (cardType === 'document') {
-    return <DocumentGuidelineStrip />;
+    return <UploadImageGuidelines layout={layout} showTitle={false} />;
   }
-  return <PhotoGuidelineStrip />;
+  return <UploadImageGuidelines items={PHOTO_GUIDELINE_ITEMS} layout={layout} showTitle={false} />;
 }
 
 /* ─── Desktop Upload Card ────────────────────────────────────────────────── */
@@ -365,19 +290,25 @@ function UploadCard({
   uploaded,
   previewUrl,
   mimeType,
+  trashIconColor,
+  showInlineGuidelines,
+  guidelineType,
   onCaptureClick,
   onUploadClick,
+  onViewGuidelinesClick,
   onRemove,
-  cardType,
 }: {
   title: string;
   uploaded: boolean;
   previewUrl?: string;
   mimeType?: string;
+  trashIconColor?: string;
+  showInlineGuidelines?: boolean;
+  guidelineType?: 'signature' | 'photo' | 'document';
   onCaptureClick: () => void;
   onUploadClick: () => void;
+  onViewGuidelinesClick: () => void;
   onRemove: () => void;
-  cardType: 'signature' | 'photo' | 'document';
 }) {
   const cardCls = 'bg-white flex-1 min-w-px rounded-[8px] border border-[#eee] flex flex-col gap-[12px] p-[14px]';
 
@@ -395,7 +326,7 @@ function UploadCard({
         <div className="flex-1 rounded-[8px] border border-[#eee] flex flex-col p-[12px] gap-[12px]">
           <div className="flex justify-end shrink-0">
             <button onClick={onRemove} className="overflow-clip size-[24px] hover:opacity-70 transition-opacity">
-              <TrashIcon className="size-full" />
+              <TrashIcon className="size-full" color={trashIconColor} />
             </button>
           </div>
           <div className="flex min-h-[160px] flex-1 items-center justify-center overflow-hidden">
@@ -437,7 +368,18 @@ function UploadCard({
           </button>
         </div>
       </div>
-      {renderGuidelineStrip(cardType)}
+      {showInlineGuidelines && guidelineType ? (
+        renderGuidelineContent(guidelineType, 'row')
+      ) : (
+        <button
+          className="inline-flex items-center gap-[4px] self-start font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#93161E]"
+          onClick={onViewGuidelinesClick}
+          type="button"
+        >
+          View upload guidelines
+          <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
+        </button>
+      )}
     </div>
   );
 }
@@ -449,19 +391,25 @@ function MobileUploadCard({
   uploaded,
   previewUrl,
   mimeType,
+  trashIconColor,
+  showInlineGuidelines,
+  guidelineType,
   onCaptureClick,
   onUploadClick,
+  onViewGuidelinesClick,
   onRemove,
-  cardType,
 }: {
   title: string;
   uploaded: boolean;
   previewUrl?: string;
   mimeType?: string;
+  trashIconColor?: string;
+  showInlineGuidelines?: boolean;
+  guidelineType?: 'signature' | 'photo' | 'document';
   onCaptureClick: () => void;
   onUploadClick: () => void;
+  onViewGuidelinesClick: () => void;
   onRemove: () => void;
-  cardType: 'signature' | 'photo' | 'document';
 }) {
   if (uploaded && previewUrl) {
     return (
@@ -477,7 +425,7 @@ function MobileUploadCard({
         <div className="rounded-[8px] border border-[#eee] flex flex-col p-[10px] gap-[8px]" style={{ minHeight: '140px' }}>
           <div className="flex justify-end shrink-0">
             <button onClick={onRemove} className="overflow-clip size-[20px] hover:opacity-70 transition-opacity">
-              <TrashIcon className="size-full" />
+              <TrashIcon className="size-full" color={trashIconColor} />
             </button>
           </div>
           <div className="flex flex-1 items-center justify-center overflow-hidden">
@@ -502,7 +450,18 @@ function MobileUploadCard({
         <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px]">Format Supported: PNG, PDF or JPEG up to 2MB</p>
       </div>
 
-      {renderGuidelineStrip(cardType)}
+      {showInlineGuidelines && guidelineType ? (
+        renderGuidelineContent(guidelineType, 'row')
+      ) : (
+        <button
+          className="inline-flex items-center gap-[4px] self-start font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#93161E]"
+          onClick={onViewGuidelinesClick}
+          type="button"
+        >
+          View upload guidelines
+          <ChevronRight className="size-[12px] shrink-0" strokeWidth={1.75} />
+        </button>
+      )}
 
       <div className="flex gap-[12px] items-center w-full">
         <div onClick={onCaptureClick} className="flex-1 min-w-px h-[36px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors flex items-center justify-center gap-[8px]">
@@ -529,6 +488,7 @@ function MobileUploadCard({
 export function UploadDocumentsScreen({
   signatureUploaded,
   photoUploaded,
+  isPmsFlow,
   identityUploaded = false,
   addressUploaded = false,
   showUploadInfoBanner,
@@ -587,6 +547,7 @@ export function UploadDocumentsScreen({
   const [addressObjectUrl, setAddressObjectUrl] = useState<string>('');
   const [pendingAddressFile, setPendingAddressFile] = useState<File | null>(null);
   const addressFileInputRef = useRef<HTMLInputElement>(null);
+  const [guidelineType, setGuidelineType] = useState<'signature' | 'photo' | 'document' | null>(null);
 
   function validateSelectedFile(file: File, fileLabel: string): boolean {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -969,6 +930,7 @@ export function UploadDocumentsScreen({
           title="Upload Signature"
           previewUrl={signaturePreviewUrl}
           mimeType={filePreviewMime(pendingSignatureFile)}
+          trashIconColor="#71859B"
           onTrash={handleSignatureTrash}
           onCancel={handleSignatureCancel}
           onSave={handleSignatureSave}
@@ -981,6 +943,7 @@ export function UploadDocumentsScreen({
           title="Upload Photo"
           previewUrl={photoPreviewUrl}
           mimeType={filePreviewMime(pendingPhotoFile)}
+          trashIconColor="#71859B"
           onTrash={handlePhotoTrash}
           onCancel={handlePhotoCancel}
           onSave={handlePhotoSave}
@@ -1025,18 +988,41 @@ export function UploadDocumentsScreen({
         />
       ) : null}
 
+      {!isPmsFlow && guidelineType ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 overflow-y-auto backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)]"
+            onClick={() => setGuidelineType(null)}
+          />
+          <div className="relative bg-white rounded-[16px] drop-shadow-[4px_4px_20px_rgba(0,0,0,0.12)] flex flex-col gap-[16px] p-[20px] md:p-[32px] w-[calc(100%-32px)] max-w-[679.5px] max-h-[calc(100vh-48px)] overflow-y-auto">
+            <div className="flex h-[33px] items-center justify-between w-full shrink-0">
+              <p className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160] whitespace-nowrap">Upload guidelines</p>
+              <button
+                className="overflow-clip size-[24px] hover:opacity-70 transition-opacity"
+                onClick={() => setGuidelineType(null)}
+                type="button"
+              >
+                <X className="size-6 text-[#435160]" strokeWidth={1.5} />
+              </button>
+            </div>
+            {renderGuidelineContent(guidelineType)}
+          </div>
+        </div>
+      ) : null}
+
       {/* ── Desktop View ── */}
-      <div className="hidden lg:block min-h-screen bg-[#fffaf6] pb-[80px]">
+      <div className="hidden lg:block bg-[#fffaf6]">
         <div className="fixed inset-0 opacity-60 pointer-events-none overflow-hidden">
           <img alt="" className="absolute left-[27.29%] top-[-2.35%] w-[90.41%] h-[107.16%] max-w-none" src={imgBgImg} />
         </div>
 
-        {/* Title — no subtitle, so form starts at top-[229px] */}
-        <div className="hidden lg:flex flex-col gap-[4px] absolute left-[60px] xl:left-[120px] top-[172px] z-20 w-[1200px]">
+        <div className="relative z-10 flex flex-col gap-[24px] pb-[12px]">
+        {/* Title */}
+        <div className="hidden lg:flex flex-col gap-[4px]">
           <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Upload Documents</p>
         </div>
 
-        <div className="absolute left-[60px] xl:left-[120px] top-[229px] z-10 w-[calc(100%-120px)] xl:w-[calc(100%-240px)] max-w-[1200px]">
+        <div>
           <div className="flex flex-col gap-[8px]">
             {/* Step / progress */}
             <div className="flex items-center justify-between font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px] w-full">
@@ -1059,19 +1045,13 @@ export function UploadDocumentsScreen({
                 {showUploadInfoBanner && (
                   <div className="bg-[#E8F1FB] h-[32px] rounded-[8px] flex items-center justify-between px-[12px] shrink-0">
                     <div className="flex gap-[8px] items-center flex-1 min-w-0">
-                      <div className="overflow-clip size-[16px] shrink-0">
-                        <svg className="size-full" fill="none" viewBox="0 0 13 13">
-                          <path d={svgPaths.p1835e980} fill="#193D6C" />
-                        </svg>
-                      </div>
+                      <Info className="size-[16px] shrink-0 text-[#193D6C]" strokeWidth={1.75} />
                       <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[12px] whitespace-nowrap">
                         Upload a clear and properly aligned file (JPG, PNG, or PDF) under 2MB, ensuring it is readable and not blurred or corrupted.
                       </p>
                     </div>
                     <button onClick={() => setShowUploadInfoBanner(false)} className="overflow-clip size-[16px] shrink-0 hover:opacity-70 transition-opacity ml-[8px]">
-                      <svg className="size-full" fill="none" viewBox="0 0 10.0006 10.0006">
-                        <path d={svgPaths.p2662980} fill="#193D6C" />
-                      </svg>
+                      <X className="size-[16px] text-[#193D6C]" strokeWidth={1.75} />
                     </button>
                   </div>
                 )}
@@ -1086,8 +1066,8 @@ export function UploadDocumentsScreen({
                         previewUrl={identityPreviewUrl}
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
+                        onViewGuidelinesClick={() => setGuidelineType('document')}
                         onRemove={handleIdentityRemove}
-                        cardType="document"
                       />
                       <UploadCard
                         title="Proof of Address"
@@ -1095,8 +1075,8 @@ export function UploadDocumentsScreen({
                         previewUrl={addressPreviewUrl}
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
+                        onViewGuidelinesClick={() => setGuidelineType('document')}
                         onRemove={handleAddressRemove}
-                        cardType="document"
                       />
                     </div>
                   ) : null}
@@ -1105,25 +1085,32 @@ export function UploadDocumentsScreen({
                       title="Specimen Signature"
                       uploaded={signatureUploaded}
                       previewUrl={signaturePreviewUrl}
+                      trashIconColor="#71859B"
+                      showInlineGuidelines={isPmsFlow}
+                      guidelineType="signature"
                       onCaptureClick={handleSignatureCaptureClick}
                       onUploadClick={handleSignatureUploadClick}
+                      onViewGuidelinesClick={() => setGuidelineType('signature')}
                       onRemove={handleSignatureRemove}
-                      cardType="signature"
                     />
                     <UploadCard
                       title="Photo Upload"
                       uploaded={photoUploaded}
                       previewUrl={photoPreviewUrl}
+                      trashIconColor="#71859B"
+                      showInlineGuidelines={isPmsFlow}
+                      guidelineType="photo"
                       onCaptureClick={handlePhotoCaptureClick}
                       onUploadClick={handlePhotoUploadClick}
+                      onViewGuidelinesClick={() => setGuidelineType('photo')}
                       onRemove={handlePhotoRemove}
-                      cardType="photo"
                     />
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -1150,19 +1137,13 @@ export function UploadDocumentsScreen({
                 {showUploadInfoBanner && (
                   <div className="bg-[#E8F1FB] rounded-[8px] flex items-start justify-between gap-[8px] p-[12px]">
                     <div className="flex gap-[8px] items-start flex-1">
-                      <div className="overflow-clip size-[16px] shrink-0 mt-[1px]">
-                        <svg className="size-full" fill="none" viewBox="0 0 13 13">
-                          <path d={svgPaths.p1835e980} fill="#193D6C" />
-                        </svg>
-                      </div>
+                      <Info className="mt-[1px] size-[16px] shrink-0 text-[#193D6C]" strokeWidth={1.75} />
                       <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[12px]">
                         Upload a clear and properly aligned file (JPG, PNG, or PDF) under 2MB, ensuring it is readable and not blurred or corrupted.
                       </p>
                     </div>
                     <button onClick={() => setShowUploadInfoBanner(false)} className="overflow-clip size-[16px] shrink-0 hover:opacity-70 transition-opacity mt-[1px]">
-                      <svg className="size-full" fill="none" viewBox="0 0 10.0006 10.0006">
-                        <path d={svgPaths.p2662980} fill="#193D6C" />
-                      </svg>
+                      <X className="size-[16px] text-[#193D6C]" strokeWidth={1.75} />
                     </button>
                   </div>
                 )}
@@ -1176,8 +1157,8 @@ export function UploadDocumentsScreen({
                         previewUrl={identityPreviewUrl}
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
+                        onViewGuidelinesClick={() => setGuidelineType('document')}
                         onRemove={handleIdentityRemove}
-                        cardType="document"
                       />
                       <MobileUploadCard
                         title="Proof of Address"
@@ -1185,8 +1166,8 @@ export function UploadDocumentsScreen({
                         previewUrl={addressPreviewUrl}
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
+                        onViewGuidelinesClick={() => setGuidelineType('document')}
                         onRemove={handleAddressRemove}
-                        cardType="document"
                       />
                     </>
                   ) : null}
@@ -1194,19 +1175,25 @@ export function UploadDocumentsScreen({
                     title="Specimen Signature"
                     uploaded={signatureUploaded}
                     previewUrl={signaturePreviewUrl}
+                    trashIconColor="#71859B"
+                    showInlineGuidelines={isPmsFlow}
+                    guidelineType="signature"
                     onCaptureClick={handleSignatureCaptureClick}
                     onUploadClick={handleSignatureUploadClick}
+                    onViewGuidelinesClick={() => setGuidelineType('signature')}
                     onRemove={handleSignatureRemove}
-                    cardType="signature"
                   />
                   <MobileUploadCard
                     title="Photo Upload"
                     uploaded={photoUploaded}
                     previewUrl={photoPreviewUrl}
+                    trashIconColor="#71859B"
+                    showInlineGuidelines={isPmsFlow}
+                    guidelineType="photo"
                     onCaptureClick={handlePhotoCaptureClick}
                     onUploadClick={handlePhotoUploadClick}
+                    onViewGuidelinesClick={() => setGuidelineType('photo')}
                     onRemove={handlePhotoRemove}
-                    cardType="photo"
                   />
                 </div>
               </div>
@@ -1224,7 +1211,6 @@ export function UploadDocumentsScreen({
         continueDisabled={!canContinue}
         isLoading={isSaving}
         loadingLabel={continueLabel}
-        hideContinueArrow={isEditMode && !isSaving}
         onContinue={() => {
           if (canContinue) {
             onContinue();
@@ -1243,6 +1229,7 @@ const UploadDocumentsStep = ({
   documentRules,
 }: UploadDocumentsStepProps): ReactElement => {
   const { currentFlow, onboardingMethod } = useOnboardingStore();
+  const isPmsFlow = currentFlow.startsWith("pms-");
   const requiresProofDocs =
     currentFlow === "aif-individual" &&
     (onboardingMethod === "MANUAL");
@@ -1328,6 +1315,7 @@ const UploadDocumentsStep = ({
     <UploadDocumentsScreen
       signatureUploaded={signatureUploaded}
       photoUploaded={photoUploaded}
+      isPmsFlow={isPmsFlow}
       identityUploaded={identityUploaded}
       addressUploaded={addressUploaded}
       documentRules={resolvedDocumentRules}

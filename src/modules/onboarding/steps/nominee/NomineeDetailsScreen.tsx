@@ -159,7 +159,7 @@ export function NomineeDetailsScreen({
                   <div className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px]">
                     <button
                       onClick={() => setNomineeOption('later')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
                         nomineeOption === 'later' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                       }`}
                     >
@@ -167,7 +167,7 @@ export function NomineeDetailsScreen({
                     </button>
                     <button
                       onClick={() => setNomineeOption('now')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
                         nomineeOption === 'now' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                       }`}
                     >
@@ -208,13 +208,13 @@ export function NomineeDetailsScreen({
                       </div>
                       <button
                         onClick={() => setShowRelationshipDropdown(!showRelationshipDropdown)}
-                        className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative hover:border-[#c7aa7b] transition-colors"
+                        className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative outline-none transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]"
                       >
                         <div className="flex items-center justify-between px-[14px] h-full">
                           <p className={`font-['Mulish',sans-serif] font-normal text-[13px] ${nomineeRelationship ? 'text-[#231f20]' : 'text-[#71859b]'}`}>
                             {nomineeRelationship || 'Select Relationship with Applicant'}
                           </p>
-                          <svg className="size-[14px]" fill="none" viewBox="0 0 8.62789 4.87783">
+                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#231F20" />
                           </svg>
                         </div>
@@ -248,13 +248,14 @@ export function NomineeDetailsScreen({
                         <p className="text-[#231F20]">Proof of Identity</p>
                         <p className="text-[#E8402F]">*</p>
                       </div>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex items-center">
+                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex items-center focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]">
                         <button
                           onClick={() => setShowProofDropdown(!showProofDropdown)}
-                          className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] h-full hover:bg-[#e8e8e8] transition-colors"
+                          tabIndex={-1}
+                          className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] h-full outline-none hover:bg-[#e8e8e8] transition-colors focus-visible:outline-none rounded-l-[8px]"
                         >
                           <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b]">{nomineeProofType}</p>
-                          <svg className="size-[12px]" fill="none" viewBox="0 0 8.62789 4.87783">
+                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </button>
@@ -286,8 +287,8 @@ export function NomineeDetailsScreen({
                               className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
                             >
                               {proofType === 'Passport' ? (
-                                <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
-                                  <p className="leading-[1.452] mb-0 text-[13px]">Passport</p>
+                                <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap rounded-l-[8px]">
+                                  <p className="leading-[1.452] mb-0 [text-align-last:justify] text-[13px]">Passport</p>
                                   <p className="leading-[1.452] text-[8px]">(For NRI nominees)</p>
                                 </div>
                               ) : (
@@ -302,10 +303,10 @@ export function NomineeDetailsScreen({
                     {/* Mobile Number */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px] max-w-[calc(33.333%-11px)]">
                       <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Mobile Number</p>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex">
-                        <div className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px]">
+                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]">
+                        <div className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] rounded-l-[8px]">
                           <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b] w-[59px]">{nomineeMobileCountry}</p>
-                          <svg className="size-[12px]" fill="none" viewBox="0 0 8.62789 4.87783">
+                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </div>
@@ -366,7 +367,7 @@ export function NomineeDetailsScreen({
                         <div className="flex-1">
                           <button
                             onClick={handleOpenDobPicker}
-                            className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative w-full hover:bg-[#f9f9f9] transition-colors"
+                            className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative w-full outline-none hover:bg-[#f9f9f9] transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]"
                           >
                             <div className="flex items-center justify-between px-[14px] h-full gap-[8px]">
                               <div className="flex gap-[8px] flex-1 items-center font-['Mulish',sans-serif] font-normal text-[13px]">
@@ -391,15 +392,15 @@ export function NomineeDetailsScreen({
                           <p className="text-[#231F20]">Address</p>
                           <p className="text-[#E8402F]">*</p>
                         </div>
-                        <button onClick={handleOpenNomineeAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
+                        <button onClick={handleOpenNomineeAddressModal} className="flex items-center gap-[4px] rounded-[6px] border border-transparent transition-opacity hover:opacity-70 focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0">
                           <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
                             <path d={nomineeFormSvgPaths.p2f5a1780} fill="#93161E" />
                           </svg>
                           <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                         </button>
                       </div>
-                      <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
-                        <div className="flex items-center px-[14px] py-[14px]">
+                      <div className={`${nomineeAddress ?'bg-[#f5f5f5]':'bg-white'} rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                        <div className={`flex items-center px-[14px] ${nomineeAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                           <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${nomineeAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                             {nomineeAddress || 'Enter Address'}
                           </p>
@@ -430,14 +431,18 @@ export function NomineeDetailsScreen({
 
                         {/* Guardian Name */}
                         <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                          <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
-                            <p className="text-[#231F20]">Guardian Name</p>
-                            <p className="text-[#E8402F]">*</p>
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                              <p className="text-[#231F20]">Guardian Name</p>
+                              <p className="text-[#E8402F]">*</p>
+                            </div>
+                            <span className="invisible font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">Edit</span>
                           </div>
                           <Input
                             type="text"
                             value={guardianName}
                             onChange={(e) => setGuardianName(e.target.value)}
+                            placeholder="Enter Guardian Name"
                           />
                         </div>
 
@@ -448,15 +453,15 @@ export function NomineeDetailsScreen({
                               <p className="text-[#231F20]">Address</p>
                               <p className="text-[#E8402F]">*</p>
                             </div>
-                            <button onClick={handleOpenGuardianAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
+                            <button onClick={handleOpenGuardianAddressModal} className="flex items-center gap-[4px] rounded-[6px] border border-transparent transition-opacity hover:opacity-70 focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0">
                               <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
                                 <path d={nomineeFormSvgPaths.p2f5a1780} fill="#93161E" />
                               </svg>
                               <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                             </button>
                           </div>
-                          <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
-                            <div className="flex items-center px-[14px] py-[14px]">
+                          <div className={`${guardianAddress ?'bg-[#f5f5f5]':'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                            <div className={`flex items-center px-[14px] ${guardianAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                               <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${guardianAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                                 {guardianAddress || 'Enter Address'}
                               </p>
@@ -518,7 +523,7 @@ export function NomineeDetailsScreen({
                   <div className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px]">
                     <button
                       onClick={() => setNomineeOption('later')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
                         nomineeOption === 'later' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                       }`}
                     >
@@ -526,7 +531,7 @@ export function NomineeDetailsScreen({
                     </button>
                     <button
                       onClick={() => setNomineeOption('now')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] transition-colors ${
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
                         nomineeOption === 'now' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
                       }`}
                     >
@@ -570,13 +575,13 @@ export function NomineeDetailsScreen({
                       </div>
                       <button
                         onClick={() => setShowRelationshipDropdown(!showRelationshipDropdown)}
-                        className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative hover:border-[#c7aa7b] transition-colors"
+                        className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative outline-none transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]"
                       >
                         <div className="flex items-center justify-between px-[14px] h-full">
                           <p className={`font-['Mulish',sans-serif] font-normal text-[13px] ${nomineeRelationship ? 'text-[#231f20]' : 'text-[#71859b]'}`}>
                             {nomineeRelationship || 'Select Relationship with Applicant'}
                           </p>
-                          <svg className="size-[14px]" fill="none" viewBox="0 0 8.62789 4.87783">
+                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#231F20" />
                           </svg>
                         </div>
@@ -610,13 +615,14 @@ export function NomineeDetailsScreen({
                         <p className="text-[#231F20]">Proof of Identity</p>
                         <p className="text-[#E8402F]">*</p>
                       </div>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex items-center">
+                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex items-center focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]">
                         <button
                           onClick={() => setShowProofDropdown(!showProofDropdown)}
-                          className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] h-full hover:bg-[#e8e8e8] transition-colors"
+                          tabIndex={-1}
+                          className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] h-full outline-none hover:bg-[#e8e8e8] transition-colors focus-visible:outline-none  rounded-l-[8px]"
                         >
                           <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b]">{nomineeProofType}</p>
-                          <svg className="size-[12px]" fill="none" viewBox="0 0 8.62789 4.87783">
+                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </button>
@@ -648,7 +654,7 @@ export function NomineeDetailsScreen({
                               className="content-stretch w-full flex gap-[8px] h-[36px] items-center px-[12px] py-[14px] hover:bg-[#f5f5f5] transition-colors"
                             >
                               {proofType === 'Passport' ? (
-                                <div className="[word-break:break-word] font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
+                                <div className="[word-break:break-word] text-justify font-['Mulish',sans-serif] font-normal leading-[0] text-[#231f20] text-[0px] whitespace-nowrap">
                                   <p className="leading-[1.452] mb-0 text-[13px]">Passport</p>
                                   <p className="leading-[1.452] text-[8px]">(For NRI nominees)</p>
                                 </div>
@@ -664,10 +670,10 @@ export function NomineeDetailsScreen({
                     {/* Mobile Number */}
                     <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
                       <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Mobile Number</p>
-                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex">
-                        <div className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px]">
+                      <div className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative flex focus-within:border-[var(--color-onboarding-primary)] focus-within:ring-2 focus-within:ring-[rgba(147,22,30,0.2)]">
+                        <div className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] rounded-l-[8px]">
                           <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b] w-[59px]">{nomineeMobileCountry}</p>
-                          <svg className="size-[12px]" fill="none" viewBox="0 0 8.62789 4.87783">
+                          <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
                         </div>
@@ -728,7 +734,7 @@ export function NomineeDetailsScreen({
                         <div className="flex-1">
                           <button
                             onClick={handleOpenDobPicker}
-                            className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative w-full hover:bg-[#f9f9f9] transition-colors"
+                            className="bg-white h-[36px] rounded-[8px] border border-[#eee] relative w-full outline-none hover:bg-[#f9f9f9] transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)]"
                           >
                             <div className="flex items-center justify-between px-[14px] h-full gap-[8px]">
                               <div className="flex gap-[8px] flex-1 items-center font-['Mulish',sans-serif] font-normal text-[13px]">
@@ -753,15 +759,15 @@ export function NomineeDetailsScreen({
                           <p className="text-[#231F20]">Address</p>
                           <p className="text-[#E8402F]">*</p>
                         </div>
-                        <button onClick={handleOpenNomineeAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
+                        <button onClick={handleOpenNomineeAddressModal} className="flex items-center gap-[4px] rounded-[6px] border border-transparent transition-opacity hover:opacity-70 focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0">
                           <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
                             <path d={nomineeFormSvgPaths.p2f5a1780} fill="#93161E" />
                           </svg>
                           <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                         </button>
                       </div>
-                      <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
-                        <div className="flex items-center px-[14px] py-[14px]">
+                      <div className={`${nomineeAddress ?'bg-[#f5f5f5]':'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                        <div className={`flex items-center px-[14px]  ${nomineeAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                           <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${nomineeAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                             {nomineeAddress || 'Enter Address'}
                           </p>
@@ -792,14 +798,18 @@ export function NomineeDetailsScreen({
 
                         {/* Guardian Name */}
                         <div className="flex flex-col gap-[4px] flex-1 min-w-[310px]">
-                          <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
-                            <p className="text-[#231F20]">Guardian Name</p>
-                            <p className="text-[#E8402F]">*</p>
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex gap-[2px] items-center font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal">
+                              <p className="text-[#231F20]">Guardian Name</p>
+                              <p className="text-[#E8402F]">*</p>
+                            </div>
+                            <span className="invisible font-['Mulish',sans-serif] font-normal leading-[18px] text-[12px]">Edit</span>
                           </div>
                           <Input
                             type="text"
                             value={guardianName}
                             onChange={(e) => setGuardianName(e.target.value)}
+                            placeholder="Enter Guardian Name"
                           />
                         </div>
 
@@ -810,15 +820,15 @@ export function NomineeDetailsScreen({
                               <p className="text-[#231F20]">Address</p>
                               <p className="text-[#E8402F]">*</p>
                             </div>
-                            <button onClick={handleOpenGuardianAddressModal} className="flex gap-[4px] items-center hover:opacity-70 transition-opacity">
+                            <button onClick={handleOpenGuardianAddressModal} className="flex items-center gap-[4px] rounded-[6px] border border-transparent transition-opacity hover:opacity-70 focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0">
                               <svg className="size-[14px]" fill="none" viewBox="0 0 10.9379 10.9374">
                                 <path d={nomineeFormSvgPaths.p2f5a1780} fill="#93161E" />
                               </svg>
                               <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                             </button>
                           </div>
-                          <div className="bg-[#f5f5f5] rounded-[8.75px] border border-[#e5e5e6] relative">
-                            <div className="flex items-center px-[14px] py-[14px]">
+                          <div className={`${guardianAddress ?'bg-[#f5f5f5]':'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                            <div className={`flex items-center px-[14px] ${guardianAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                               <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${guardianAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                                 {guardianAddress || 'Enter Address'}
                               </p>
@@ -875,7 +885,6 @@ export function NomineeDetailsScreen({
         continueDisabled={!canProceed}
         isLoading={isTransitioning}
         loadingLabel="Saving..."
-        hideContinueArrow={isEditMode}
         onContinue={() => {
           if (!canProceed || isTransitioning) {
             return;
@@ -914,7 +923,7 @@ export function NomineeDetailsScreen({
                 <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Select Date of Birth</p>
                 <button
                   onClick={handleCloseDobPicker}
-                  className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
+                  className="size-[15px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
                 >
                   <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
                     <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
@@ -927,10 +936,11 @@ export function NomineeDetailsScreen({
                 {/* Day */}
                 <div className="flex-1 flex flex-col gap-[8px]">
                   <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Day</label>
+                  <div className="relative">
                   <select
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(e.target.value)}
-                    className="bg-white h-[40px] rounded-[8px] border border-[#eee] px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus:border-[#c7aa7b]"
+                    className="bg-white h-[40px] w-full appearance-none rounded-[8px] border border-[#eee] pl-[12px] pr-[32px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none"
                   >
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                       <option key={day} value={day.toString().padStart(2, '0')}>
@@ -938,15 +948,20 @@ export function NomineeDetailsScreen({
                       </option>
                     ))}
                   </select>
+                    <svg className="pointer-events-none absolute right-[12px] top-1/2 h-[10px] w-[10px] -translate-y-1/2" fill="none" viewBox="0 0 8.62789 4.87783">
+                      <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
+                    </svg>
+                  </div>
                 </div>
 
                 {/* Month */}
                 <div className="flex-1 flex flex-col gap-[8px]">
                   <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Month</label>
+                  <div className="relative">
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="bg-white h-[40px] rounded-[8px] border border-[#eee] px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus:border-[#c7aa7b]"
+                    className="bg-white h-[40px] w-full appearance-none rounded-[8px] border border-[#eee] pl-[12px] pr-[32px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none"
                   >
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                       <option key={month} value={month.toString().padStart(2, '0')}>
@@ -954,15 +969,20 @@ export function NomineeDetailsScreen({
                       </option>
                     ))}
                   </select>
+                    <svg className="pointer-events-none absolute right-[12px] top-1/2 h-[10px] w-[10px] -translate-y-1/2" fill="none" viewBox="0 0 8.62789 4.87783">
+                      <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
+                    </svg>
+                  </div>
                 </div>
 
                 {/* Year */}
                 <div className="flex-1 flex flex-col gap-[8px]">
                   <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">Year</label>
+                  <div className="relative">
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
-                    className="bg-white h-[40px] rounded-[8px] border border-[#eee] px-[12px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus:border-[#c7aa7b]"
+                    className="bg-white h-[40px] w-full appearance-none rounded-[8px] border border-[#eee] pl-[12px] pr-[32px] font-['Mulish',sans-serif] font-normal text-[13px] text-[#231f20] outline-none focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none"
                   >
                     {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(year => (
                       <option key={year} value={year.toString()}>
@@ -970,6 +990,10 @@ export function NomineeDetailsScreen({
                       </option>
                     ))}
                   </select>
+                    <svg className="pointer-events-none absolute right-[12px] top-1/2 h-[10px] w-[10px] -translate-y-1/2" fill="none" viewBox="0 0 8.62789 4.87783">
+                      <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 

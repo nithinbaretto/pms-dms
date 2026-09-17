@@ -12,11 +12,15 @@ import {
   QR_POLL_INTERVAL_MS,
 } from "./constants";
 import {
+  ACCOUNT_NUMBER_MAX_LENGTH,
+  ACCOUNT_NUMBER_MIN_LENGTH,
   createEmptyBankDetails,
   enrichBankDetailsFromIfsc,
   isAllowedChequeFile,
+  isValidBankAccountNumber,
   mapGetBankDetailsToModel,
   mapPennyDropResponseToModel,
+  normalizeBankAccountInput,
   normalizeBankVerificationType,
   resolveInitialValidationStatus,
   resolveValidationStatus,
@@ -53,7 +57,10 @@ type UseBankDetailsFlowResult = {
   checkQrPaymentStatus: () => Promise<"pending" | "success" | "failed" | "expired">;
   stopQrPolling: () => void;
   isUploadingCheque: boolean;
-  uploadCancelledCheque: (file: File) => Promise<ChequeUploadOutcome>;
+  uploadCancelledCheque: (
+    file: File,
+    options?: { runOcr?: boolean },
+  ) => Promise<ChequeUploadOutcome>;
   saveBankDetails: (options?: {
     cancelledCheque?: string;
     isBankVerifiedOverride?: boolean;
@@ -246,7 +253,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
 
   const validateManualPennyDrop = useCallback(
     async (accountNumber: string, ifscCode: string): Promise<ManualPennyDropResult> => {
-      const trimmedAccount = accountNumber.trim();
+      const trimmedAccount = normalizeBankAccountInput(accountNumber);
       const trimmedIfsc = ifscCode.trim().toUpperCase();
 
       if (!trimmedAccount || !trimmedIfsc) {
@@ -254,6 +261,14 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           success: false,
           data: createEmptyBankDetails(),
           message: "Account number and IFSC are required.",
+        };
+      }
+
+      if (!isValidBankAccountNumber(trimmedAccount)) {
+        return {
+          success: false,
+          data: createEmptyBankDetails(),
+          message: `Account number must be ${ACCOUNT_NUMBER_MIN_LENGTH} to ${ACCOUNT_NUMBER_MAX_LENGTH} digits.`,
         };
       }
 
@@ -286,9 +301,14 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           ifscCode: trimmedIfsc,
         });
 
-        setData(mapped.data);
-        setVerificationType(mapped.success ? "Penny drop" : "Manual");
-        setBankValidationStatus(mapped.success ? "success" : "failed");
+        if (mapped.success) {
+          setData(mapped.data);
+          setVerificationType("Penny drop");
+          setBankValidationStatus("success");
+        } else {
+          setVerificationType("Manual");
+          setBankValidationStatus("failed");
+        }
         // Manual failure opens the cheque-upload screen; avoid a duplicate top banner.
         setError(null);
 
@@ -302,7 +322,6 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
           hasBankData: true,
           isBankVerified: false,
         };
-        setData(withInput);
         setVerificationType("Manual");
         setBankValidationStatus("failed");
         setError(null);
@@ -566,7 +585,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
   );
 
   const uploadCancelledCheque = useCallback(
-    async (file: File): Promise<ChequeUploadOutcome> => {
+    async (file: File, options?: { runOcr?: boolean }): Promise<ChequeUploadOutcome> => {
       if (!leadId || !resolvedPan) {
         const message = "Unable to upload cancelled cheque. Missing lead or PAN information.";
         setError(message);
@@ -607,10 +626,12 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
         }
 
         let ocr: Awaited<ReturnType<typeof onboardingApi.documentOcr>> | null = null;
-        try {
-          ocr = await onboardingApi.documentOcr(file);
-        } catch {
-          ocr = null;
+        if (options?.runOcr === true) {
+          try {
+            ocr = await onboardingApi.documentOcr(file);
+          } catch {
+            ocr = null;
+          }
         }
 
         return { ok: true, storageUrl, ocr };

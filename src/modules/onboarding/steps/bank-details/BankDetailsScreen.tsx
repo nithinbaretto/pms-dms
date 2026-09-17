@@ -11,29 +11,38 @@ import mobileChangeBankSvgPaths from '../../../../assets/figma-svg/svg-donzv28yg
 import mobileBank9SvgPaths from '../../../../assets/figma-svg/svg-dczpv2qfz9';
 import imgBankLogo from '../../../../assets/logo.png';
 import imgQrCode from '../../../../assets/images/qrcode.png';
-import imgClock from '../../../../assets/logo.png';
+import imgClock from '../../../../assets/icons/svg/clock.svg';
 import imgCancelledCheque from '../../../../assets/images/cancelled_cheque_1.png';
 import imgCancelledChequeBlurry from '../../../../assets/images/cancelled_cheque_2.png';
 import imgCancelledChequeIncomplete from '../../../../assets/images/cancelled_cheque_3.png';
 import imgCancelledChequeGlare from '../../../../assets/images/cancelled_cheque_4.png';
 import imgLogo from '../../../../assets/logo.png';
-import editIcon from '../../../../assets/icons/edit_icon.png';
+import eyeIcon from '../../../../assets/icons/svg/eye.svg';
+import editIcon from '../../../../assets/icons/svg/edit.svg';
 import scanIcon from '../../../../assets/icons/svg/scan.svg';
 import currencyInrIcon from '../../../../assets/icons/svg/currencyInr.svg';
 import { Input } from '../../../../shared/ui/input';
 import CameraCaptureModal from '../../components/CameraCaptureModal';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
-import { BANK_DETAILS_PROGRESS_PERCENT, BANK_DETAILS_STEP_LABEL } from './constants';
 import {
+  BANK_DETAILS_PROGRESS_PERCENT,
+  BANK_DETAILS_STEP_LABEL,
+  QR_DEFAULT_EXPIRY_SECONDS,
+} from './constants';
+import {
+  ACCOUNT_NUMBER_MAX_LENGTH,
+  ACCOUNT_NUMBER_MIN_LENGTH,
   IFSC_MAX_LENGTH,
+  isValidBankAccountNumber,
   isValidIfscCode,
   maskBankAccountNumber,
+  normalizeBankAccountInput,
   normalizeIfscInput,
 } from './helpers';
 
 const editIconMaskStyle = {
-  WebkitMaskImage: `url(${editIcon})`,
-  maskImage: `url(${editIcon})`,
+  WebkitMaskImage: `url("${editIcon}")`,
+  maskImage: `url("${editIcon}")`,
   WebkitMaskSize: 'contain',
   maskSize: 'contain',
   WebkitMaskRepeat: 'no-repeat',
@@ -85,9 +94,8 @@ function ChequeUploadGuidelines() {
         {CHEQUE_GUIDELINE_ITEMS.map((item) => (
           <div
             key={item.label}
-            className={`relative flex min-w-0 flex-col items-center justify-center gap-2 rounded-[8px] px-2 py-3 ${
-              item.good ? 'bg-[#eeffe5]' : 'bg-[#fff0e5]'
-            }`}
+            className={`relative flex min-w-0 flex-col items-center justify-center gap-2 rounded-[8px] px-2 py-3 ${item.good ? 'bg-[#eeffe5]' : 'bg-[#fff0e5]'
+              }`}
           >
             <div className="relative h-[80px] w-full overflow-hidden rounded-[2px] shadow-[-6px_6px_16px_0px_rgba(0,0,0,0.08)]">
               <img
@@ -102,9 +110,8 @@ function ChequeUploadGuidelines() {
             <div className="flex items-center gap-1">
               <ChequeGuidelineStatusIcon good={item.good} size={14} />
               <p
-                className={`font-['Mulish',sans-serif] text-[9px] font-normal leading-[1.1] whitespace-nowrap ${
-                  item.good ? 'text-[#37B400]' : 'text-[#E8402F]'
-                }`}
+                className={`font-['Mulish',sans-serif] text-[9px] font-normal leading-[1.1] whitespace-nowrap ${item.good ? 'text-[#37B400]' : 'text-[#E8402F]'
+                  }`}
               >
                 {item.label}
               </p>
@@ -116,8 +123,10 @@ function ChequeUploadGuidelines() {
   );
 }
 
-const IFSC_PLACEHOLDER = 'ICIC0001959';
+const ACCOUNT_NUMBER_PLACEHOLDER = 'Enter Account Number';
+const IFSC_PLACEHOLDER = 'Enter IFSC Code';
 const IFSC_ERROR_MESSAGE = 'Please enter a valid 11-character IFSC code';
+const ACCOUNT_NUMBER_ERROR_MESSAGE = `Please enter a valid account number (${ACCOUNT_NUMBER_MIN_LENGTH}-${ACCOUNT_NUMBER_MAX_LENGTH} digits)`;
 
 function IfscInput({
   value,
@@ -141,7 +150,7 @@ function IfscInput({
         autoComplete="off"
         spellCheck={false}
         aria-invalid={showError}
-        className={className ? `uppercase ${className}` : 'uppercase'}
+        className={className ? `uppercase placeholder:normal-case ${className}` : 'uppercase placeholder:normal-case'}
       />
       {showError ? (
         <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
@@ -189,7 +198,7 @@ interface BankDetailsScreenProps {
   onQrGenerate?: () => void;
   onQrPayment?: () => void;
   onSaveAndContinue?: () => void;
-  onUploadCancelledCheque?: (file: File) => Promise<boolean>;
+  onUploadCancelledCheque?: (file: File, options?: { runOcr?: boolean }) => Promise<boolean>;
   onViewCancelledCheque?: () => void;
   onClearChequeUploadError?: () => void;
   isUploadingCheque?: boolean;
@@ -246,6 +255,7 @@ interface BankDetailsScreenProps {
   setManualErrorBankBranch: (value: string) => void;
   manualErrorChequeUploaded: boolean;
   setManualErrorChequeUploaded: (value: boolean) => void;
+  manualErrorChequeOcrFailed: boolean;
   showManualErrorChequeModal: boolean;
   setShowManualErrorChequeModal: (value: boolean) => void;
   manualErrorChequeModalAnimating: boolean;
@@ -329,6 +339,7 @@ export function BankDetailsScreen({
   setManualErrorBankBranch,
   manualErrorChequeUploaded,
   setManualErrorChequeUploaded,
+  manualErrorChequeOcrFailed,
   showManualErrorChequeModal,
   setShowManualErrorChequeModal,
   manualErrorChequeModalAnimating,
@@ -363,14 +374,19 @@ export function BankDetailsScreen({
   } as const;
 
   const normalizedIfscCode = manualIfscCode.trim().toUpperCase();
+  const normalizedManualAccountNumber = normalizeBankAccountInput(manualAccountNumber);
+  const showManualAccountNumberError =
+    normalizedManualAccountNumber.length > 0 &&
+    !isValidBankAccountNumber(normalizedManualAccountNumber);
   const ifscData = ifscMaster[normalizedIfscCode as keyof typeof ifscMaster] ?? ifscMaster.ELDHY6734A;
   const canContinue = bankValidationStatus === 'success';
   const canContinueFromFailedCheque =
     bankValidationStatus === 'failed' && chequeUploaded;
   const isManualErrorFormValid =
     manualErrorReenterAccountNumber.trim() !== '' &&
+    isValidBankAccountNumber(manualErrorReenterAccountNumber) &&
     (!manualAccountNumber.trim() ||
-      manualErrorReenterAccountNumber.trim() === manualAccountNumber.trim()) &&
+      normalizeBankAccountInput(manualErrorReenterAccountNumber) === normalizedManualAccountNumber) &&
     manualErrorAccountHolderName.trim() !== '' &&
     manualErrorAccountType !== undefined &&
     manualErrorBankBranch.trim() !== '' &&
@@ -382,7 +398,7 @@ export function BankDetailsScreen({
 
   const closeChangeBankScreen = () => {
     setQrGenerated(false);
-    setQrTimer(213);
+    setQrTimer(QR_DEFAULT_EXPIRY_SECONDS);
     setManualBankValidating(false);
 
     if (isAddBankEntry && !hasBankData) {
@@ -426,18 +442,11 @@ export function BankDetailsScreen({
     return accountNumberValue === '1234567890' || normalizedIfsc.startsWith('FAIL');
   };
 
-  const displayAccountHolderName =
-    accountHolderName.trim() ||
-    manualErrorAccountHolderName.trim() ||
-    contactPersonName.trim() ||
-    '—';
-  const displayBankName = bankName.trim() || ifscData.bankName;
-  const displayAccountNumber = accountNumber.trim() || manualAccountNumber.trim() || '—';
-  const displayIfscCode = ifscCode.trim() || normalizedIfscCode || '—';
-  const displayBranch =
-    branchDisplay.trim() ||
-    manualErrorBankBranch.trim() ||
-    ifscData.branchAddress;
+  const displayAccountHolderName = accountHolderName.trim() || contactPersonName.trim() || '—';
+  const displayBankName = bankName.trim() || '—';
+  const displayAccountNumber = accountNumber.trim() || '—';
+  const displayIfscCode = ifscCode.trim() || '—';
+  const displayBranch = branchDisplay.trim() || '—';
   const resolvedQrImage = qrImageUrl.trim() || imgQrCode;
 
   const handleApmiValidate = () => {
@@ -469,7 +478,7 @@ export function BankDetailsScreen({
       return;
     }
     setQrGenerated(true);
-    setQrTimer(213);
+    setQrTimer(QR_DEFAULT_EXPIRY_SECONDS);
   };
 
   const handleQrPayment = () => {
@@ -494,7 +503,9 @@ export function BankDetailsScreen({
   };
 
   const canSubmitManualIfsc =
-    Boolean(manualAccountNumber.trim()) && isValidIfscCode(normalizedIfscCode) && !manualBankValidating;
+    isValidBankAccountNumber(normalizedManualAccountNumber) &&
+    isValidIfscCode(normalizedIfscCode) &&
+    !manualBankValidating;
 
   const handleManualValidate = () => {
     if (!canSubmitManualIfsc) {
@@ -512,7 +523,7 @@ export function BankDetailsScreen({
     setTimeout(() => {
       setManualBankValidating(false);
 
-      if (shouldPennyDropFail(manualAccountNumber, normalizedIfscCode)) {
+      if (shouldPennyDropFail(normalizedManualAccountNumber, normalizedIfscCode)) {
         setBankValidationStatus('failed');
         setShowManualValidationError(true);
         setChequeUploaded(false);
@@ -525,7 +536,7 @@ export function BankDetailsScreen({
 
       setManualErrorAccountHolderName(contactPersonName.trim() || 'Rajesh Gupta');
       setManualErrorBankBranch(ifscData.branchAddress);
-      setManualErrorReenterAccountNumber(manualAccountNumber);
+      setManualErrorReenterAccountNumber(normalizedManualAccountNumber);
       setBankValidationStatus('success');
       setShowManualValidationError(false);
       closeChangeBankScreen();
@@ -635,7 +646,7 @@ export function BankDetailsScreen({
       return;
     }
     if (onUploadCancelledCheque) {
-      const uploaded = await onUploadCancelledCheque(pendingChequeFile);
+      const uploaded = await onUploadCancelledCheque(pendingChequeFile, { runOcr: false });
       if (!uploaded) {
         return;
       }
@@ -655,7 +666,9 @@ export function BankDetailsScreen({
     }
 
     if (onUploadCancelledCheque) {
-      const uploaded = await onUploadCancelledCheque(pendingManualErrorChequeFile);
+      const uploaded = await onUploadCancelledCheque(pendingManualErrorChequeFile, {
+        runOcr: true,
+      });
       if (!uploaded) {
         return;
       }
@@ -682,9 +695,7 @@ export function BankDetailsScreen({
         <p className="font-['Mulish',sans-serif] font-normal leading-normal text-[#231f20] text-[13px] whitespace-nowrap truncate min-w-0">
           {chequeDisplayName}
         </p>
-        <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 15 10">
-          <path d="M7.5 1.25C4.375 1.25 1.6875 3.1875 0.625 6C1.6875 8.8125 4.375 10.75 7.5 10.75C10.625 10.75 13.3125 8.8125 14.375 6C13.3125 3.1875 10.625 1.25 7.5 1.25ZM7.5 9.25C5.84375 9.25 4.5 7.90625 4.5 6.25C4.5 4.59375 5.84375 3.25 7.5 3.25C9.15625 3.25 10.5 4.59375 10.5 6.25C10.5 7.90625 9.15625 9.25 7.5 9.25ZM7.5 4.5C6.53125 4.5 5.75 5.28125 5.75 6.25C5.75 7.21875 6.53125 8 7.5 8C8.46875 8 9.25 7.21875 9.25 6.25C9.25 5.28125 8.46875 4.5 7.5 4.5Z" fill="#93161E" />
-        </svg>
+        <img src={eyeIcon} alt="View cheque" className="size-[16px] shrink-0" />
       </div>
     </button>
   );
@@ -696,7 +707,7 @@ export function BankDetailsScreen({
         <>
           {/* Mobile View */}
           <div className="lg:hidden fixed inset-0 bg-[#fffaf6] z-30 overflow-y-auto">
-            <div className="flex flex-col gap-[24px] items-center pt-[24px] px-[24px] pb-[120px]">
+            <div className="flex flex-col gap-[32px] items-center pt-[24px] px-[24px] pb-[120px]">
               {/* Logo — parent chrome is covered by this full-screen overlay */}
               <div className="h-[48px] w-[98px] shrink-0 self-start">
                 <img alt="ICICI Prudential" className="size-full object-contain" src={imgLogo} />
@@ -790,16 +801,16 @@ export function BankDetailsScreen({
 
                           <QrScanInstructionPills />
 
-                          {/* Timer - shown when QR is generated and timer > 0 */}
-                          {qrGenerated && qrTimer > 0 && (
-                            <div className="flex gap-[6px] items-center justify-center">
-                              <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
-                              <img src={imgClock} alt="Clock" className="size-[18px]" />
-                              <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
-                                {String(Math.floor(qrTimer / 60)).padStart(2, '0')}:{String(qrTimer % 60).padStart(2, '0')}
-                              </p>
-                            </div>
-                          )}
+                          {/* Timer row remains visible so users can always see the payment countdown label */}
+                          <div className="flex gap-[6px] items-center justify-center">
+                            <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
+                            <img src={imgClock} alt="Clock" className="size-[18px]" />
+                            <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
+                              {qrGenerated && qrTimer > 0
+                                ? `${String(Math.floor(qrTimer / 60)).padStart(2, '0')}:${String(qrTimer % 60).padStart(2, '0')}`
+                                : `${String(Math.floor(QR_DEFAULT_EXPIRY_SECONDS / 60)).padStart(2, '0')}:${String(QR_DEFAULT_EXPIRY_SECONDS % 60).padStart(2, '0')}`}
+                            </p>
+                          </div>
 
                           {/* Error message - shown when timer runs out */}
                           {qrGenerated && qrTimer === 0 && (
@@ -824,9 +835,16 @@ export function BankDetailsScreen({
                               <Input
                                 type="text"
                                 value={manualAccountNumber}
-                                onChange={(e) => setManualAccountNumber(e.target.value)}
-                                placeholder="0987654320"
+                                onChange={(e) => setManualAccountNumber(normalizeBankAccountInput(e.target.value))}
+                                placeholder={ACCOUNT_NUMBER_PLACEHOLDER}
+                                inputMode="numeric"
+                                maxLength={ACCOUNT_NUMBER_MAX_LENGTH}
                               />
+                              {showManualAccountNumberError ? (
+                                <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
+                                  {ACCOUNT_NUMBER_ERROR_MESSAGE}
+                                </p>
+                              ) : null}
                             </div>
 
                             {/* IFSC Code Field */}
@@ -867,13 +885,13 @@ export function BankDetailsScreen({
           {/* Desktop View */}
           <div className="hidden lg:block">
             {/* Page Title - Desktop */}
-            <div className="flex flex-col gap-[4px] absolute left-[60px] xl:left-[120px] top-[172px] z-20 w-[1200px]">
+            <div className="flex flex-col gap-[4px]">
               <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Bank Details</p>
               <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Select your preferred method to update bank account details</p>
             </div>
 
             {/* Form Container */}
-            <div className="absolute left-[60px] xl:left-[120px] right-[60px] xl:right-[120px] top-[248px] z-20">
+            <div className="mt-6">
               {/* Step Indicator */}
               <div className="flex items-center justify-between mb-[8px] w-full">
                 <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
@@ -952,16 +970,16 @@ export function BankDetailsScreen({
 
                       <QrScanInstructionPills />
 
-                      {/* Timer - shown when QR is generated and timer > 0 */}
-                      {qrGenerated && qrTimer > 0 && (
-                        <div className="flex gap-[6px] items-center justify-center">
-                          <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
-                          <img src={imgClock} alt="Clock" className="size-[18px]" />
-                          <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
-                            {String(Math.floor(qrTimer / 60)).padStart(2, '0')}:{String(qrTimer % 60).padStart(2, '0')}
-                          </p>
-                        </div>
-                      )}
+                      {/* Timer row remains visible so users can always see the payment countdown label */}
+                      <div className="flex gap-[6px] items-center justify-center">
+                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">Complete payment in</p>
+                        <img src={imgClock} alt="Clock" className="size-[18px]" />
+                        <p className="font-['Mulish',sans-serif] font-medium leading-[21px] text-[#231f20] text-[14px] whitespace-nowrap">
+                          {qrGenerated && qrTimer > 0
+                            ? `${String(Math.floor(qrTimer / 60)).padStart(2, '0')}:${String(qrTimer % 60).padStart(2, '0')}`
+                            : `${String(Math.floor(QR_DEFAULT_EXPIRY_SECONDS / 60)).padStart(2, '0')}:${String(QR_DEFAULT_EXPIRY_SECONDS % 60).padStart(2, '0')}`}
+                        </p>
+                      </div>
 
                       {/* Error message - shown when timer runs out */}
                       {qrGenerated && qrTimer === 0 && (
@@ -986,9 +1004,16 @@ export function BankDetailsScreen({
                           <Input
                             type="text"
                             value={manualAccountNumber}
-                            onChange={(e) => setManualAccountNumber(e.target.value)}
-                            placeholder="0987654320"
+                            onChange={(e) => setManualAccountNumber(normalizeBankAccountInput(e.target.value))}
+                            placeholder={ACCOUNT_NUMBER_PLACEHOLDER}
+                            inputMode="numeric"
+                            maxLength={ACCOUNT_NUMBER_MAX_LENGTH}
                           />
+                          {showManualAccountNumberError ? (
+                            <p className="font-['Mulish',sans-serif] text-[12px] leading-[18px] text-[#e8402f]">
+                              {ACCOUNT_NUMBER_ERROR_MESSAGE}
+                            </p>
+                          ) : null}
                         </div>
 
                         {/* IFSC Code Field */}
@@ -1073,7 +1098,7 @@ export function BankDetailsScreen({
         <>
           {/* ── MOBILE / TABLET VIEW ── */}
           <div className="lg:hidden fixed inset-0 bg-[#fffaf6] z-30 overflow-y-auto">
-            <div className="flex flex-col gap-[24px] items-center pt-[24px] px-[24px] pb-[120px]">
+            <div className="flex flex-col gap-[32px] items-center pt-[24px] px-[24px] pb-[120px]">
               {/* Logo — parent chrome is covered by this full-screen overlay */}
               <div className="h-[48px] w-[98px] shrink-0 self-start">
                 <img alt="ICICI Prudential" className="size-full object-contain" src={imgLogo} />
@@ -1101,20 +1126,22 @@ export function BankDetailsScreen({
 
                   <div className="flex flex-col gap-[20px] items-start pb-[16px] px-[16px] pt-[0px]">
                     {/* Warning Banner */}
-                    <div className="bg-[#fff1e2] rounded-[8px] w-full mt-[16px]">
-                      <div className="flex flex-row items-center overflow-clip rounded-[inherit] size-full">
-                        <div className="flex gap-[8px] items-center p-[12px] w-full">
-                          <div className="overflow-clip relative shrink-0 size-[16px]">
-                            <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 13.7506 12.2499">
-                              <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
-                            </svg>
+                    {manualErrorChequeOcrFailed ? (
+                      <div className="bg-[#fff1e2] rounded-[8px] w-full mt-[16px]">
+                        <div className="flex flex-row items-center overflow-clip rounded-[inherit] size-full">
+                          <div className="flex gap-[8px] items-center p-[12px] w-full">
+                            <div className="overflow-clip relative shrink-0 size-[16px]">
+                              <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 13.7506 12.2499">
+                                <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
+                              </svg>
+                            </div>
+                            <p className="flex-1 font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px] min-w-0">
+                              We couldn't process your request. Kindly fill in the details below to continue.
+                            </p>
                           </div>
-                          <p className="flex-1 font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px] min-w-0">
-                            We couldn't process your request. Kindly fill in the details below to continue.
-                          </p>
                         </div>
                       </div>
-                    </div>
+                    ) : null}
 
                     {/* Upload Cancelled Cheque */}
                     <div className="flex flex-col gap-[4px] w-full">
@@ -1132,9 +1159,7 @@ export function BankDetailsScreen({
                             <p className="font-['Mulish',sans-serif] font-normal leading-normal text-[#231f20] text-[13px] whitespace-nowrap truncate min-w-0">
                               {chequeDisplayName}
                             </p>
-                            <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 15 10">
-                              <path d="M7.5 1.25C4.375 1.25 1.6875 3.1875 0.625 6C1.6875 8.8125 4.375 10.75 7.5 10.75C10.625 10.75 13.3125 8.8125 14.375 6C13.3125 3.1875 10.625 1.25 7.5 1.25ZM7.5 9.25C5.84375 9.25 4.5 7.90625 4.5 6.25C4.5 4.59375 5.84375 3.25 7.5 3.25C9.15625 3.25 10.5 4.59375 10.5 6.25C10.5 7.90625 9.15625 9.25 7.5 9.25ZM7.5 4.5C6.53125 4.5 5.75 5.28125 5.75 6.25C5.75 7.21875 6.53125 8 7.5 8C8.46875 8 9.25 7.21875 9.25 6.25C9.25 5.28125 8.46875 4.5 7.5 4.5Z" fill="#93161E" />
-                            </svg>
+                            <img src={eyeIcon} alt="View cheque" className="size-[16px] shrink-0" />
                           </div>
                         </button>
                       ) : (
@@ -1182,8 +1207,10 @@ export function BankDetailsScreen({
                       <Input
                         type="text"
                         value={manualErrorReenterAccountNumber}
-                        onChange={(e) => setManualErrorReenterAccountNumber(e.target.value)}
-                        placeholder="0987654320"
+                        onChange={(e) => setManualErrorReenterAccountNumber(normalizeBankAccountInput(e.target.value))}
+                        placeholder={ACCOUNT_NUMBER_PLACEHOLDER}
+                        inputMode="numeric"
+                        maxLength={ACCOUNT_NUMBER_MAX_LENGTH}
                       />
                     </div>
 
@@ -1261,13 +1288,13 @@ export function BankDetailsScreen({
 
           {/* ── DESKTOP VIEW ── */}
           {/* Page Title */}
-          <div className="hidden lg:flex flex-col gap-[4px] absolute left-[60px] xl:left-[120px] top-[172px] z-20 w-[1200px]">
+          <div className="hidden lg:flex flex-col gap-[4px]">
             <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Bank Details</p>
             <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Select your preferred method to update bank account details</p>
           </div>
 
           {/* Form Container */}
-          <div className="hidden lg:block absolute left-[60px] xl:left-[120px] right-[60px] xl:right-[120px] top-[248px] z-20 pb-[80px]">
+          <div className="hidden lg:block mt-6 pb-[80px]">
             {/* Step Indicator */}
             <div className="flex items-center justify-between mb-[8px] w-full">
               <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">{BANK_DETAILS_STEP_LABEL}</p>
@@ -1285,16 +1312,18 @@ export function BankDetailsScreen({
 
               <div className="flex flex-col gap-[20px] p-[16px]">
                 {/* Warning Message */}
-                <div className="bg-[#fff1e2] rounded-[8px] p-[12px] flex gap-[8px] items-start">
-                  <div className="size-[16px] shrink-0 relative">
-                    <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 13.7506 12.2499">
-                      <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
-                    </svg>
+                {manualErrorChequeOcrFailed ? (
+                  <div className="bg-[#fff1e2] rounded-[8px] p-[12px] flex gap-[8px] items-start">
+                    <div className="size-[16px] shrink-0 relative">
+                      <svg className="absolute inset-0 size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 13.7506 12.2499">
+                        <path d={mobileBankFailedSvgPaths.p1682e300} fill="#93161E" />
+                      </svg>
+                    </div>
+                    <p className="flex-1 font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">
+                      We couldn't process your request. Kindly fill in the details below to continue.
+                    </p>
                   </div>
-                  <p className="flex-1 font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">
-                    We couldn't process your request. Kindly fill in the details below to continue.
-                  </p>
-                </div>
+                ) : null}
 
                 {/* Upload Cancelled Cheque */}
                 <div className="flex flex-col gap-[4px] w-full min-w-[310px] max-w-[378.67px]">
@@ -1312,9 +1341,7 @@ export function BankDetailsScreen({
                         <p className="font-['Mulish',sans-serif] font-normal leading-normal text-[#231f20] text-[13px] whitespace-nowrap truncate min-w-0">
                           {chequeDisplayName}
                         </p>
-                        <svg className="size-[16px] shrink-0" fill="none" viewBox="0 0 15 10">
-                          <path d="M7.5 1.25C4.375 1.25 1.6875 3.1875 0.625 6C1.6875 8.8125 4.375 10.75 7.5 10.75C10.625 10.75 13.3125 8.8125 14.375 6C13.3125 3.1875 10.625 1.25 7.5 1.25ZM7.5 9.25C5.84375 9.25 4.5 7.90625 4.5 6.25C4.5 4.59375 5.84375 3.25 7.5 3.25C9.15625 3.25 10.5 4.59375 10.5 6.25C10.5 7.90625 9.15625 9.25 7.5 9.25ZM7.5 4.5C6.53125 4.5 5.75 5.28125 5.75 6.25C5.75 7.21875 6.53125 8 7.5 8C8.46875 8 9.25 7.21875 9.25 6.25C9.25 5.28125 8.46875 4.5 7.5 4.5Z" fill="#93161E" />
-                        </svg>
+                        <img src={eyeIcon} alt="View cheque" className="size-[16px] shrink-0" />
                       </div>
                     </button>
                   ) : (
@@ -1362,8 +1389,10 @@ export function BankDetailsScreen({
                     <Input
                       type="text"
                       value={manualErrorReenterAccountNumber}
-                      onChange={(e) => setManualErrorReenterAccountNumber(e.target.value)}
-                      placeholder="0987654320"
+                      onChange={(e) => setManualErrorReenterAccountNumber(normalizeBankAccountInput(e.target.value))}
+                      placeholder={ACCOUNT_NUMBER_PLACEHOLDER}
+                      inputMode="numeric"
+                      maxLength={ACCOUNT_NUMBER_MAX_LENGTH}
                     />
                   </div>
 
@@ -1459,7 +1488,7 @@ export function BankDetailsScreen({
         /* Main Bank Details Screen */
         <>
           {/* Page Title - Desktop */}
-          <div className="hidden lg:flex flex-col gap-[4px] absolute left-[60px] xl:left-[120px] top-[172px] z-20 w-[1200px]">
+          <div className="hidden lg:flex flex-col gap-[4px]">
             <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Bank Details</p>
             {isAddBankEntry ? null : (
               <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
@@ -1467,7 +1496,7 @@ export function BankDetailsScreen({
           </div>
 
           {/* Mobile/Tablet Header Section */}
-          <div className="lg:hidden absolute left-[24px] right-[24px] top-[96px] z-20 flex flex-col gap-[4px]">
+          <div className="lg:hidden z-20 mt-4 flex flex-col gap-[4px]">
             <h1 className="font-['Mulish',sans-serif] font-medium leading-[24px] text-[#231f20] text-[16px]">Bank Details</h1>
             {isAddBankEntry ? null : (
               <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
@@ -1475,7 +1504,7 @@ export function BankDetailsScreen({
           </div>
 
           {/* Form Container */}
-          <div className={`absolute left-[24px] lg:left-[60px] xl:left-[120px] right-[24px] lg:right-[60px] xl:right-[120px] top-[172px] lg:top-[248px] pb-[100px] z-20 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
+          <div className={`relative z-20 mt-4 lg:mt-6 pb-[100px] transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-0 scale-[0.98]' : 'opacity-100 scale-100'
             }`}>
             {/* Step Indicator - Desktop Only */}
             <div className="hidden lg:flex items-center justify-between mb-[8px] w-full">
@@ -1886,7 +1915,6 @@ export function BankDetailsScreen({
             continueDisabled={!canContinue && !canContinueFromFailedCheque}
             isLoading={isTransitioning || isSaving}
             loadingLabel="Saving..."
-            hideContinueArrow={isEditMode}
             onContinue={proceedToNext}
           />
         </>

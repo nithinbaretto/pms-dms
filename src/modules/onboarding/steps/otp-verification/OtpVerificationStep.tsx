@@ -1,7 +1,8 @@
 import type { ReactElement } from "react";
-import { Check, Loader2, Mail, Smartphone } from "lucide-react";
+import { Loader2, Mail, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import otpVerifiedIcon from "../../../../assets/icons/svg/otp_verified.svg";
 import { Button } from "../../../../shared/ui/button";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import OtpInput from "../../components/OtpInput";
@@ -239,11 +240,13 @@ const OtpVerificationStep = ({
     return (
       <section className="w-full rounded-2xl bg-[var(--color-onboarding-surface)] p-8 text-center shadow-[-8px_-8px_40px_0px_rgba(0,0,0,0.08)]">
         <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 py-6">
-          <span className="flex size-14 items-center justify-center rounded-full bg-[#37b24d]">
-            <Check className="size-8 text-white" strokeWidth={3} />
-          </span>
-          <h2 className="text-[36px] font-medium text-[var(--color-onboarding-heading)]">OTP Verified!</h2>
-          <p className="text-base text-[var(--color-onboarding-heading)]">Taking you to the next step...</p>
+          <img alt="OTP verified" className="size-[60px]" src={otpVerifiedIcon} />
+          <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
+            OTP Verified!
+          </h2>
+          <p className="text-center font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
+            Let's get your empanelment started...
+          </p>
         </div>
       </section>
     );
@@ -305,21 +308,24 @@ const OtpVerificationStep = ({
               {timer > 0 ? (
                 <>
                   Resend OTP in{" "}
-                  <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal">
+                  <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#93161E]">
                     {timer} Sec
                   </span>
                 </>
               ) : (
-                <button
-                  className="mt-3 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal disabled:cursor-not-allowed disabled:opacity-70"
-                  disabled={accountRestricted}
-                  onClick={() => {
-                    void handleResend();
-                  }}
-                  type="button"
-                >
-                  Resend OTP
-                </button>
+                <>
+                  Didn&apos;t get it?{" "}
+                  <button
+                    className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#93161E] disabled:cursor-not-allowed disabled:opacity-70"
+                    disabled={accountRestricted}
+                    onClick={() => {
+                      void handleResend();
+                    }}
+                    type="button"
+                  >
+                    Resend OTP
+                  </button>
+                </>
               )}
             </p>
           </div>

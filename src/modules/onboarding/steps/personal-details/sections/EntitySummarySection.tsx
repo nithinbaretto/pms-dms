@@ -28,9 +28,9 @@ const iconWrapClass =
   "flex size-[32px] shrink-0 items-center justify-center rounded-[9.846px] bg-[#C7AA7B]";
 
 const labelClass =
-  "font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#435160]";
+  "block font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#435160]";
 const valueClass =
-  "font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal text-[#231F20]";
+  "block font-['Mulish',sans-serif] text-[12px] font-medium leading-none tracking-normal text-[#231F20]";
 
 const EntitySummarySection = ({
   summary,
@@ -57,7 +57,7 @@ const EntitySummarySection = ({
             <span className={iconWrapClass}>
               <img alt="" className="size-[18px]" src={nameIcon} />
             </span>
-            <div>
+            <div className="flex flex-col gap-1">
               <p className={labelClass}>Name</p>
               <p className={valueClass}>{summary.name}</p>
             </div>
@@ -67,7 +67,7 @@ const EntitySummarySection = ({
             <span className={iconWrapClass}>
               <img alt="" className="size-[18px]" src={panIcon} />
             </span>
-            <div>
+            <div className="flex flex-col gap-1">
               <p className={labelClass}>PAN</p>
               <p className={valueClass}>{summary.pan}</p>
             </div>
@@ -77,7 +77,7 @@ const EntitySummarySection = ({
             <span className={iconWrapClass}>
               <img alt="" className="size-[18px]" src={dobIcon} />
             </span>
-            <div>
+            <div className="flex flex-col gap-1">
               <p className={labelClass}>Date of Birth</p>
               <p className={valueClass}>{summary.dob}</p>
             </div>
@@ -88,7 +88,7 @@ const EntitySummarySection = ({
               <span className={iconWrapClass}>
                 <img alt="" className="size-[18px]" src={aprnIcon} />
               </span>
-              <div>
+              <div className="flex flex-col gap-1">
                 <p className={labelClass}>{registrationLabel}</p>
                 <p className={valueClass}>{registrationValue}</p>
               </div>
@@ -99,7 +99,7 @@ const EntitySummarySection = ({
             <span className={iconWrapClass}>
               <img alt="" className="size-[18px]" src={entityTypeIcon} />
             </span>
-            <div className="w-full">
+            <div className="flex w-full flex-col gap-1">
               <p className={labelClass}>Entity Type</p>
               {canSelectEntityType ? (
                 <Select
