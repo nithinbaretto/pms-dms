@@ -5,8 +5,7 @@ export const RELATIONSHIP_OPTIONS = [
   "Mother",
   "Son",
   "Daughter",
-  "Wife",
-  "Husband",
+  "Spouse",
   "Brother",
   "Sister",
   "Grandfather",
@@ -22,6 +21,8 @@ export const DEFAULT_PROOF_OF_IDENTITY = "Aadhar";
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MOBILE_PATTERN = /^\d{10}$/;
 export const DOB_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+export const NOMINEE_NAME_MAX_LENGTH = 299;
+export const NOMINEE_NAME_PATTERN = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
 export const AADHAAR_REGEX = /^\d{12}$/;
 export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 export const DRIVING_LICENSE_REGEX = /^[A-Z]{2}[0-9]{13}$/;

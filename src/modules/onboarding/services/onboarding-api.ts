@@ -222,7 +222,7 @@ export type ValidateGstInRequest = {
 };
 
 export type ValidateGstInResponse = {
-  isMatchFound: boolean;
+  isValidated: boolean;
   gstInId: string;
   legalName: string;
   state: string;
@@ -365,6 +365,7 @@ export type GetBankDetailsResponse = {
   isBankVerified: boolean;
   isBankModified: boolean;
   verificationType: string;
+  cancelledCheque: string;
 };
 
 export type PennyDropCallRequest = {
@@ -468,7 +469,6 @@ export type FetchReversePennyDropBankDetailsResponse = GetBankDetailsResponse & 
   message: string;
 };
 
-/** Provisional review payload — field mapping will be tightened when UAT sample is available. */
 export type ReviewPersonalSection = {
   name: string;
   panNumber: string;
@@ -486,22 +486,37 @@ export type ReviewGstDetail = {
   gstNumber: string;
   stateCode: string;
   legalName: string;
+  isSelected: boolean;
+  documentUrl: string;
+};
+
+export type ReviewAuthSignatory = {
+  name: string;
+  pan: string;
+  mobile: string;
+  email: string;
 };
 
 export type ReviewBusinessSection = {
   selectedBranch: string;
+  entityType: string;
   productCategories: string[];
   gstSummary: string;
   gstDetails: ReviewGstDetail[];
+  modeOfOperation: string;
+  selectedNoOfSignatory: number;
+  authSignatories: ReviewAuthSignatory[];
 };
 
 export type ReviewBankSection = {
   accountHolderName: string;
+  accountType: string;
   accountNumber: string;
   ifsc: string;
   bankName: string;
   branchName: string;
   chequeUploaded: boolean;
+  cancelledChequeUrl: string;
 };
 
 export type ReviewNomineeSection = {
@@ -514,14 +529,22 @@ export type ReviewNomineeSection = {
   proofOfIdentityType: string;
   proofOfIdentityNumber: string;
   isMinor: boolean;
+  guardianName: string;
+  guardianAddress: string;
 };
 
 export type ReviewDocumentSection = {
   uploadedPhoto: string;
   uploadedSignature: string;
+  proofOfIdentityUrl: string;
+  proofOfAddressUrl: string;
+  hufDeedOfDeclarationUrl: string;
   documentUploaded: boolean;
   photoUploaded: boolean;
   signatureUploaded: boolean;
+  identityUploaded: boolean;
+  addressUploaded: boolean;
+  hufDeedUploaded: boolean;
 };
 
 export type ReviewDetailsResponse = {
@@ -529,11 +552,13 @@ export type ReviewDetailsResponse = {
   applicationStatus: string;
   nextInfoSection: string;
   isSubmit: boolean;
+  productType: string;
   personal: ReviewPersonalSection;
   business: ReviewBusinessSection;
   bank: ReviewBankSection;
   nominee: ReviewNomineeSection;
   documents: ReviewDocumentSection;
+  entityDetails: Record<string, unknown> | null;
 };
 
 export type CreateApplicationResponse = {
@@ -759,10 +784,14 @@ type BranchListItemApi = {
 };
 
 type ValidateGstInApiResponse = {
+  isValidated?: boolean;
   isMatchFound?: boolean;
+  referenceId?: string;
   gstInId?: string;
   legalName?: string;
+  "Legal Name"?: string;
   state?: string;
+  State?: string;
 };
 
 type UploadDocumentApiResponse = {
@@ -1092,6 +1121,18 @@ const parseProofOfIdentity = (
   };
 };
 
+const extractDocumentUrl = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (!isRecord(value)) {
+    return "";
+  }
+
+  return pickString(value, ["documentUrl", "fileURL", "fileUrl", "url", "downloadLink"]);
+};
+
 const parseNomineeMinorAndDob = (
   value: unknown,
 ): { isNomineeMinor?: boolean; dateOfBirth: string } => {
@@ -1173,15 +1214,20 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
   const gstDetails = gstList
     .map((item) => {
       const record = asRecord(item);
-      const isSelected = asBooleanOrUndefined(record.isSelected);
-      if (isSelected === false) {
+      const gstNumber = pickString(record, ["gstInId", "gstIn", "gstNumber"]);
+      const legalName = pickString(record, ["gstInName", "name", "legalName"]);
+      if (!gstNumber && !legalName) {
         return null;
       }
 
       return {
-        gstNumber: pickString(record, ["gstInId", "gstIn", "gstNumber"]),
+        gstNumber,
         stateCode: pickString(record, ["gstInState", "stateCode", "state"]),
-        legalName: pickString(record, ["gstInName", "name", "legalName"]),
+        legalName,
+        isSelected: asBooleanOrUndefined(record.isSelected) ?? false,
+        documentUrl:
+          extractDocumentUrl(record.documents) ||
+          pickString(record, ["fileURL", "fileUrl", "documentUrl"]),
       };
     })
     .filter((item): item is ReviewGstDetail => item !== null);
@@ -1210,12 +1256,58 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
     "signatureUrl",
     "signatureURL",
   ]);
+  const proofOfIdentityUrl = pickString(documentsSource, [
+    "proofOfIdentityURL",
+    "proofOfIdentityUrl",
+    "identityUrl",
+  ]);
+  const proofOfAddressUrl = pickString(documentsSource, [
+    "proofOfAddressURL",
+    "proofOfAddressUrl",
+    "addressUrl",
+  ]);
+  const hufDeedOfDeclarationUrl = pickString(documentsSource, [
+    "hufDeedOfDeclarationURL",
+    "hufDeedOfDeclarationUrl",
+    "hufDeedOfDeclaration",
+    "hufDeedURL",
+    "hufDeedUrl",
+  ]);
   const cancelledChequeUrl = pickString(bankSource, [
     "uploadedCancelledChequeURL",
     "uploadedCancelledChequeUrl",
     "cancelledChequeURL",
     "cancelledChequeUrl",
+    "cancelledCheque",
   ]);
+  const authSignatorySource = pickNestedRecord(businessSource, [
+    "authsignatoryData",
+    "authSignatoryData",
+    "authorizedSignatory",
+    "authorizedSignatoryData",
+  ]);
+  const authSignatoryList = Array.isArray(authSignatorySource.authSignatoryDetails)
+    ? authSignatorySource.authSignatoryDetails
+    : Array.isArray(authSignatorySource.authSignatories)
+      ? authSignatorySource.authSignatories
+      : [];
+  const authSignatories = authSignatoryList
+    .map((item) => {
+      const record = asRecord(item);
+      const name = pickString(record, ["name", "signatoryName", "fullName"]);
+      const pan = pickString(record, ["pan", "panNumber"]);
+      const mobile = pickString(record, ["mobile", "mobileNumber", "primaryMobileNumber"]);
+      const email = pickString(record, ["email", "emailId", "primaryEmail"]);
+      if (!name && !pan && !mobile && !email) {
+        return null;
+      }
+
+      return { name, pan, mobile, email };
+    })
+    .filter((item): item is ReviewAuthSignatory => item !== null);
+  const productType = pickString(payload, ["productType", "product"]);
+  const entityDetailsSource = payload.entityDetails;
+  const entityDetails = isRecord(entityDetailsSource) ? entityDetailsSource : null;
 
   const proofOfIdentityRaw = pickString(nomineeSource, ["proofOfIdentity"]);
   const parsedProof = proofOfIdentityRaw
@@ -1232,6 +1324,7 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
     ]),
     nextInfoSection: pickString(payload, ["nextInfoSection"]),
     isSubmit: pickBoolean(payload, ["isSubmit"]),
+    productType,
     personal: {
       name: pickString(personalSource, ["name", "applicantName", "fullName"]),
       panNumber: pickString(personalSource, ["panNumber", "pan"]),
@@ -1253,9 +1346,18 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
     },
     business: {
       selectedBranch: pickString(businessSource, ["selectedBranch", "branchName", "branch"]),
-      productCategories,
+      entityType:
+        pickString(businessSource, ["entityType"]) || pickString(personalSource, ["entityType"]),
+      productCategories:
+        productCategories.length > 0 ? productCategories : productType ? [productType] : [],
       gstSummary,
       gstDetails,
+      modeOfOperation: pickString(authSignatorySource, ["modeOfOperation", "mode"]),
+      selectedNoOfSignatory:
+        typeof authSignatorySource.selectedNoOfSignatory === "number"
+          ? authSignatorySource.selectedNoOfSignatory
+          : Number.parseInt(pickString(authSignatorySource, ["selectedNoOfSignatory"]), 10) || 0,
+      authSignatories,
     },
     bank: {
       accountHolderName: pickString(bankSource, [
@@ -1264,6 +1366,7 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
         "nameAsPerBank",
         "name",
       ]),
+      accountType: pickString(bankSource, ["accountType", "bankType", "accountCategory"]),
       accountNumber: pickString(bankSource, ["accountNumber", "bankAccountNumber"]),
       ifsc: pickString(bankSource, ["ifsc", "ifscCode"]),
       bankName: pickString(bankSource, ["bankName", "bank"]),
@@ -1276,6 +1379,7 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
       ]),
       chequeUploaded:
         pickBoolean(bankSource, ["chequeUploaded", "isChequeUploaded"]) || Boolean(cancelledChequeUrl),
+      cancelledChequeUrl,
     },
     nominee: {
       nomineeName: pickString(nomineeSource, ["nomineeName", "name"]),
@@ -1294,17 +1398,39 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
       proofOfIdentityNumber:
         pickString(nomineeSource, ["proofOfIdentityNumber"]) || parsedProof.proofOfIdentityNumber,
       isMinor:
-        pickBoolean(nomineeSource, ["isMinor", "isNomineeMinor"]) ||
-        Boolean(nomineeMinorParsed.isNomineeMinor),
+        nomineeMinorParsed.isNomineeMinor ??
+        pickBoolean(nomineeSource, ["isMinor", "isNomineeMinor"]),
+      guardianName: pickString(nomineeSource, ["guardianName"]),
+      guardianAddress: pickString(nomineeSource, ["guardianAddress"]),
     },
     documents: {
       uploadedPhoto,
       uploadedSignature,
-      documentUploaded: pickBoolean(documentsSource, ["documentUploaded"]),
+      proofOfIdentityUrl,
+      proofOfAddressUrl,
+      hufDeedOfDeclarationUrl,
+      documentUploaded:
+        pickBoolean(documentsSource, ["documentUploaded"]) ||
+        Boolean(
+          uploadedPhoto ||
+            uploadedSignature ||
+            proofOfIdentityUrl ||
+            proofOfAddressUrl ||
+            hufDeedOfDeclarationUrl,
+        ),
       photoUploaded: pickBoolean(documentsSource, ["photoUploaded"]) || Boolean(uploadedPhoto),
       signatureUploaded:
         pickBoolean(documentsSource, ["signatureUploaded"]) || Boolean(uploadedSignature),
+      identityUploaded:
+        pickBoolean(documentsSource, ["identityUploaded", "proofOfIdentityUploaded"]) ||
+        Boolean(proofOfIdentityUrl),
+      addressUploaded:
+        pickBoolean(documentsSource, ["addressUploaded", "proofOfAddressUploaded"]) ||
+        Boolean(proofOfAddressUrl),
+      hufDeedUploaded:
+        pickBoolean(documentsSource, ["hufDeedUploaded"]) || Boolean(hufDeedOfDeclarationUrl),
     },
+    entityDetails,
   };
 };
 
@@ -1860,13 +1986,21 @@ export const onboardingApi = {
       leadId: request.leadId,
       gstInNumber: request.gstInNumber.trim().toUpperCase(),
     });
-    const data = extractPayload(response) as ValidateGstInApiResponse;
+    const envelope = isRecord(response) ? response : {};
+    const data = extractPayload(response);
 
     return {
-      isMatchFound: asBooleanOrUndefined(data.isMatchFound) ?? false,
-      gstInId: asStringOrNull(data.gstInId) ?? "",
-      legalName: asStringOrNull(data.legalName) ?? "",
-      state: asStringOrNull(data.state) ?? "",
+      isValidated: pickBoolean(data, ["isValidated", "isMatchFound"]) ||
+        pickBoolean(envelope, ["isValidated", "isMatchFound"]),
+      gstInId:
+        pickString(data, ["gstInId", "referenceId", "gstInNumber"]) ||
+        pickString(envelope, ["gstInId", "referenceId", "gstInNumber"]),
+      legalName:
+        pickString(data, ["Legal Name", "legalName", "legal_name"]) ||
+        pickString(envelope, ["Legal Name", "legalName", "legal_name"]),
+      state:
+        pickString(data, ["State", "state"]) ||
+        pickString(envelope, ["State", "state"]),
     };
   },
 
@@ -2330,6 +2464,12 @@ export const onboardingApi = {
         asStringOrNull(data.verification_type) ??
         asStringOrNull(data.verificationtype) ??
         "",
+      cancelledCheque:
+        asStringOrNull(data.cancelledCheque) ??
+        asStringOrNull(data.cancelledChequeURL) ??
+        asStringOrNull(data.cancelledChequeUrl) ??
+        asStringOrNull(data.uploadedCancelledChequeURL) ??
+        "",
     };
   },
 
@@ -2679,6 +2819,12 @@ export const onboardingApi = {
         pickString(data, ["referenceId", "ReferenceId"]) ||
         request.verificationId,
       message: pickString(root, ["message", "Message"]) || pickString(data, ["message", "Message"]),
+      cancelledCheque: pickString(bankSource, [
+        "cancelledCheque",
+        "cancelledChequeURL",
+        "cancelledChequeUrl",
+        "uploadedCancelledChequeURL",
+      ]),
     };
   },
 };

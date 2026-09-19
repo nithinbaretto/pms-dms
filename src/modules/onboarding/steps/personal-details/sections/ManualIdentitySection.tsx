@@ -3,6 +3,7 @@ import { Calendar } from "lucide-react";
 
 import { Input } from "../../../../../shared/ui/input";
 import type { EntitySummary } from "../types";
+import { getTodayDateInputValue, isPersonalDobValid } from "../validation";
 
 type ManualIdentitySectionProps = {
   summary: EntitySummary;
@@ -77,8 +78,13 @@ const ManualIdentitySection = ({
           <Input
             className="pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
             id="manual-personal-dob"
+            max={getTodayDateInputValue()}
             onChange={(event) => {
-              onDobChange(fromDateInputValue(event.target.value));
+              const nextValue = fromDateInputValue(event.target.value);
+              if (nextValue && !isPersonalDobValid(nextValue)) {
+                return;
+              }
+              onDobChange(nextValue);
             }}
             placeholder="Select Date of Birth"
             type="date"

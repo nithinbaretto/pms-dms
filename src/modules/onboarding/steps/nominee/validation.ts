@@ -3,10 +3,12 @@ import {
   DRIVING_LICENSE_REGEX,
   EMAIL_PATTERN,
   MOBILE_PATTERN,
+  NOMINEE_NAME_MAX_LENGTH,
+  NOMINEE_NAME_PATTERN,
   PAN_REGEX,
   PASSPORT_REGEX,
 } from "./constants";
-import { parseDob, validateAgeForMinor } from "./helpers";
+import { isFutureDob, parseDob, validateAgeForMinor } from "./helpers";
 import type { NomineeFieldErrors, NomineeFormData, NomineeOption } from "./types";
 
 const getProofOfIdentityNumberError = (type: string, value: string): string | undefined => {
@@ -68,8 +70,13 @@ export const getNomineeFieldErrors = (
 ): NomineeFieldErrors => {
   const errors: NomineeFieldErrors = {};
 
-  if (!form.nomineeName.trim()) {
+  const nomineeName = form.nomineeName.trim();
+  if (!nomineeName) {
     errors.nomineeName = "Nominee name is required.";
+  } else if (nomineeName.length > NOMINEE_NAME_MAX_LENGTH) {
+    errors.nomineeName = `Nominee name cannot exceed ${NOMINEE_NAME_MAX_LENGTH} characters.`;
+  } else if (!NOMINEE_NAME_PATTERN.test(nomineeName)) {
+    errors.nomineeName = "Nominee name can contain alphabets only.";
   }
 
   if (!form.relationshipWithApplicant.trim()) {
@@ -90,6 +97,8 @@ export const getNomineeFieldErrors = (
 
   if (!form.dateOfBirth.trim() || parseDob(form.dateOfBirth) === null) {
     errors.dateOfBirth = "Date of birth is required.";
+  } else if (isFutureDob(form.dateOfBirth)) {
+    errors.dateOfBirth = "Date of birth cannot be a future date.";
   }
 
   const resolvedNomineeAddress = form.isNomineeAddressSameAsApplicantAddress

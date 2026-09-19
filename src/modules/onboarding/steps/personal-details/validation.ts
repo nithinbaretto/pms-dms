@@ -3,6 +3,61 @@ import type { Address, PersonalDetailsModel } from "./types";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_PATTERN = /^\d{10}$/;
 const PINCODE_PATTERN = /^\d{6}$/;
+const PERSON_NAME_PATTERN = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
+const DOB_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+const startOfToday = (): Date => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+const parsePersonalDob = (value: string): Date | null => {
+  const match = DOB_PATTERN.exec(value.trim());
+  if (!match) {
+    return null;
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const parsed = new Date(year, month - 1, day);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+};
+
+export const getTodayDateInputValue = (): string => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${today.getFullYear()}-${month}-${day}`;
+};
+
+export const isPersonalDobValid = (value: string): boolean => {
+  const parsed = parsePersonalDob(value);
+  if (!parsed) {
+    return false;
+  }
+
+  return parsed.getTime() <= startOfToday().getTime();
+};
+
+export const sanitizePersonName = (value: string): string => {
+  return value.replace(/[^A-Za-z ]/g, "").replace(/ {2,}/g, " ").replace(/^ +/, "");
+};
+
+export const isPersonNameValid = (value: string): boolean => {
+  return PERSON_NAME_PATTERN.test(value.trim());
+};
 
 export const isAddressValid = (address: Address): boolean => {
   const hasStructuredFields =
@@ -36,9 +91,9 @@ export const isPersonalDetailsStepValid = (
 ): boolean => {
   const identityValid = options?.isManual
     ? Boolean(
-        data.personalDetails.name.trim() &&
+        isPersonNameValid(data.personalDetails.name) &&
           data.personalDetails.pan.trim() &&
-          data.personalDetails.dob.trim(),
+          isPersonalDobValid(data.personalDetails.dob),
       )
     : Boolean(data.personalDetails.entityType);
 

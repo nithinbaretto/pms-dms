@@ -13,7 +13,8 @@ import {
 } from '../../../../shared/ui/select';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import { useOnboardingStore } from '../../state/onboarding-store';
-import { PROOF_NUMBER_MAX_LENGTH, PROOF_NUMBER_PLACEHOLDERS, PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
+import { NOMINEE_NAME_MAX_LENGTH, PROOF_NUMBER_MAX_LENGTH, PROOF_NUMBER_PLACEHOLDERS, PROOF_OF_IDENTITY_OPTIONS, RELATIONSHIP_OPTIONS } from './constants';
+import { getDobDayOptions, getDobMonthOptions, getDobYearOptions } from './helpers';
 
 interface NomineeDetailsScreenProps {
   // Nominee form state
@@ -274,6 +275,9 @@ export function NomineeDetailsScreen({
                         value={nomineeName}
                         onChange={(e) => setNomineeName(e.target.value)}
                         placeholder="Enter Nominee Name"
+                        maxLength={NOMINEE_NAME_MAX_LENGTH}
+                        autoComplete="name"
+                        inputMode="text"
                       />
                     </div>
 
@@ -605,6 +609,9 @@ export function NomineeDetailsScreen({
                         value={nomineeName}
                         onChange={(e) => setNomineeName(e.target.value)}
                         placeholder="Enter Nominee Name"
+                        maxLength={NOMINEE_NAME_MAX_LENGTH}
+                        autoComplete="name"
+                        inputMode="text"
                       />
                     </div>
 
@@ -941,19 +948,19 @@ export function NomineeDetailsScreen({
                   label="Day"
                   value={selectedDay}
                   onChange={setSelectedDay}
-                  options={Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'))}
+                  options={getDobDayOptions(selectedYear, selectedMonth)}
                 />
                 <DobSelect
                   label="Month"
                   value={selectedMonth}
                   onChange={setSelectedMonth}
-                  options={Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'))}
+                  options={getDobMonthOptions(selectedYear)}
                 />
                 <DobSelect
                   label="Year"
                   value={selectedYear}
                   onChange={setSelectedYear}
-                  options={Array.from({ length: 100 }, (_, i) => (new Date().getFullYear() - i).toString())}
+                  options={getDobYearOptions()}
                 />
               </div>
 

@@ -69,8 +69,8 @@ const BusinessDetailsStep = ({
 
   const canContinueWithSignatory = SHOW_PROPRIETORSHIP_SIGNATORY
     ? !isLoading &&
-      canContinue &&
-      isSignatoryStepComplete(signatories, signatoryMode, anySignatoryCount)
+    canContinue &&
+    isSignatoryStepComplete(signatories, signatoryMode, anySignatoryCount)
     : canContinue;
 
   if (!SHOW_PROPRIETORSHIP_SIGNATORY && isLoading) {
@@ -93,7 +93,7 @@ const BusinessDetailsStep = ({
             <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">
               Business Details
             </h1>
-            {(SHOW_PROPRIETORSHIP_SIGNATORY || records.length >= 0)? (
+            {(SHOW_PROPRIETORSHIP_SIGNATORY || records.length >= 0) ? (
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 Your details have been fetched from APMI. Fields shown in grey cannot be changed
               </p>

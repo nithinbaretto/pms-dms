@@ -26,10 +26,13 @@ export type ManualGstDraft = {
   fileURL: string;
   registrationStatus: GstRegistrationStatus;
   requiresCertificate: boolean;
+  previewUrl?: string;
+  previewName?: string;
+  previewType?: string;
 };
 
 export type ValidateGstResult = {
-  isMatchFound: boolean;
+  isValidated: boolean;
   gstInId: string;
   legalName: string;
   state: string;

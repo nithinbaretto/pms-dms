@@ -13,8 +13,6 @@ type ContactDetailsSectionProps = {
   mobileLocked?: boolean;
   emailLocked?: boolean;
   isSendingOtp?: boolean;
-  /** Manual AIF only — PMS Individual omits this so UI stays unchanged. */
-  showMobileVerifyHint?: boolean;
   mobileErrorMessage?: string | null;
   emailErrorMessage?: string | null;
   onMobileChange: (value: string) => void;
@@ -28,16 +26,15 @@ const ContactDetailsSection = ({
   mobileLocked = false,
   emailLocked = false,
   isSendingOtp = false,
-  showMobileVerifyHint = false,
   mobileErrorMessage,
   emailErrorMessage,
   onMobileChange,
   onEmailChange,
   onStartVerify,
 }: ContactDetailsSectionProps): ReactElement => {
+  const isMobileInvalid = !mobile.verified;
   const isEmailInvalid = !email.verified;
-  const showMobileHint = showMobileVerifyHint && !mobile.verified;
-  const mobileHelperMessage = mobileErrorMessage ?? (showMobileHint ? "Please verify your mobile number." : null);
+  const mobileHelperMessage = mobileErrorMessage ?? (isMobileInvalid ? "Please verify your mobile number." : null);
   const emailHelperMessage = emailErrorMessage ?? (isEmailInvalid ? "Please verify your email." : null);
 
   return (
@@ -49,34 +46,35 @@ const ContactDetailsSection = ({
         Contact details
       </h2>
 
-      <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-        <div className="space-y-1">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-1">
           <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
             Mobile Number <span className="text-[#E8402F]">*</span>
           </label>
           <div
-            className={`flex h-9 items-center rounded-[8px] border bg-white pr-2 ${
+            className={`flex h-9 min-w-0 items-center overflow-hidden rounded-[8px] border bg-white pr-2 ${
               mobileHelperMessage ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
             }`}
           >
-            <div className="flex h-full items-center gap-1 bg-[#f5f5f5] px-2 text-right font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#71859B]">
+            <div className="flex h-full shrink-0 items-center rounded-l-[7px] bg-[#f5f5f5] px-2 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#71859B]">
               <span>+91 (IND)</span>
             </div>
             <Input
-              className="h-full flex-1 border-0 bg-transparent px-3 shadow-none focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
+              className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 shadow-none placeholder:text-[#71859B] focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
               disabled={mobileLocked}
               maxLength={10}
               onChange={(event) => {
                 onMobileChange(event.target.value.replace(/\D/g, ""));
               }}
+              placeholder="Enter Mobile Number"
               readOnly={mobileLocked}
               value={mobile.value}
             />
             {mobile.verified ? (
-              <img alt="" className="size-[13px]" src={verifiedIcon} />
+              <img alt="" className="size-[13px] shrink-0" src={verifiedIcon} />
             ) : (
               <Button
-                className="h-6 rounded-[4px] bg-[var(--color-onboarding-primary)] px-3 text-[11px] text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
+                className="h-6 shrink-0 rounded-[4px] bg-[var(--color-onboarding-primary)] px-3 text-[11px] text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
                 disabled={isSendingOtp || mobile.value.length !== 10}
                 onClick={() => {
                   onStartVerify("mobile");
@@ -94,29 +92,30 @@ const ContactDetailsSection = ({
           ) : null}
         </div>
 
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
             Email <span className="text-[#E8402F]">*</span>
           </label>
           <div
-            className={`flex h-9 items-center rounded-[8px] border bg-white pr-1 ${
+            className={`flex h-9 min-w-0 items-center overflow-hidden rounded-[8px] border bg-white pr-1 ${
               emailHelperMessage ? "border-[var(--color-onboarding-danger)]" : "border-[#eeeeee]"
             }`}
           >
             <Input
-              className="h-full flex-1 border-0 bg-transparent px-3 shadow-none focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
+              className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 shadow-none placeholder:text-[#71859B] focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
               disabled={emailLocked}
               onChange={(event) => {
                 onEmailChange(event.target.value);
               }}
+              placeholder="Enter Email ID"
               readOnly={emailLocked}
               value={email.value}
             />
             {email.verified ? (
-              <img alt="" className="mr-2 size-[13px]" src={verifiedIcon} />
+              <img alt="" className="mr-2 size-[13px] shrink-0" src={verifiedIcon} />
             ) : (
               <Button
-                className="h-6 rounded-[4px] bg-[var(--color-onboarding-primary)] px-3 text-[11px] text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
+                className="h-6 shrink-0 rounded-[4px] bg-[var(--color-onboarding-primary)] px-3 text-[11px] text-white hover:bg-[#7f141a] disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
                 disabled={isSendingOtp || !email.value.trim()}
                 onClick={() => {
                   onStartVerify("email");

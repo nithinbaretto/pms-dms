@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Check,
+  Eye,
   Loader2,
   Trash2,
   XIcon,
 } from "lucide-react";
 
-import documentIcon from "../../../../../assets/icons/document.png";
 import uploadFileIcon from "../../../../../assets/icons/svg/upload_file.svg";
 import gstGuideline1 from "../../../../../assets/images/guidlines_img_1.png";
 import gstGuideline2 from "../../../../../assets/images/guidlines_img_2.png";
@@ -17,7 +17,6 @@ import gstGuideline4 from "../../../../../assets/images/guidlines_img_4.png";
 import { Button } from "../../../../../shared/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogTitle,
 } from "../../../../../shared/ui/dialog";
@@ -36,9 +35,18 @@ import {
   formatGstName,
   isDuplicateGstNumber,
   isValidGstNumber,
+  sanitizeGstLegalName,
 } from "../validation";
 import CameraCaptureModal from "../../../components/CameraCaptureModal";
 import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
+import { onboardingApi } from "../../../services/onboarding-api";
+import { useOnboardingStore } from "../../../state/onboarding-store";
+import {
+  extractFileNameFromUrl,
+  isPdfDisplaySrc,
+  resolveDocumentFormat,
+  toDisplaySrc,
+} from "../../documents/helpers";
 
 const SELECT_MENU_CLASS =
   "z-[70] max-h-[200px] overflow-y-scroll rounded-[8px] border border-[#eee] bg-white p-0 shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] [scrollbar-width:thin] [scrollbar-color:#c5cdd6_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#c5cdd6] [&_[data-slot=select-scroll-up-button]]:hidden [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-radix-select-viewport]]:h-auto [&_[data-radix-select-viewport]]:max-h-none";
@@ -48,6 +56,12 @@ const isPdfPreview = (name: string, type: string): boolean =>
 
 const withPdfViewerParams = (src: string): string =>
   `${src}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&zoom=page-width`;
+
+const revokeBlobUrl = (url?: string): void => {
+  if (url?.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+};
 
 const GST_GUIDELINE_ITEMS = [
   { src: gstGuideline4, label: "Clear & Complete", good: true },
@@ -110,40 +124,119 @@ const AddGstModal = ({
     previewUrl: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const previewRequestIdRef = useRef(0);
   const [showCamera, setShowCamera] = useState(false);
+  const [certificatePreviewOpen, setCertificatePreviewOpen] = useState(false);
+  const [certificatePreviewSrc, setCertificatePreviewSrc] = useState("");
+  const [certificatePreviewType, setCertificatePreviewType] = useState("");
+  const [isLoadingCertificatePreview, setIsLoadingCertificatePreview] = useState(false);
+  const [certificatePreviewError, setCertificatePreviewError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      setView("fetch");
+      setIsAddingAnother(false);
+      setDraft(emptyDraft());
+      setFormatError(null);
+      setFileError(null);
+      setShowCamera(false);
+      setCertificatePreviewOpen(false);
+      setCertificatePreviewSrc("");
+      setCertificatePreviewType("");
+      setCertificatePreviewError(null);
+      setIsLoadingCertificatePreview(false);
       return;
     }
 
-    setView("fetch");
-    setIsAddingAnother(false);
-    setDraft(emptyDraft());
-    setPendingDrafts([]);
-    setFormatError(null);
-    setFileError(null);
-    setLocalPreview(null);
-    setShowCamera(false);
+    setLocalPreview((prev) => {
+      revokeBlobUrl(prev?.previewUrl);
+      return null;
+    });
+    setPendingDrafts((current) => {
+      current.forEach((item) => {
+        revokeBlobUrl(item.previewUrl);
+      });
+      return [];
+    });
+    setCertificatePreviewOpen(false);
+    setCertificatePreviewSrc("");
   }, [open]);
-
-  useEffect(() => {
-    return () => {
-      if (localPreview?.previewUrl) {
-        URL.revokeObjectURL(localPreview.previewUrl);
-      }
-    };
-  }, [localPreview]);
 
   const knownGstNumbers = [
     ...existingGstNumbers,
     ...pendingDrafts.map((item) => item.gstNumber),
   ];
 
-  const resetCurrentDraft = (): void => {
-    if (localPreview?.previewUrl) {
-      URL.revokeObjectURL(localPreview.previewUrl);
+  const closeCertificatePreview = (): void => {
+    setCertificatePreviewOpen(false);
+    setCertificatePreviewSrc("");
+    setCertificatePreviewType("");
+    setCertificatePreviewError(null);
+    setIsLoadingCertificatePreview(false);
+  };
+
+  const openCertificatePreview = async (item: ManualGstDraft): Promise<void> => {
+    const localSrc = item.previewUrl?.trim() || "";
+    const downloadLink = item.fileURL.trim();
+    if (!localSrc && !downloadLink) {
+      return;
     }
+
+    setCertificatePreviewOpen(true);
+    setCertificatePreviewSrc("");
+    setCertificatePreviewType(item.previewType?.trim() || "");
+    setCertificatePreviewError(null);
+
+    if (localSrc) {
+      setCertificatePreviewSrc(localSrc);
+      return;
+    }
+
+    const { leadId, pan, panNumber } = useOnboardingStore.getState();
+    const resolvedPan = (pan || panNumber).trim().toUpperCase();
+    if (!leadId || !resolvedPan) {
+      setCertificatePreviewError("Unable to open document. Missing lead or PAN information.");
+      return;
+    }
+
+    const requestId = ++previewRequestIdRef.current;
+    setIsLoadingCertificatePreview(true);
+
+    try {
+      const fileName =
+        item.previewName?.trim() ||
+        extractFileNameFromUrl(downloadLink, "GST Certificate");
+      const type = resolveDocumentFormat(fileName || downloadLink, item.previewType);
+      const response = await onboardingApi.downloadFile({
+        downloadLink,
+        fileName,
+        leadId,
+        panNumber: resolvedPan,
+        type,
+      });
+      if (requestId !== previewRequestIdRef.current) {
+        return;
+      }
+      const displaySrc = toDisplaySrc(response.fileURL, type);
+      if (!displaySrc) {
+        throw new Error("Document download returned an empty file.");
+      }
+      setCertificatePreviewSrc(displaySrc);
+      setCertificatePreviewType(type);
+    } catch {
+      if (requestId !== previewRequestIdRef.current) {
+        return;
+      }
+      setCertificatePreviewError("Unable to load GST certificate. Please try again.");
+    } finally {
+      if (requestId === previewRequestIdRef.current) {
+        setIsLoadingCertificatePreview(false);
+      }
+    }
+  };
+
+  const resetCurrentDraft = (): void => {
+    revokeBlobUrl(localPreview?.previewUrl);
     setLocalPreview(null);
     setDraft(emptyDraft());
     setFormatError(null);
@@ -154,9 +247,7 @@ const AddGstModal = ({
   };
 
   const clearPreview = (): void => {
-    if (localPreview?.previewUrl) {
-      URL.revokeObjectURL(localPreview.previewUrl);
-    }
+    revokeBlobUrl(localPreview?.previewUrl);
     setLocalPreview(null);
     setDraft((current) => ({ ...current, fileURL: "" }));
     if (fileInputRef.current) {
@@ -165,8 +256,23 @@ const AddGstModal = ({
   };
 
   const addDraftToPending = (next: ManualGstDraft): void => {
-    setPendingDrafts((current) => [...current, toCompletedDraft(next)]);
-    resetCurrentDraft();
+    const transferredPreview = localPreview;
+    setPendingDrafts((current) => [
+      ...current,
+      toCompletedDraft({
+        ...next,
+        previewUrl: transferredPreview?.previewUrl ?? next.previewUrl,
+        previewName: transferredPreview?.name ?? next.previewName,
+        previewType: transferredPreview?.type ?? next.previewType,
+      }),
+    ]);
+    setLocalPreview(null);
+    setDraft(emptyDraft());
+    setFormatError(null);
+    setFileError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setIsAddingAnother(false);
     setView("list");
   };
@@ -187,7 +293,7 @@ const AddGstModal = ({
     setFormatError(null);
     const result = await onValidateGst(gstNumber);
 
-    if (result?.isMatchFound) {
+    if (result?.isValidated) {
       addDraftToPending({
         gstNumber: result.gstInId || gstNumber,
         legalName: formatGstName(result.legalName),
@@ -224,9 +330,7 @@ const AddGstModal = ({
       return;
     }
 
-    if (localPreview?.previewUrl) {
-      URL.revokeObjectURL(localPreview.previewUrl);
-    }
+    revokeBlobUrl(localPreview?.previewUrl);
 
     const isPdf = isPdfPreview(selectedFile.name, selectedFile.type);
     setLocalPreview({
@@ -263,6 +367,22 @@ const AddGstModal = ({
     setShowCamera(false);
   };
 
+  const returnToGstFetch = (nextGst: string): void => {
+    revokeBlobUrl(localPreview?.previewUrl);
+    setLocalPreview(null);
+    setFileError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (view === "manual") {
+      setView("fetch");
+    }
+    setDraft({
+      ...emptyDraft(),
+      gstNumber: nextGst,
+    });
+  };
+
   const isDuplicate = isDuplicateGstNumber(draft.gstNumber, knownGstNumbers);
   const canContinue =
     Boolean(draft.legalName.trim()) &&
@@ -271,10 +391,12 @@ const AddGstModal = ({
     !isDuplicate &&
     (!draft.requiresCertificate || Boolean(draft.fileURL.trim()));
   const canFetch = draft.gstNumber.trim().length === 15 && !isDuplicate;
-  const gstNumberLocked = draft.requiresCertificate || isValidatingGst;
+  const gstNumberLocked = isValidatingGst;
 
   const gstNumberField = (
-    <div className="space-y-1">
+    <div
+      className={`${pendingDrafts.length > 0 ? "w-1/2" : "w-full"} space-y-1`}
+    >
       <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[100%] tracking-[0px] text-[#231F20]">
         GST Number <span className="text-[#E8402F]">*</span>
       </label>
@@ -288,10 +410,14 @@ const AddGstModal = ({
           disabled={gstNumberLocked}
           onChange={(event) => {
             const nextGst = event.target.value.toUpperCase();
-            setDraft((current) => ({
-              ...current,
-              gstNumber: nextGst,
-            }));
+            if (draft.requiresCertificate || view === "manual") {
+              returnToGstFetch(nextGst);
+            } else {
+              setDraft((current) => ({
+                ...current,
+                gstNumber: nextGst,
+              }));
+            }
             if (isDuplicateGstNumber(nextGst, knownGstNumbers)) {
               setFormatError("This GST number is already added");
               return;
@@ -383,7 +509,7 @@ const AddGstModal = ({
               onChange={(event) => {
                 setDraft((current) => ({
                   ...current,
-                  legalName: event.target.value,
+                  legalName: sanitizeGstLegalName(event.target.value),
                 }));
               }}
               placeholder="Enter Legal Name"
@@ -516,6 +642,9 @@ const AddGstModal = ({
     <>
       <Dialog
         onOpenChange={(nextOpen) => {
+          if (!nextOpen && (certificatePreviewOpen || showCamera)) {
+            return;
+          }
           if (!nextOpen && !showCamera) {
             onOpenChange(nextOpen);
           }
@@ -525,15 +654,32 @@ const AddGstModal = ({
         <DialogContent
           className="flex h-auto max-h-[min(784px,calc(100vh-48px))] w-[calc(100%-2rem)] max-w-[589px] flex-col gap-0 overflow-hidden rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:w-[589px] sm:max-w-[589px]"
           hideClose
+          onInteractOutside={(event) => {
+            if (certificatePreviewOpen) {
+              event.preventDefault();
+            }
+          }}
+          onPointerDownOutside={(event) => {
+            if (certificatePreviewOpen) {
+              event.preventDefault();
+            }
+          }}
         >
           <div className="flex shrink-0 items-start justify-between gap-3 px-6 pt-6">
             <DialogTitle className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] !text-[#435160]">
               Add GST
             </DialogTitle>
-            <DialogClose className="inline-flex size-[24px] shrink-0 items-center justify-center text-[#435160] hover:opacity-70 focus:outline-hidden">
+            <button
+              aria-label="Close"
+              className="inline-flex size-[24px] shrink-0 items-center justify-center text-[#435160] hover:opacity-70 focus:outline-hidden"
+              onClick={() => {
+                onOpenChange(false);
+              }}
+              type="button"
+            >
               <XIcon className="size-[24px]" strokeWidth={1.5} />
               <span className="sr-only">Close</span>
-            </DialogClose>
+            </button>
           </div>
           <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-4">
             {view === "list" ? (
@@ -563,16 +709,23 @@ const AddGstModal = ({
                         </div>
                         <div className="ml-3 flex shrink-0 items-center gap-2 self-center">
                           {item.requiresCertificate ? (
-                            <img
-                              alt=""
-                              className="h-[11px] w-[11px]"
-                              src={documentIcon}
-                            />
+                            <button
+                              aria-label="Preview GST certificate"
+                              className="flex items-center justify-center text-[#231F20] hover:opacity-70 disabled:opacity-40"
+                              disabled={!item.fileURL.trim() && !item.previewUrl?.trim()}
+                              onClick={() => {
+                                void openCertificatePreview(item);
+                              }}
+                              type="button"
+                            >
+                              <Eye className="h-4 w-4" strokeWidth={1.75} />
+                            </button>
                           ) : null}
                           <button
                             aria-label="Remove GST"
                             className="flex items-center justify-center text-[#93161E] hover:opacity-70"
                             onClick={() => {
+                              revokeBlobUrl(item.previewUrl);
                               const next = pendingDrafts.filter(
                                 (entry) => entry.gstNumber !== item.gstNumber,
                               );
@@ -602,7 +755,7 @@ const AddGstModal = ({
                 {isAddingAnother ? (
                   <>
                     <div className="h-px bg-[#EEEEEE]" />
-                    <div className="w-full">{gstNumberField}</div>
+                    {gstNumberField}
                     {draft.requiresCertificate ? (
                       manualDetailsFields
                     ) : (
@@ -656,6 +809,80 @@ const AddGstModal = ({
                 )}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            closeCertificatePreview();
+          }
+        }}
+        open={certificatePreviewOpen}
+      >
+        <DialogContent
+          className="z-[80] flex w-[calc(100%-48px)] max-w-[679.5px] flex-col gap-[16px] rounded-[16px] border-0 bg-white p-[20px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] sm:max-w-[679.5px] md:p-[32px]"
+          hideClose
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            event.preventDefault();
+            closeCertificatePreview();
+          }}
+          onPointerDownOutside={(event) => {
+            event.preventDefault();
+            closeCertificatePreview();
+          }}
+        >
+          <div className="flex h-[33px] w-full shrink-0 items-center justify-between">
+            <DialogTitle className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[33px] !text-[#435160]">
+              GST Certificate
+            </DialogTitle>
+            <button
+              aria-label="Close"
+              className="inline-flex size-[24px] shrink-0 items-center justify-center text-[#435160] hover:opacity-70 focus:outline-hidden"
+              onClick={closeCertificatePreview}
+              type="button"
+            >
+              <XIcon className="size-[24px]" strokeWidth={1.5} />
+              <span className="sr-only">Close</span>
+            </button>
+          </div>
+          <div className="relative w-full overflow-hidden rounded-[8px] border border-dashed border-[#eee]">
+            <div className="relative flex h-[211px] w-full items-center justify-center p-[12px]">
+              {isLoadingCertificatePreview ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="size-6 animate-spin text-[#93161e]" />
+                  <p className="font-['Mulish',sans-serif] text-[13px] text-[#435160]">
+                    Loading...
+                  </p>
+                </div>
+              ) : certificatePreviewError ? (
+                <p className="px-2 text-center font-['Mulish',sans-serif] text-[13px] text-[#93161e]">
+                  {certificatePreviewError}
+                </p>
+              ) : certificatePreviewSrc ? (
+                isPdfDisplaySrc(certificatePreviewSrc, certificatePreviewType) ||
+                isPdfPreview(certificatePreviewType, certificatePreviewType) ? (
+                  <iframe
+                    className="h-full w-full border-0 bg-white"
+                    src={withPdfViewerParams(certificatePreviewSrc)}
+                    title="GST certificate preview"
+                  />
+                ) : (
+                  <img
+                    alt="GST certificate preview"
+                    className="max-h-full max-w-full object-contain"
+                    src={certificatePreviewSrc}
+                  />
+                )
+              ) : (
+                <p className="text-center font-['Mulish',sans-serif] text-[13px] text-[#71859b]">
+                  No preview available.
+                </p>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -24,6 +24,7 @@ import {
   displayValue,
   displayYesNo,
   fileTypeLabelFromUrl,
+  formatAccountType,
   formatPrimaryContact,
   primaryApplicationId,
   toGstStateCode,
@@ -118,11 +119,22 @@ const TicketCard = ({ label, value, tone, onCopy, copied }: TicketCardProps): Re
         <button
           type="button"
           onClick={onCopy}
-          className="absolute top-1/2 right-[12px] flex size-[24px] -translate-y-1/2 items-center justify-center self-center rounded-full bg-white text-[#71859b] shadow-[0px_1px_2px_rgba(0,0,0,0.06)] transition-colors hover:text-[#435160]"
+          className="group absolute top-1/2 right-[12px] flex size-[24px] -translate-y-1/2 cursor-pointer items-center justify-center self-center rounded-full bg-white text-[#71859b] shadow-[0px_1px_2px_rgba(0,0,0,0.06)] transition-colors hover:bg-[#f4f7fa] hover:text-[#231f20]"
           aria-label={copied ? "Copied" : "Copy application ID"}
-          title={copied ? "Copied" : "Copy"}
         >
           <Copy className="size-[12px]" />
+          <span
+            role="status"
+            className={`pointer-events-none absolute right-[30px] z-10 whitespace-nowrap rounded-[6px] bg-[#231f20] px-[8px] py-[5px] font-['Mulish',sans-serif] text-[11px] font-medium leading-none text-white shadow-[0px_2px_8px_rgba(0,0,0,0.16)] transition-opacity ${
+              copied ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            }`}
+          >
+            {copied ? "Copied" : "Copy"}
+            <span
+              aria-hidden
+              className="absolute top-1/2 left-full -translate-y-1/2 border-y-[5px] border-l-[5px] border-y-transparent border-l-[#231f20]"
+            />
+          </span>
         </button>
       ) : null}
     </div>
@@ -220,7 +232,7 @@ function SuccessScreen({ result }: SuccessScreenProps): ReactElement {
                 Application Submitted for Review
               </h1>
               <p className="w-full font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-center text-[#435160] md:whitespace-nowrap">
-                A confirmation SMS/Email has been sent
+                A confirmation SMS/Email has been sent{" "}
                 <br className="md:hidden" />
                 to your registered contact details
               </p>
@@ -499,6 +511,19 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
 
                 <SectionCard sectionId="business" onEdit={handleEdit}>
                   <div className="flex flex-col gap-[16px]">
+                    {review?.productType || review?.business.entityType ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[16px]">
+                        <SummaryField
+                          label="Product Type"
+                          value={displayValue(review?.productType)}
+                        />
+                        <SummaryField
+                          label="Entity Type"
+                          value={displayValue(review?.business.entityType)}
+                        />
+                      </div>
+                    ) : null}
+
                     <div className="flex flex-col gap-[12px]">
                       <p className="font-['Mulish',sans-serif] font-medium text-[13px] leading-[19.5px] text-[#231f20]">
                         GST Details
@@ -547,6 +572,38 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                         value={displayValue(review?.business.selectedBranch)}
                       />
                     </div>
+
+                    {review?.business.authSignatories.length ? (
+                      <>
+                        <div className="h-px w-full bg-[#e5e5e6]" />
+                        <div className="flex flex-col gap-[12px]">
+                          <p className="font-['Mulish',sans-serif] font-medium text-[13px] leading-[19.5px] text-[#231f20]">
+                            Authorized Signatories
+                          </p>
+                          {review.business.modeOfOperation ? (
+                            <SummaryField
+                              label="Mode of Operation"
+                              value={displayValue(review.business.modeOfOperation)}
+                            />
+                          ) : null}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+                            {review.business.authSignatories.map((signatory, index) => (
+                              <div
+                                key={`${signatory.pan || signatory.name}-${index}`}
+                                className="flex flex-col gap-[4px]"
+                              >
+                                <p className="font-['Mulish',sans-serif] text-[13px] text-[#231f20]">
+                                  {displayValue(signatory.name)}
+                                </p>
+                                <p className="font-['Mulish',sans-serif] text-[12px] text-[#71859b]">
+                                  {displayValue(signatory.pan)}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
                   </div>
                 </SectionCard>
 
@@ -555,6 +612,10 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                     <SummaryField
                       label="Name"
                       value={displayValue(review?.bank.accountHolderName)}
+                    />
+                    <SummaryField
+                      label="Account Type"
+                      value={formatAccountType(review?.bank.accountType)}
                     />
                     <SummaryField
                       label="Account Number"
@@ -566,11 +627,25 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                       label="Branch Name & Address"
                       value={displayValue(review?.bank.branchName)}
                     />
-                    <SummaryField
-                      label="Cheque Upload"
-                      value={displayYesNo(Boolean(review?.bank.chequeUploaded))}
-                    />
+                    {review?.bank.chequeUploaded || review?.bank.cancelledChequeUrl ? (
+                      <SummaryField
+                        label="Cheque Upload"
+                        value={displayYesNo(true)}
+                      />
+                    ) : null}
                   </div>
+                  {review?.bank.cancelledChequeUrl ? (
+                    <div className="mt-[16px] grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
+                      <ReviewDocumentCard
+                        label="Cancelled Cheque"
+                        storageUrl={review.bank.cancelledChequeUrl}
+                        isLoading={previewLoadingKey === review.bank.cancelledChequeUrl.trim()}
+                        onView={(url) => {
+                          void handleViewDocument(url);
+                        }}
+                      />
+                    </div>
+                  ) : null}
                 </SectionCard>
 
                 <SectionCard sectionId="nominee" onEdit={handleEdit}>
@@ -608,11 +683,29 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                       label="Address"
                       value={displayValue(review?.nominee.nomineeAddress)}
                     />
+                    {review?.nominee.isMinor ||
+                    review?.nominee.guardianName ||
+                    review?.nominee.guardianAddress ? (
+                      <>
+                        <SummaryField
+                          label="Guardian Name"
+                          value={displayValue(review?.nominee.guardianName)}
+                        />
+                        <SummaryField
+                          label="Guardian Address"
+                          value={displayValue(review?.nominee.guardianAddress)}
+                        />
+                      </>
+                    ) : null}
                   </div>
                 </SectionCard>
 
                 <SectionCard sectionId="documents" onEdit={handleEdit}>
-                  {review?.documents.signatureUploaded || review?.documents.photoUploaded ? (
+                  {review?.documents.signatureUploaded ||
+                  review?.documents.photoUploaded ||
+                  review?.documents.identityUploaded ||
+                  review?.documents.addressUploaded ||
+                  review?.documents.hufDeedUploaded ? (
                     <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4 lg:gap-[16px]">
                       {review.documents.signatureUploaded ? (
                         <ReviewDocumentCard
@@ -631,6 +724,40 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                           label="Photo Upload"
                           storageUrl={review.documents.uploadedPhoto}
                           isLoading={previewLoadingKey === review.documents.uploadedPhoto.trim()}
+                          onView={(url) => {
+                            void handleViewDocument(url);
+                          }}
+                        />
+                      ) : null}
+                      {review.documents.identityUploaded ? (
+                        <ReviewDocumentCard
+                          label="Proof of Identity"
+                          storageUrl={review.documents.proofOfIdentityUrl}
+                          isLoading={
+                            previewLoadingKey === review.documents.proofOfIdentityUrl.trim()
+                          }
+                          onView={(url) => {
+                            void handleViewDocument(url);
+                          }}
+                        />
+                      ) : null}
+                      {review.documents.addressUploaded ? (
+                        <ReviewDocumentCard
+                          label="Proof of Address"
+                          storageUrl={review.documents.proofOfAddressUrl}
+                          isLoading={previewLoadingKey === review.documents.proofOfAddressUrl.trim()}
+                          onView={(url) => {
+                            void handleViewDocument(url);
+                          }}
+                        />
+                      ) : null}
+                      {review.documents.hufDeedUploaded ? (
+                        <ReviewDocumentCard
+                          label="HUF Deed of Declaration"
+                          storageUrl={review.documents.hufDeedOfDeclarationUrl}
+                          isLoading={
+                            previewLoadingKey === review.documents.hufDeedOfDeclarationUrl.trim()
+                          }
                           onView={(url) => {
                             void handleViewDocument(url);
                           }}

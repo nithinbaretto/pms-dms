@@ -28,6 +28,7 @@ export const createEmptyBankDetails = (): BankDetailsModel => ({
   isBankVerified: false,
   branchDisplay: "",
   hasBankData: false,
+  cancelledCheque: "",
 });
 
 export const normalizeAccountType = (bankType: string): BankAccountType => {
@@ -214,6 +215,7 @@ const toBankDetailsModel = (input: {
   branchName: string;
   bankAddress: string;
   isBankVerified: boolean;
+  cancelledCheque?: string;
 }): BankDetailsModel => {
   const accountHolderName = input.accountHolderName.trim();
   const bankName = input.bankName.trim();
@@ -223,6 +225,7 @@ const toBankDetailsModel = (input: {
   const branchName = input.branchName.trim();
   const bankAddress = input.bankAddress.trim();
   const accountType = normalizeAccountType(bankType);
+  const cancelledCheque = input.cancelledCheque?.trim() ?? "";
 
   return {
     accountHolderName,
@@ -236,6 +239,7 @@ const toBankDetailsModel = (input: {
     isBankVerified: input.isBankVerified,
     branchDisplay: formatBranchDisplay(branchName, bankAddress),
     hasBankData: hasBankCoreData({ accountNumber, ifscCode }),
+    cancelledCheque,
   };
 };
 
@@ -249,6 +253,7 @@ export const mapGetBankDetailsToModel = (response: GetBankDetailsResponse): Bank
     branchName: response.branchName,
     bankAddress: response.bankAddress,
     isBankVerified: response.isBankVerified,
+    cancelledCheque: response.cancelledCheque,
   });
 };
 
@@ -387,9 +392,21 @@ export const resolveValidationStatus = (model: BankDetailsModel): BankValidation
  * Backend defaults isBankVerified to false until the user runs penny drop via Validate.
  * Do not treat that default as a failed validation.
  */
-export const resolveInitialValidationStatus = (model: BankDetailsModel): BankValidationStatus => {
+export const resolveInitialValidationStatus = (
+  model: BankDetailsModel,
+  verificationType: BankVerificationType = "",
+): BankValidationStatus => {
   if (model.hasBankData && model.isBankVerified) {
     return "success";
+  }
+
+  // Manual cheque saves leave isBankVerified false. Restore the failed + cheque UI
+  // when returning to this step instead of treating the account as never validated.
+  if (
+    model.hasBankData &&
+    (Boolean(model.cancelledCheque.trim()) || verificationType === "Manual")
+  ) {
+    return "failed";
   }
 
   return "pending";

@@ -19,10 +19,10 @@ const ProductCategoryCard = ({
   return (
     <button
       className={cn(
-        "w-full rounded-lg border p-3 text-left transition-colors",
+        "w-full rounded-lg border-[0.8px] p-3 text-left transition-all duration-300 ease-in-out hover:scale-[1.01] hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] active:scale-[0.99]",
         selected
-          ? "border-[var(--color-onboarding-product-selected-border)] bg-[var(--color-onboarding-product-selected)]"
-          : "border-[#eeeeee] bg-[var(--color-onboarding-surface)]",
+          ? "border-[rgba(147,22,30,0.09)] bg-[rgba(147,22,30,0.04)]"
+          : "border-[#eeeeee] bg-white hover:border-[#c7aa7b]",
       )}
       onClick={onSelect}
       type="button"
@@ -32,13 +32,15 @@ const ProductCategoryCard = ({
           <span
             aria-hidden="true"
             className={cn(
-              "flex size-[14px] items-center justify-center rounded-[3.5px] border-2",
+              "flex size-[14px] items-center justify-center rounded-[3.5px] border-2 transition-all duration-200 ease-in-out",
               selected
-                ? "border-[var(--color-onboarding-primary)] bg-[var(--color-onboarding-primary)]"
+                ? "scale-110 border-[#93161e] bg-[#93161e]"
                 : "border-[#eeeeee] bg-white",
             )}
           >
-            {selected ? <Check className="size-2.5 text-white" /> : null}
+            {selected ? (
+              <Check className="size-[8.75px] animate-[checkmark_0.2s_ease-in-out] text-white" />
+            ) : null}
           </span>
           <span className="space-y-0.5">
             <span className="block font-['Mulish',sans-serif] text-[12px] font-medium leading-[18px] tracking-normal text-[#435160]">

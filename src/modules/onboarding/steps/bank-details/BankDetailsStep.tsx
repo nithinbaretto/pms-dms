@@ -122,9 +122,24 @@ const BankDetailsStep = ({
     setIsEditMode(initialIsEditMode);
   }, [initialIsEditMode]);
 
+  const lastHydratedChequeRef = useRef("");
+
   useEffect(() => {
-    setChequeUploaded(initialChequeUploaded);
-  }, [initialChequeUploaded]);
+    const storedUrl = data.cancelledCheque.trim();
+    if (storedUrl && storedUrl !== lastHydratedChequeRef.current) {
+      lastHydratedChequeRef.current = storedUrl;
+      setCancelledChequeUrl(storedUrl);
+      setCancelledChequeFileName(extractFileNameFromUrl(storedUrl, "Cheque.png"));
+      setChequeUploaded(true);
+      setManualErrorChequeUploaded(true);
+      return;
+    }
+
+    if (!storedUrl) {
+      lastHydratedChequeRef.current = "";
+      setChequeUploaded(initialChequeUploaded);
+    }
+  }, [data.cancelledCheque, initialChequeUploaded]);
 
   useEffect(() => {
     onChequeUploadedChange?.(chequeUploaded);

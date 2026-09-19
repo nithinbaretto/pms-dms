@@ -1,5 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Loader2 } from "lucide-react";
+
+import { useOnboardingFooterLocked } from "./StepSlideTransition";
 
 type OnboardingStepFooterProps = {
   nextLabel?: string | null;
@@ -68,7 +71,8 @@ const OnboardingStepFooter = ({
   hideContinueArrow = false,
   continueContent,
   beforeContinue,
-}: OnboardingStepFooterProps): ReactElement => {
+}: OnboardingStepFooterProps): ReactElement | null => {
+  const footerLocked = useOnboardingFooterLocked();
   const canClickNext = Boolean(nextClickable && onNextClick && !continueDisabled && !isLoading);
   const resolvedLoadingLabel = loadingLabel ?? `${continueLabel.replace(/→.*/, "").trim()}...`;
 
@@ -125,7 +129,11 @@ const OnboardingStepFooter = ({
     </button>
   );
 
-  return (
+  if (footerLocked) {
+    return null;
+  }
+
+  const footer = (
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-white pr-[var(--removed-body-scroll-bar-size)] shadow-[0px_-4px_12px_0px_rgba(0,0,0,0.12)]">
       {/* Mobile — stacked Figma layout */}
       <div className="mx-auto flex w-full flex-col items-start gap-2 px-6 py-3 lg:hidden">
@@ -166,6 +174,12 @@ const OnboardingStepFooter = ({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") {
+    return footer;
+  }
+
+  return createPortal(footer, document.body);
 };
 
 export default OnboardingStepFooter;

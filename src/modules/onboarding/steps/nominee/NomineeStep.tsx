@@ -5,7 +5,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import CorrespondenceAddressModal from "../personal-details/modals/CorrespondenceAddressModal";
 import { NomineeDetailsScreen } from "./NomineeDetailsScreen";
-import { addressFromLine, getSafeDobParts, sanitizeProofNumber } from "./helpers";
+import {
+  addressFromLine,
+  clampDobSelection,
+  getSafeDobParts,
+  isFutureDob,
+  parseDob,
+  sanitizeNomineeName,
+  sanitizeProofNumber,
+} from "./helpers";
 import { useNomineeFlow } from "./useNomineeFlow";
 
 type NomineeStepProps = {
@@ -80,11 +88,16 @@ const NomineeStep = ({
     setOption(next);
   };
 
+  const applyDobSelection = (day: string, month: string, year: string) => {
+    const next = clampDobSelection(day, month, year);
+    setSelectedDay(next.day);
+    setSelectedMonth(next.month);
+    setSelectedYear(next.year);
+  };
+
   const handleOpenDobPicker = () => {
     const parts = getSafeDobParts(form.dateOfBirth);
-    setSelectedDay(parts.day);
-    setSelectedMonth(parts.month);
-    setSelectedYear(parts.year);
+    applyDobSelection(parts.day, parts.month, parts.year);
     setShowDobPicker(true);
     setTimeout(() => setDobPickerAnimating(true), 10);
   };
@@ -95,7 +108,12 @@ const NomineeStep = ({
   };
 
   const handleSaveDob = () => {
-    updateField("dateOfBirth", `${selectedDay}/${selectedMonth}/${selectedYear}`);
+    const value = `${selectedDay}/${selectedMonth}/${selectedYear}`;
+    if (!parseDob(value) || isFutureDob(value)) {
+      return;
+    }
+
+    updateField("dateOfBirth", value);
     handleCloseDobPicker();
   };
 
@@ -190,7 +208,7 @@ const NomineeStep = ({
         nomineeOption={option}
         setNomineeOption={handleSetNomineeOption}
         nomineeName={form.nomineeName}
-        setNomineeName={(value) => updateField("nomineeName", value)}
+        setNomineeName={(value) => updateField("nomineeName", sanitizeNomineeName(value))}
         nomineeRelationship={form.relationshipWithApplicant}
         setNomineeRelationship={(value) => updateField("relationshipWithApplicant", value)}
         nomineeProofType={form.proofOfIdentityType}
@@ -224,11 +242,11 @@ const NomineeStep = ({
         showDobPicker={showDobPicker}
         dobPickerAnimating={dobPickerAnimating}
         selectedDay={selectedDay}
-        setSelectedDay={setSelectedDay}
+        setSelectedDay={(day) => applyDobSelection(day, selectedMonth, selectedYear)}
         selectedMonth={selectedMonth}
-        setSelectedMonth={setSelectedMonth}
+        setSelectedMonth={(month) => applyDobSelection(selectedDay, month, selectedYear)}
         selectedYear={selectedYear}
-        setSelectedYear={setSelectedYear}
+        setSelectedYear={(year) => applyDobSelection(selectedDay, selectedMonth, year)}
         handleOpenDobPicker={handleOpenDobPicker}
         handleCloseDobPicker={handleCloseDobPicker}
         handleSaveDob={handleSaveDob}

@@ -15,6 +15,7 @@ import { Dialog, DialogClose, DialogContent } from "../../../../../shared/ui/dia
 import { Input } from "../../../../../shared/ui/input";
 import { cn } from "../../../../../shared/ui/utils";
 import locationIcon from "../../../../../assets/icons/svg/Location.svg";
+import { hasAddressValue } from "../helpers";
 import type { Address } from "../types";
 
 type CorrespondenceAddressModalProps = {
@@ -122,12 +123,15 @@ const CorrespondenceAddressModal = ({
     setDraft(initialAddress);
     setSearchQuery("");
     setLocationError(null);
+    const canCopyPermanentAddress = hasAddressValue(permanentAddress);
     setSameAsPermanent(
-      mode === "permanent"
+      mode === "permanent" || !canCopyPermanentAddress
         ? false
         : (initialSameAsPermanent ?? isSameAddress(initialAddress, permanentAddress)),
     );
   }, [initialAddress, initialSameAsPermanent, mode, open, permanentAddress]);
+
+  const canCopyPermanentAddress = hasAddressValue(permanentAddress);
 
   const mapCenter = useMemo<LatLng>(() => {
     if (draft.lat && draft.lng) {
@@ -240,36 +244,47 @@ const CorrespondenceAddressModal = ({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 pb-6 md:px-8 md:pb-8">
           <div className="space-y-4">
             {!isPermanentMode ? (
-            <div
-              className={cn(
-                "rounded-[8px] border p-[14px]",
-                sameAsPermanent
-                  ? "border-[rgba(147,22,30,0.09)] bg-[rgba(147,22,30,0.04)]"
-                  : "border-[#eeeeee] bg-white",
-              )}
-            >
-              <label className="flex items-start gap-2">
-                <Checkbox
-                  checked={sameAsPermanent}
-                  className="mt-px border-[#eeeeee] data-[state=checked]:border-[#93161e] data-[state=checked]:bg-[#93161e] data-[state=checked]:text-white"
-                  onCheckedChange={(checked) => {
-                    const isChecked = Boolean(checked);
-                    setSameAsPermanent(isChecked);
-                    if (isChecked) {
-                      setDraft(permanentAddress);
-                    }
-                  }}
-                />
-                <span className="space-y-3">
-                  <span className="block text-[13px] leading-[19.5px] text-[#435160]">
-                    {sameAsLabel ?? "Same as permanent address"}
+              <div
+                className={cn(
+                  "rounded-[8px] border p-[14px]",
+                  sameAsPermanent
+                    ? "border-[rgba(147,22,30,0.09)] bg-[rgba(147,22,30,0.04)]"
+                    : "border-[#eeeeee] bg-white",
+                  !canCopyPermanentAddress && "opacity-50",
+                )}
+              >
+                <label
+                  className={cn(
+                    "flex items-start gap-2",
+                    canCopyPermanentAddress ? "cursor-pointer" : "cursor-not-allowed",
+                  )}
+                >
+                  <Checkbox
+                    checked={sameAsPermanent}
+                    className="mt-px border-[#eeeeee] data-[state=checked]:border-[#93161e] data-[state=checked]:bg-[#93161e] data-[state=checked]:text-white"
+                    disabled={!canCopyPermanentAddress}
+                    onCheckedChange={(checked) => {
+                      if (!canCopyPermanentAddress) {
+                        return;
+                      }
+
+                      const isChecked = Boolean(checked);
+                      setSameAsPermanent(isChecked);
+                      if (isChecked) {
+                        setDraft(permanentAddress);
+                      }
+                    }}
+                  />
+                  <span className="space-y-3">
+                    <span className="block text-[13px] leading-[19.5px] text-[#435160]">
+                      {sameAsLabel ?? "Same as permanent address"}
+                    </span>
+                    <span className="block text-[13px] leading-[19.5px] text-[#231f20]">
+                      {toSingleLine(permanentAddress)}
+                    </span>
                   </span>
-                  <span className="block text-[13px] leading-[19.5px] text-[#231f20]">
-                    {toSingleLine(permanentAddress)}
-                  </span>
-                </span>
-              </label>
-            </div>
+                </label>
+              </div>
             ) : null}
 
             {isPermanentMode || !sameAsPermanent ? (

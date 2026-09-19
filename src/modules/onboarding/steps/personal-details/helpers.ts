@@ -43,6 +43,12 @@ export const addressFromApiString = (value: string): Address => {
   };
 };
 
+export const hasAddressValue = (address: Address): boolean => {
+  return [address.addressLine, address.city, address.state, address.pincode].some(
+    (part) => part.trim().length > 0,
+  );
+};
+
 export const formatAddressForApi = (address: Address): string => {
   const parts = [address.addressLine, address.city, address.state, address.pincode]
     .map((part) => part.trim())

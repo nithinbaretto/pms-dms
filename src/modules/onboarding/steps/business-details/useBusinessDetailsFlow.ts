@@ -225,7 +225,7 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
           gstInNumber: normalized,
         });
         return {
-          isMatchFound: response.isMatchFound,
+          isValidated: response.isValidated,
           gstInId: response.gstInId || normalized,
           legalName: response.legalName,
           state: resolveStateName(response.state, stateOptions),
@@ -233,7 +233,7 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
       } catch {
         setError("Unable to validate GST number. Enter details manually.");
         return {
-          isMatchFound: false,
+          isValidated: false,
           gstInId: normalized,
           legalName: "",
           state: "",

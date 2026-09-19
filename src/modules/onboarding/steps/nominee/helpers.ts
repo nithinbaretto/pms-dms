@@ -3,8 +3,35 @@ import type {
   SaveNomineeDetailsRequest,
 } from "../../services/onboarding-api";
 import type { Address } from "../personal-details/types";
-import { DEFAULT_PROOF_OF_IDENTITY, DOB_PATTERN } from "./constants";
-import type { NomineeFormData, NomineeSnapshot } from "./types";
+import { DEFAULT_PROOF_OF_IDENTITY, DOB_PATTERN, NOMINEE_NAME_MAX_LENGTH } from "./constants";
+import type { NomineeFormData, NomineeOption, NomineeSnapshot } from "./types";
+
+const nomineeOptionStorageKey = (leadId: string): string => `onboarding:nomineeOption:${leadId}`;
+
+export const getStoredNomineeOption = (leadId: string | null): NomineeOption | null => {
+  if (!leadId) {
+    return null;
+  }
+
+  try {
+    const value = sessionStorage.getItem(nomineeOptionStorageKey(leadId));
+    return value === "later" || value === "now" ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+export const storeNomineeOption = (leadId: string | null, option: NomineeOption): void => {
+  if (!leadId) {
+    return;
+  }
+
+  try {
+    sessionStorage.setItem(nomineeOptionStorageKey(leadId), option);
+  } catch {
+    // Ignore quota / private-mode storage failures.
+  }
+};
 
 export const formatAadhaarNumber = (value: string): string => {
   const digits = value.replace(/\D/g, "").slice(0, 12);
@@ -32,6 +59,16 @@ export const normalizeProofNumberForSave = (type: string, value: string): string
   }
 
   return value.trim().toUpperCase();
+};
+
+export const sanitizeNomineeName = (value: string): string => {
+  return value.replace(/[^A-Za-z ]/g, "").slice(0, NOMINEE_NAME_MAX_LENGTH);
+};
+
+const startOfToday = (): Date => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
 };
 
 export const parseDob = (value: string): Date | null => {
@@ -64,13 +101,24 @@ export const formatDate = (date: Date): string => {
   return `${day}/${month}/${year}`;
 };
 
+export const isFutureDob = (dob: string): boolean => {
+  const parsed = parseDob(dob);
+  if (!parsed) {
+    return false;
+  }
+
+  parsed.setHours(0, 0, 0, 0);
+  return parsed.getTime() > startOfToday().getTime();
+};
+
 export const getAge = (dob: string): number | null => {
   const parsed = parseDob(dob);
   if (!parsed) {
     return null;
   }
 
-  const now = new Date();
+  parsed.setHours(0, 0, 0, 0);
+  const now = startOfToday();
   if (parsed.getTime() > now.getTime()) {
     return null;
   }
@@ -91,19 +139,56 @@ export const validateAgeForMinor = (dob: string): boolean => {
 
 export const getSafeDobParts = (dob: string) => {
   const parsed = parseDob(dob);
-  if (!parsed) {
-    return {
-      day: "01",
-      month: "01",
-      year: (new Date().getFullYear() - 18).toString(),
-    };
-  }
+  const fallback = new Date();
+  fallback.setFullYear(fallback.getFullYear() - 18);
+  fallback.setHours(0, 0, 0, 0);
+
+  const source = !parsed || parsed.getTime() > startOfToday().getTime() ? fallback : parsed;
 
   return {
-    day: parsed.getDate().toString().padStart(2, "0"),
-    month: (parsed.getMonth() + 1).toString().padStart(2, "0"),
-    year: parsed.getFullYear().toString(),
+    day: source.getDate().toString().padStart(2, "0"),
+    month: (source.getMonth() + 1).toString().padStart(2, "0"),
+    year: source.getFullYear().toString(),
   };
+};
+
+export const getDobYearOptions = (): string[] => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 100 }, (_, index) => (currentYear - index).toString());
+};
+
+export const getDobMonthOptions = (year: string): string[] => {
+  const now = new Date();
+  const selectedYear = Number(year);
+  const maxMonth = selectedYear === now.getFullYear() ? now.getMonth() + 1 : 12;
+
+  return Array.from({ length: maxMonth }, (_, index) => (index + 1).toString().padStart(2, "0"));
+};
+
+export const getDobDayOptions = (year: string, month: string): string[] => {
+  const now = new Date();
+  const selectedYear = Number(year);
+  const selectedMonth = Number(month);
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1;
+  const maxDay = isCurrentMonth ? Math.min(daysInMonth, now.getDate()) : daysInMonth;
+
+  return Array.from({ length: maxDay }, (_, index) => (index + 1).toString().padStart(2, "0"));
+};
+
+export const clampDobSelection = (
+  day: string,
+  month: string,
+  year: string,
+): { day: string; month: string; year: string } => {
+  const yearOptions = getDobYearOptions();
+  const nextYear = yearOptions.includes(year) ? year : yearOptions[0];
+  const monthOptions = getDobMonthOptions(nextYear);
+  const nextMonth = monthOptions.includes(month) ? month : monthOptions[monthOptions.length - 1];
+  const dayOptions = getDobDayOptions(nextYear, nextMonth);
+  const nextDay = dayOptions.includes(day) ? day : dayOptions[dayOptions.length - 1];
+
+  return { day: nextDay, month: nextMonth, year: nextYear };
 };
 
 export const emptyAddress = (): Address => ({
@@ -173,7 +258,7 @@ export const withDefaultGuardianSameAsNominee = (form: NomineeFormData): Nominee
 
 export const mapGetNomineeDetailsToForm = (response: GetNomineeDetailsResponse): NomineeFormData => {
   return withDefaultGuardianSameAsNominee({
-    nomineeName: response.nomineeName,
+    nomineeName: sanitizeNomineeName(response.nomineeName),
     relationshipWithApplicant: response.relationshipWithApplicant,
     proofOfIdentityType: response.proofOfIdentityType || DEFAULT_PROOF_OF_IDENTITY,
     proofOfIdentityNumber: sanitizeProofNumber(

@@ -18,6 +18,24 @@ export const displayYesNo = (value: boolean): string => {
   return value ? "Uploaded" : "Pending";
 };
 
+export const formatAccountType = (value: string | undefined | null): string => {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) {
+    return "-";
+  }
+
+  const normalized = trimmed.toLowerCase();
+  if (normalized === "saving" || normalized === "savings") {
+    return "Savings";
+  }
+
+  if (normalized === "current") {
+    return "Current";
+  }
+
+  return trimmed;
+};
+
 /** Primary application id from createApplication `applicationId` array. */
 export const primaryApplicationId = (ids: string[] | undefined | null): string => {
   if (!ids?.length) {

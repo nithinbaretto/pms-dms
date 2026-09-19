@@ -20,6 +20,7 @@ export type BankDetailsModel = {
   /** Combined branch label for the summary card. */
   branchDisplay: string;
   hasBankData: boolean;
+  cancelledCheque: string;
 };
 
 export type ManualPennyDropResult = {

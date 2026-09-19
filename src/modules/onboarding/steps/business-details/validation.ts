@@ -16,8 +16,15 @@ export const isDuplicateGstNumber = (gstNumber: string, existingGstNumbers: stri
   return existingGstNumbers.some((item) => item.trim().toUpperCase() === normalized);
 };
 
+export const sanitizeGstLegalName = (value: string): string => {
+  return value
+    .replace(/[^A-Za-z0-9 .,&'()/-]/g, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^ +/, "");
+};
+
 export const formatGstName = (name: string): string => {
-  return name.trim().replace(/\s+/g, " ");
+  return sanitizeGstLegalName(name).trim();
 };
 
 export const requireBranchSelection = (selectedBranch: string): boolean => {

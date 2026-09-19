@@ -157,7 +157,7 @@ export const useBankDetailsFlow = (): UseBankDetailsFlowResult => {
       setInitialSnapshot(mapped);
       setVerificationType(loadedVerificationType);
       setInitialVerificationType(loadedVerificationType);
-      setBankValidationStatus(resolveInitialValidationStatus(mapped));
+      setBankValidationStatus(resolveInitialValidationStatus(mapped, loadedVerificationType));
     } catch {
       if (requestId !== loadRequestIdRef.current) {
         return;

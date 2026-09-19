@@ -5,6 +5,7 @@ import { useOnboardingStore } from "../../state/onboarding-store";
 import {
   buildSavePayload,
   createEmptyPersonalDetails,
+  hasAddressValue,
   mapGetPersonalDetailsToModel,
   mapNextInfoSectionToStep,
   normalizeEmailForCompare,
@@ -12,7 +13,13 @@ import {
   normalizeVerifiedSource,
 } from "./helpers";
 import type { Address, PersonalDetailsModel, VerificationChannel } from "./types";
-import { isEmailValid, isMobileValid, isPersonalDetailsStepValid } from "./validation";
+import {
+  isEmailValid,
+  isMobileValid,
+  isPersonalDobValid,
+  isPersonalDetailsStepValid,
+  sanitizePersonName,
+} from "./validation";
 
 type SaveResult = {
   data: PersonalDetailsModel;
@@ -121,8 +128,14 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         mobileVerified,
       });
 
-      if (isManualFlow && !mapped.personalDetails.pan.trim()) {
-        mapped.personalDetails.pan = panNumber.trim().toUpperCase();
+      if (isManualFlow) {
+        mapped.personalDetails.name = sanitizePersonName(mapped.personalDetails.name).trim();
+        if (!mapped.personalDetails.pan.trim()) {
+          mapped.personalDetails.pan = panNumber.trim().toUpperCase();
+        }
+        if (mapped.personalDetails.dob && !isPersonalDobValid(mapped.personalDetails.dob)) {
+          mapped.personalDetails.dob = "";
+        }
       }
 
       if (!mapped.personalDetails.arn.trim() && arn?.trim() && !isKraFlow) {
@@ -194,7 +207,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         ...current,
         personalDetails: {
           ...current.personalDetails,
-          name: value,
+          name: sanitizePersonName(value),
         },
       };
     });
@@ -203,6 +216,10 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
   const setDobValue = useCallback((value: string): void => {
     setData((current) => {
       if (!current) {
+        return current;
+      }
+
+      if (value && !isPersonalDobValid(value)) {
         return current;
       }
 
@@ -490,10 +507,12 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         return current;
       }
 
+      const copyFromPermanent = sameAsPermanent && hasAddressValue(current.permanentAddress);
+
       return {
         ...current,
-        isCorrespoingSameAsPermanent: sameAsPermanent,
-        correspondenceAddress: sameAsPermanent ? { ...current.permanentAddress } : address,
+        isCorrespoingSameAsPermanent: copyFromPermanent,
+        correspondenceAddress: copyFromPermanent ? { ...current.permanentAddress } : address,
       };
     });
   }, [isManualFlow]);

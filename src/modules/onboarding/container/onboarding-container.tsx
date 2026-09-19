@@ -1,10 +1,15 @@
 import type { ReactElement } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import backgroundImage from "../../../assets/images/background_img.png";
 import logoImage from "../../../assets/logo.png";
 import LegalFooterLinks from "../components/LegalFooterLinks";
 import OnboardingHero from "../components/OnboardingHero";
+import StepSlideTransition, {
+  resolveStepSlideDirection,
+  shouldAnimateEntryTransition,
+  type StepSlideDirection,
+} from "../components/StepSlideTransition";
 import { getFlowConfig, type FlowKey } from "../flow/flow.config";
 import { getScreenForStep } from "../flow/getScreenForStep";
 import { isHufEntityJourney } from "../flow/huf-entity-journey";
@@ -87,6 +92,22 @@ const OnboardingContainer = (): ReactElement => {
   const [isUpdatingManualData, setIsUpdatingManualData] = useState(false);
 
   const flowConfig = useMemo(() => getFlowConfig(currentFlow), [currentFlow]);
+  const previousStepRef = useRef(currentStep);
+  const slideDirectionRef = useRef<StepSlideDirection>("forward");
+  const animateEntryRef = useRef(true);
+
+  if (previousStepRef.current !== currentStep) {
+    slideDirectionRef.current = resolveStepSlideDirection(
+      previousStepRef.current,
+      currentStep,
+      flowConfig.steps,
+    );
+    animateEntryRef.current = shouldAnimateEntryTransition(
+      previousStepRef.current,
+      currentStep,
+    );
+    previousStepRef.current = currentStep;
+  }
 
   useEffect(() => {
     if (!isHufEntityJourney() && currentStep === "huf-entity-details") {
@@ -687,9 +708,8 @@ const OnboardingContainer = (): ReactElement => {
       </div>
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-6 lg:px-[120px] ${
-          isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:pt-16 lg:pb-8"
-        }`}
+        className={`relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-6 lg:px-[120px] ${isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:pt-16 lg:pb-8"
+          }`}
       >
         <img
           alt="ICICI Prudential Alternate Investments"
@@ -697,24 +717,29 @@ const OnboardingContainer = (): ReactElement => {
           src={logoImage}
         />
 
-        {isOnboardingFormStep ? (
-          <div
-            className={`mt-8 lg:mt-15 ${
-              currentStep === "upload-documents" ? "pb-0 lg:pb-0" : "pb-20 lg:pb-12"
-            }`}
-          >
-            {renderStep()}
-          </div>
-        ) : (
-          <div className="relative mt-0 min-w-0">
+        <div className="relative mt-0 min-w-0">
+          {isOnboardingFormStep ? null : (
             <div className="mt-10 min-w-0 max-w-[610px] lg:mt-34 lg:max-w-[min(610px,calc(100%-544px))]">
               <OnboardingHero />
             </div>
-            <div className="mt-10 w-full min-w-0 max-w-[520px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[520px] lg:-translate-y-1/2 lg:translate-x-6">
+          )}
+          <div
+            className={
+              isOnboardingFormStep
+                ? `mt-8 lg:mt-15 ${currentStep === "upload-documents" ? "pb-0 lg:pb-0" : "pb-20 lg:pb-12"
+                }`
+                : "mt-10 w-full min-w-0 max-w-[520px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[520px] lg:-translate-y-1/2 lg:translate-x-6"
+            }
+          >
+            <StepSlideTransition
+              direction={slideDirectionRef.current}
+              enabled={animateEntryRef.current}
+              stepKey={currentStep}
+            >
               {renderStep()}
-            </div>
+            </StepSlideTransition>
           </div>
-        )}
+        </div>
       </div>
 
       {isOnboardingFormStep ? null : (

@@ -9,8 +9,10 @@ import {
   cloneNomineeSnapshot,
   emptyAddress,
   formatApplicantAddress,
+  getStoredNomineeOption,
   hasNomineeCoreData,
   mapGetNomineeDetailsToForm,
+  storeNomineeOption,
   validateAgeForMinor,
   withDefaultGuardianSameAsNominee,
 } from "./helpers";
@@ -91,14 +93,16 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
         mapped.nomineeAddress = applicantPermanentAddress;
       }
 
-      const nextForm = hasNomineeCoreData(mapped) ? mapped : createEmptyNomineeForm();
+      const hasSavedNominee = hasNomineeCoreData(mapped);
+      const nextForm = hasSavedNominee ? mapped : createEmptyNomineeForm();
       setForm(withDefaultGuardianSameAsNominee(nextForm));
       setInitialSnapshot(cloneNomineeSnapshot(mapped));
-      setOptionState("now");
+      setOptionState(hasSavedNominee ? "now" : getStoredNomineeOption(leadId) === "later" ? "later" : "now");
     } catch {
       setError("Unable to load nominee details. Please try again.");
       setForm(createEmptyNomineeForm());
       setInitialSnapshot(createEmptyNomineeForm());
+      setOptionState(getStoredNomineeOption(leadId) === "later" ? "later" : "now");
     } finally {
       setIsLoading(false);
     }
@@ -193,16 +197,19 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
 
   const setOption = useCallback((next: NomineeOption) => {
     setOptionState(next);
+    storeNomineeOption(leadId, next);
     setError(null);
-  }, []);
+  }, [leadId]);
 
   const addNomineeLater = useCallback(() => {
     setOptionState("later");
+    storeNomineeOption(leadId, "later");
     setError(null);
-  }, []);
+  }, [leadId]);
 
   const submitNominee = useCallback(async (): Promise<SubmitResult | null> => {
     if (option === "later") {
+      storeNomineeOption(leadId, "later");
       return { skipped: true };
     }
 
@@ -223,6 +230,7 @@ export const useNomineeFlow = (): UseNomineeFlowResult => {
       await onboardingApi.saveNomineeDetails(
         buildSaveNomineePayload(form, initialSnapshot, leadId, applicantPermanentAddress),
       );
+      storeNomineeOption(leadId, "now");
       return { skipped: false };
     } catch {
       setError("Unable to save nominee details. Please try again.");

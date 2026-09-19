@@ -27,7 +27,7 @@ const FieldRowSkeleton = (): ReactElement => (
 export const OnboardingContentSkeleton = ({
   sections = 3,
 }: OnboardingContentSkeletonProps): ReactElement => (
-  <div className="space-y-5">
+  <div className="space-y-5" data-onboarding-skeleton="">
     {Array.from({ length: sections }).map((_, sectionIndex) => (
       <div className="space-y-3" key={`section-${sectionIndex}`}>
         <div className="flex items-center justify-between">
@@ -58,7 +58,7 @@ const OnboardingStepSkeleton = ({
   const clampedProgress = Math.min(100, Math.max(0, progressPercent));
 
   return (
-    <>
+    <div data-onboarding-skeleton="">
       <div className="mx-auto w-full max-w-[1240px] space-y-3 pb-20 lg:pb-12">
         <section className="space-y-3">
           <header className="flex flex-col gap-2">
@@ -153,7 +153,7 @@ const OnboardingStepSkeleton = ({
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 };
 

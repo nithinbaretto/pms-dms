@@ -55,7 +55,7 @@ const METHOD_OPTIONS: MethodOption[] = [
   {
     value: "MANUAL",
     title: "Manual",
-    subtitle: "Fetch from KYC records",
+    subtitle: "Enter details yourself",
     icon: manualIcon,
   },
 ];
@@ -156,7 +156,7 @@ const OnboardingMethodStep = ({
                     "flex w-full items-center gap-2.5 rounded-lg border px-2 py-2 text-left transition-colors",
                     selected
                       ? "border-[#93161E] bg-[#93161E0A]"
-                      : "border-[#EEEEEE] bg-white",
+                      : "border-[#EEEEEE] bg-white hover:border-[#c7aa7b]",
                   )}
                   key={value}
                   onClick={() => {

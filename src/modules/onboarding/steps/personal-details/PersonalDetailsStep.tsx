@@ -118,8 +118,8 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
-          <div className="h-2 w-full bg-[#e6e7e8]">
+        <section className="rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+          <div className="h-2 w-full overflow-hidden rounded-t-[16px] bg-[#e6e7e8]">
             <div className="h-full w-[20%] rounded-r-full bg-[#37b400]" />
           </div>
 

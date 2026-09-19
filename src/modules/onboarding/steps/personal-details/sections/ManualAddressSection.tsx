@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 
 import { Checkbox } from "../../../../../shared/ui/checkbox";
 import { cn } from "../../../../../shared/ui/utils";
+import { hasAddressValue } from "../helpers";
 import type { Address } from "../types";
 
 type ManualAddressSectionProps = {
@@ -73,6 +74,8 @@ const ManualAddressSection = ({
   sameAsPermanent = false,
   onSameAsPermanentChange,
 }: ManualAddressSectionProps): ReactElement => {
+  const canCopyPermanentAddress = hasAddressValue(permanentAddress);
+
   return (
     <section className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
       <AddressDisplayField
@@ -90,12 +93,22 @@ const ManualAddressSection = ({
           onEdit={onEditCorrespondenceAddress}
           placeholder="Enter Correspondence Address"
         />
-        <label className="flex items-center gap-2">
+        <label
+          className={cn(
+            "flex items-center gap-2",
+            canCopyPermanentAddress ? "cursor-pointer" : "cursor-not-allowed opacity-50",
+          )}
+        >
           <Checkbox
-            checked={sameAsPermanent}
+            checked={canCopyPermanentAddress && sameAsPermanent}
             className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
+            disabled={!canCopyPermanentAddress}
             iconClassName="size-[10px]"
             onCheckedChange={(checked) => {
+              if (!canCopyPermanentAddress) {
+                return;
+              }
+
               onSameAsPermanentChange?.(Boolean(checked));
             }}
           />
