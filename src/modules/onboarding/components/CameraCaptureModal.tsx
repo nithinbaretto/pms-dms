@@ -124,7 +124,7 @@ const CameraCaptureModal = ({
       <div className="absolute inset-0 overflow-y-auto backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)]" onClick={onCancel} />
       <div className="relative bg-white rounded-[16px] drop-shadow-[4px_4px_20px_rgba(0,0,0,0.12)] flex flex-col gap-[16px] p-[20px] md:p-[32px] w-[calc(100%-32px)] max-w-[679.5px]">
         <div className="flex h-[33px] items-center justify-between w-full shrink-0">
-          <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px] whitespace-nowrap">{title}</p>
+          <p className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160] whitespace-nowrap">{title}</p>
           <button type="button" onClick={onCancel} className="overflow-clip size-[24px] hover:opacity-70 transition-opacity" aria-label="Close">
             <svg className="size-full" fill="none" viewBox="0 0 15 15">
               <path d="M1.5 1.5L13.5 13.5M13.5 1.5L1.5 13.5" stroke="#435160" strokeWidth="1.5" strokeLinecap="round" />

@@ -122,8 +122,13 @@ export const getNomineeFieldErrors = (
   }
 
   if (validateAgeForMinor(form.dateOfBirth)) {
-    if (!form.guardianName.trim()) {
+    const guardianName = form.guardianName.trim();
+    if (!guardianName) {
       errors.guardianName = "Guardian name is required for minor nominees.";
+    } else if (guardianName.length > NOMINEE_NAME_MAX_LENGTH) {
+      errors.guardianName = `Guardian name cannot exceed ${NOMINEE_NAME_MAX_LENGTH} characters.`;
+    } else if (!NOMINEE_NAME_PATTERN.test(guardianName)) {
+      errors.guardianName = "Guardian name can contain alphabets only.";
     }
 
     const guardianAddress = form.isGuardianAddressSameAsNomineeAddress

@@ -5,7 +5,6 @@ import { ChevronRight, Info, X } from 'lucide-react';
 
 import svgPaths from '../../../../assets/figma-svg/svg-fcmqq9l0qc';
 import modalSvgPaths from '../../../../assets/figma-svg/svg-kmnbjcgk4j';
-import imgBgImg from '../../../../assets/images/background_img.png';
 import imgSignGuideline1 from '../../../../assets/images/sign_guidelines_1.png';
 import imgSignGuideline2 from '../../../../assets/images/sign_guidelines_2.png';
 import imgSignGuideline3 from '../../../../assets/images/sign_guidelines_3.png';
@@ -102,7 +101,7 @@ function filePreviewMime(file: File | null | undefined): string | undefined {
   return file.type || undefined;
 }
 
-function TrashIcon({ className, color = '#71859B' }: { className?: string; color?: string }) {
+function TrashIcon({ className, color = '#93161E' }: { className?: string; color?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -208,7 +207,7 @@ function PreviewDialogShell({
       <div className="absolute inset-0 overflow-y-auto backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)]" onClick={onCancel} />
       <div className="relative bg-white rounded-[16px] drop-shadow-[4px_4px_20px_rgba(0,0,0,0.12)] flex flex-col gap-[16px] p-[20px] md:p-[32px] w-[calc(100%-32px)] max-w-[679.5px]">
         <div className="flex h-[33px] items-center justify-between w-full shrink-0">
-          <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px] whitespace-nowrap">{title}</p>
+          <p className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160] whitespace-nowrap">{title}</p>
           <button onClick={onCancel} className="overflow-clip size-[24px] hover:opacity-70 transition-opacity">
             <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
               <path d={modalSvgPaths.p3bbf7480} fill="#435160" />
@@ -246,29 +245,20 @@ function UploadSignatureModal({
   title,
   previewUrl,
   mimeType,
-  trashIconColor,
-  onTrash,
   onCancel,
   onSave,
 }: {
   title: string;
   previewUrl: string;
   mimeType?: string;
-  trashIconColor?: string;
-  onTrash: () => void;
   onCancel: () => void;
   onSave: () => void;
 }) {
   return (
     <PreviewDialogShell title={title} onCancel={onCancel} onSave={onSave}>
       <div className="flex flex-col items-center justify-center p-[12px]">
-        <div className="flex gap-[16px] items-start justify-end w-full">
-          <div className="flex flex-1 items-center justify-center" style={{ height: '211px' }}>
-            <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
-          </div>
-          <button onClick={onTrash} className="overflow-clip size-[24px] shrink-0 hover:opacity-70 transition-opacity mt-[4px]" title="Remove">
-            <TrashIcon className="size-full" color={trashIconColor} />
-          </button>
+        <div className="flex w-full items-center justify-center" style={{ height: '211px' }}>
+          <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
         </div>
       </div>
     </PreviewDialogShell>
@@ -287,6 +277,16 @@ function renderGuidelineContent(cardType: 'signature' | 'photo' | 'document', la
 
 /* ─── Desktop Upload Card ────────────────────────────────────────────────── */
 
+function TitleInfoIcon() {
+  return (
+    <div className="overflow-clip size-[16px] shrink-0">
+      <svg className="size-full" fill="none" viewBox="0 0 13 13">
+        <path d={svgPaths.p1835e980} fill="#5A6B7D" />
+      </svg>
+    </div>
+  );
+}
+
 function UploadCard({
   title,
   uploaded,
@@ -294,6 +294,7 @@ function UploadCard({
   mimeType,
   trashIconColor,
   showInlineGuidelines,
+  showTitleInfoIcon = true,
   guidelineType,
   fileError,
   onCaptureClick,
@@ -307,6 +308,7 @@ function UploadCard({
   mimeType?: string;
   trashIconColor?: string;
   showInlineGuidelines?: boolean;
+  showTitleInfoIcon?: boolean;
   guidelineType?: 'signature' | 'photo' | 'document';
   fileError?: string | null;
   onCaptureClick: () => void;
@@ -324,21 +326,15 @@ function UploadCard({
         <div className={cardCls}>
         <div className="flex gap-[4px] items-center shrink-0">
           <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px] whitespace-nowrap">{title}</p>
-          <div className="overflow-clip size-[16px] shrink-0">
-            <svg className="size-full" fill="none" viewBox="0 0 13 13">
-              <path d={svgPaths.p1835e980} fill="#5A6B7D" />
-            </svg>
-          </div>
+          {showTitleInfoIcon ? <TitleInfoIcon /> : null}
         </div>
-        <div className="flex-1 rounded-[8px] border border-[#eee] flex flex-col p-[12px] gap-[12px]">
-          <div className="flex justify-end shrink-0">
-            <button onClick={onRemove} className="overflow-clip size-[24px] hover:opacity-70 transition-opacity">
-              <TrashIcon className="size-full" color={trashIconColor} />
-            </button>
-          </div>
-          <div className="flex min-h-[160px] flex-1 items-center justify-center overflow-hidden">
+        <div className="rounded-[8px] border border-[#eee] flex items-start p-[12px] gap-[16px]">
+          <div className="flex flex-1 items-center justify-center overflow-hidden">
             <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
+          <button onClick={onRemove} className="overflow-clip size-[24px] shrink-0 hover:opacity-70 transition-opacity" title="Remove" type="button">
+            <TrashIcon className="size-full" color={trashIconColor} />
+          </button>
         </div>
         </div>
       </div>
@@ -349,16 +345,12 @@ function UploadCard({
     <div className="flex flex-1 min-w-px flex-col gap-[4px]">
       <div className={cardCls}>
       <div className="flex items-center justify-between w-full gap-[12px] shrink-0">
-        <div className="flex flex-col gap-[4px] min-w-0">
+        <div className="flex flex-col gap-[4px]">
           <div className="flex gap-[4px] items-center">
             <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px] whitespace-nowrap">{title}</p>
-            <div className="overflow-clip size-[16px] shrink-0">
-              <svg className="size-full" fill="none" viewBox="0 0 13 13">
-                <path d={svgPaths.p1835e980} fill="#5A6B7D" />
-              </svg>
-            </div>
+            {showTitleInfoIcon ? <TitleInfoIcon /> : null}
           </div>
-          <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px] max-w-[267px]">Format Supported: PNG, PDF or JPEG up to 2MB</p>
+          <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px] whitespace-nowrap">Format Supported: PNG, PDF or JPEG up to 2MB</p>
         </div>
         <div className="flex gap-[12px] items-center shrink-0">
           <button onClick={onCaptureClick} className="flex gap-[8px] h-[36px] items-center justify-center px-[21px] py-[7px] rounded-[8px] border border-[#eee] hover:border-[#c7aa7b] transition-colors">
@@ -404,6 +396,7 @@ function MobileUploadCard({
   mimeType,
   trashIconColor,
   showInlineGuidelines,
+  showTitleInfoIcon = true,
   guidelineType,
   fileError,
   onCaptureClick,
@@ -417,6 +410,7 @@ function MobileUploadCard({
   mimeType?: string;
   trashIconColor?: string;
   showInlineGuidelines?: boolean;
+  showTitleInfoIcon?: boolean;
   guidelineType?: 'signature' | 'photo' | 'document';
   fileError?: string | null;
   onCaptureClick: () => void;
@@ -429,21 +423,15 @@ function MobileUploadCard({
       <div className="bg-white rounded-[8px] border border-[#eee] flex flex-col gap-[12px] p-[14px]">
         <div className="flex gap-[4px] items-center">
           <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px]">{title}</p>
-          <div className="overflow-clip size-[16px] shrink-0">
-            <svg className="size-full" fill="none" viewBox="0 0 13 13">
-              <path d={svgPaths.p1835e980} fill="#5A6B7D" />
-            </svg>
-          </div>
+          {showTitleInfoIcon ? <TitleInfoIcon /> : null}
         </div>
-        <div className="rounded-[8px] border border-[#eee] flex flex-col p-[10px] gap-[8px]" style={{ minHeight: '140px' }}>
-          <div className="flex justify-end shrink-0">
-            <button onClick={onRemove} className="overflow-clip size-[20px] hover:opacity-70 transition-opacity">
-              <TrashIcon className="size-full" color={trashIconColor} />
-            </button>
-          </div>
+        <div className="rounded-[8px] border border-[#eee] flex items-start p-[10px] gap-[12px]">
           <div className="flex flex-1 items-center justify-center overflow-hidden">
             <DocumentPreviewFrame mimeType={mimeType} src={previewUrl} />
           </div>
+          <button onClick={onRemove} className="overflow-clip size-[20px] shrink-0 hover:opacity-70 transition-opacity" title="Remove" type="button">
+            <TrashIcon className="size-full" color={trashIconColor} />
+          </button>
         </div>
       </div>
     );
@@ -455,11 +443,7 @@ function MobileUploadCard({
         <div className="flex flex-col gap-[4px] items-start w-full">
           <div className="flex gap-[4px] items-center">
             <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#231F20] text-[14px] whitespace-nowrap">{title}</p>
-            <div className="overflow-clip shrink-0 size-[16px]">
-              <svg className="size-full" fill="none" viewBox="0 0 13 13">
-                <path d={svgPaths.p1835e980} fill="#5A6B7D" />
-              </svg>
-            </div>
+            {showTitleInfoIcon ? <TitleInfoIcon /> : null}
           </div>
           <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px]">Format Supported: PNG, PDF or JPEG up to 2MB</p>
         </div>
@@ -954,8 +938,6 @@ export function UploadDocumentsScreen({
           title="Upload Signature"
           previewUrl={signaturePreviewUrl}
           mimeType={filePreviewMime(pendingSignatureFile)}
-          trashIconColor="#71859B"
-          onTrash={handleSignatureTrash}
           onCancel={handleSignatureCancel}
           onSave={handleSignatureSave}
         />
@@ -967,8 +949,6 @@ export function UploadDocumentsScreen({
           title="Upload Photo"
           previewUrl={photoPreviewUrl}
           mimeType={filePreviewMime(pendingPhotoFile)}
-          trashIconColor="#71859B"
-          onTrash={handlePhotoTrash}
           onCancel={handlePhotoCancel}
           onSave={handlePhotoSave}
         />
@@ -979,7 +959,6 @@ export function UploadDocumentsScreen({
           title="Upload Proof of Identity"
           previewUrl={identityPreviewUrl}
           mimeType={filePreviewMime(pendingIdentityFile)}
-          onTrash={handleIdentityTrash}
           onCancel={handleIdentityTrash}
           onSave={handleIdentitySave}
         />
@@ -990,7 +969,6 @@ export function UploadDocumentsScreen({
           title="Upload Proof of Address"
           previewUrl={addressPreviewUrl}
           mimeType={filePreviewMime(pendingAddressFile)}
-          onTrash={handleAddressTrash}
           onCancel={handleAddressTrash}
           onSave={handleAddressSave}
         />
@@ -1035,12 +1013,8 @@ export function UploadDocumentsScreen({
       ) : null}
 
       {/* ── Desktop View ── */}
-      <div className="hidden lg:block bg-[#fffaf6]">
-        <div className="fixed inset-0 opacity-60 pointer-events-none overflow-hidden">
-          <img alt="" className="absolute left-[27.29%] top-[-2.35%] w-[90.41%] h-[107.16%] max-w-none" src={imgBgImg} />
-        </div>
-
-        <div className="relative z-10 flex flex-col gap-[24px] pb-[12px]">
+      <div className="hidden lg:block">
+        <div className="relative z-10 flex flex-col gap-[24px]">
         {/* Title */}
         <div className="hidden lg:flex flex-col gap-[4px]">
           <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Upload Documents</p>
@@ -1088,6 +1062,8 @@ export function UploadDocumentsScreen({
                         title="Proof of Identity"
                         uploaded={identityUploaded}
                         previewUrl={identityPreviewUrl}
+                        trashIconColor="#93161E"
+                        showTitleInfoIcon={!requiresProofDocs || identityUploaded}
                         fileError={fileErrors.identity}
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
@@ -1098,6 +1074,8 @@ export function UploadDocumentsScreen({
                         title="Proof of Address"
                         uploaded={addressUploaded}
                         previewUrl={addressPreviewUrl}
+                        trashIconColor="#93161E"
+                        showTitleInfoIcon={!requiresProofDocs || addressUploaded}
                         fileError={fileErrors.address}
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
@@ -1111,8 +1089,9 @@ export function UploadDocumentsScreen({
                       title="Specimen Signature"
                       uploaded={signatureUploaded}
                       previewUrl={signaturePreviewUrl}
-                      trashIconColor="#71859B"
+                      trashIconColor="#93161E"
                       showInlineGuidelines={showInlineGuidelines}
+                      showTitleInfoIcon={!requiresProofDocs || signatureUploaded}
                       guidelineType="signature"
                       fileError={fileErrors.signature}
                       onCaptureClick={handleSignatureCaptureClick}
@@ -1124,8 +1103,9 @@ export function UploadDocumentsScreen({
                       title="Photo Upload"
                       uploaded={photoUploaded}
                       previewUrl={photoPreviewUrl}
-                      trashIconColor="#71859B"
+                      trashIconColor="#93161E"
                       showInlineGuidelines={showInlineGuidelines}
+                      showTitleInfoIcon={!requiresProofDocs || photoUploaded}
                       guidelineType="photo"
                       fileError={fileErrors.photo}
                       onCaptureClick={handlePhotoCaptureClick}
@@ -1183,6 +1163,8 @@ export function UploadDocumentsScreen({
                         title="Proof of Identity"
                         uploaded={identityUploaded}
                         previewUrl={identityPreviewUrl}
+                        trashIconColor="#93161E"
+                        showTitleInfoIcon={!requiresProofDocs || identityUploaded}
                         fileError={fileErrors.identity}
                         onCaptureClick={handleIdentityCaptureClick}
                         onUploadClick={handleIdentityUploadClick}
@@ -1193,6 +1175,8 @@ export function UploadDocumentsScreen({
                         title="Proof of Address"
                         uploaded={addressUploaded}
                         previewUrl={addressPreviewUrl}
+                        trashIconColor="#93161E"
+                        showTitleInfoIcon={!requiresProofDocs || addressUploaded}
                         fileError={fileErrors.address}
                         onCaptureClick={handleAddressCaptureClick}
                         onUploadClick={handleAddressUploadClick}
@@ -1205,8 +1189,9 @@ export function UploadDocumentsScreen({
                     title="Specimen Signature"
                     uploaded={signatureUploaded}
                     previewUrl={signaturePreviewUrl}
-                    trashIconColor="#71859B"
+                    trashIconColor="#93161E"
                     showInlineGuidelines={showInlineGuidelines}
+                    showTitleInfoIcon={!requiresProofDocs || signatureUploaded}
                     guidelineType="signature"
                     fileError={fileErrors.signature}
                     onCaptureClick={handleSignatureCaptureClick}
@@ -1218,8 +1203,9 @@ export function UploadDocumentsScreen({
                     title="Photo Upload"
                     uploaded={photoUploaded}
                     previewUrl={photoPreviewUrl}
-                    trashIconColor="#71859B"
+                    trashIconColor="#93161E"
                     showInlineGuidelines={showInlineGuidelines}
+                    showTitleInfoIcon={!requiresProofDocs || photoUploaded}
                     guidelineType="photo"
                     fileError={fileErrors.photo}
                     onCaptureClick={handlePhotoCaptureClick}

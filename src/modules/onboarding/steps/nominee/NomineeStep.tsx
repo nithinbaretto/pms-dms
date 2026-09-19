@@ -14,6 +14,7 @@ import {
   sanitizeNomineeName,
   sanitizeProofNumber,
 } from "./helpers";
+import { useOnboardingStore } from "../../state/onboarding-store";
 import { useNomineeFlow } from "./useNomineeFlow";
 
 type NomineeStepProps = {
@@ -45,6 +46,13 @@ const NomineeStep = ({
     handleGuardianSync,
     submitNominee,
   } = useNomineeFlow();
+
+  const currentFlow = useOnboardingStore((state) => state.currentFlow);
+  const onboardingMethod = useOnboardingStore((state) => state.onboardingMethod);
+  const isAifManualFlow = currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
+  const nomineeSubtitle = isAifManualFlow
+    ? "Please enter the details below to continue."
+    : "Add nominee details for this application.";
 
   const [isEditMode, setIsEditMode] = useState(initialIsEditMode);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -190,7 +198,7 @@ const NomineeStep = ({
         nextLabel="Upload Documents"
         progressPercent={65}
         stepLabel="Step 4 of 6"
-        subtitle="Add nominee details for this application."
+        subtitle={nomineeSubtitle}
         title="Nominee Details"
       />
     );
@@ -231,7 +239,7 @@ const NomineeStep = ({
         nomineeDob={form.dateOfBirth}
         nomineeAddress={form.nomineeAddress}
         guardianName={form.guardianName}
-        setGuardianName={(value) => updateField("guardianName", value)}
+        setGuardianName={(value) => updateField("guardianName", sanitizeNomineeName(value))}
         guardianAddress={form.guardianAddress}
         sameAsNomineeAddress={form.isGuardianAddressSameAsNomineeAddress}
         onSameAsNomineeAddressChange={handleGuardianSync}

@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import editIcon from "../../../../../assets/icons/edit_icon.png";
 import { Checkbox } from "../../../../../shared/ui/checkbox";
 import { cn } from "../../../../../shared/ui/utils";
 import { hasAddressValue } from "../helpers";
@@ -44,21 +45,32 @@ const AddressDisplayField = ({
 
   return (
     <div className="space-y-1">
-      <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]" htmlFor={id}>
-        {label} <span className="text-[#E8402F]">*</span>
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]" htmlFor={id}>
+          {label} <span className="text-[#E8402F]">*</span>
+        </label>
+        {hasValue ? (
+          <button
+            className="inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#93161E]"
+            onClick={onEdit}
+            type="button"
+          >
+            <img alt="" className="h-3 w-3" src={editIcon} /> Edit
+          </button>
+        ) : null}
+      </div>
       <button
         className={cn(
           "w-full text-left font-['Mulish',sans-serif] text-[14px] font-normal tracking-normal",
           hasValue
-            ? "flex min-h-[76px] items-center rounded-[10px] border border-[#E5E5E6] bg-[#F5F5F5] px-3 text-[13px] leading-[19.5px] text-[#5A6B7D]"
+            ? "flex min-h-[76px] items-center rounded-[10px] border border-[#E5E5E6] bg-transparent px-3 text-[13px] leading-[19.5px] text-[#5A6B7D]"
             : "flex h-9 items-center overflow-hidden rounded-[8px] border border-[#eeeeee] bg-white px-[14px] leading-none text-[#71859B]",
         )}
         id={id}
         onClick={onEdit}
         type="button"
       >
-        <span className={hasValue ? "line-clamp-2 whitespace-pre-wrap break-words" : "block w-full truncate"}>
+        <span className={hasValue ? "whitespace-pre-wrap break-words" : "block w-full truncate"}>
           {hasValue ? value : placeholder}
         </span>
       </button>

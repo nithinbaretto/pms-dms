@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Camera, Loader2, Trash2, Upload } from 'lucide-react';
+import { Camera, Loader2, Upload } from 'lucide-react';
 import changeBankSvgPaths from '../../../../assets/figma-svg/svg-1hi99h9mgv';
 import qrGeneratedSvgPaths from '../../../../assets/figma-svg/svg-idaonln9ok';
 import loadingSvgPaths from '../../../../assets/figma-svg/svg-0crc3rdhsl';
@@ -1818,26 +1818,15 @@ export function BankDetailsScreen({
                     />
                     {chequeFileSelected ? (
                       <div className="relative w-full rounded-[8px] border border-dashed border-[#eee] shrink-0">
-                        <div className="flex flex-col items-center justify-center p-[12px]">
-                          <div className="flex w-full items-start justify-end gap-[16px]">
-                            <div className="relative min-h-[140px] flex-1" style={{ height: '211px' }}>
-                              <div className="absolute inset-0 overflow-hidden">
-                                <img
-                                  alt="Cancelled Cheque"
-                                  className="absolute inset-0 size-full object-contain"
-                                  src={chequePreviewUrl || imgCancelledCheque}
-                                />
-                              </div>
+                        <div className="flex w-full items-center justify-center p-[12px]">
+                          <div className="relative min-h-[140px] w-full" style={{ height: '211px' }}>
+                            <div className="absolute inset-0 overflow-hidden">
+                              <img
+                                alt="Cancelled Cheque"
+                                className="absolute inset-0 size-full object-contain"
+                                src={chequePreviewUrl || imgCancelledCheque}
+                              />
                             </div>
-                            <button
-                              type="button"
-                              onClick={clearChequeSelection}
-                              className="mt-[4px] size-[24px] shrink-0 overflow-clip hover:opacity-70 transition-opacity"
-                              aria-label="Remove cancelled cheque"
-                              title="Remove"
-                            >
-                              <Trash2 className="size-full text-[#71859B]" strokeWidth={1.75} />
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -1978,7 +1967,7 @@ export function BankDetailsScreen({
           <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-[calc(100%-48px)] max-w-[679.5px] z-[80] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-all duration-200 ease-out ${chequePreviewModalAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
             }`}>
             <div className="flex h-[33px] items-center justify-between w-full shrink-0">
-              <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Cancelled Cheque</p>
+              <p className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">Cancelled Cheque</p>
               <button
                 type="button"
                 onClick={() => {
@@ -2077,25 +2066,14 @@ export function BankDetailsScreen({
                 {manualErrorChequeFileSelected ? (
                   <div className="relative w-full rounded-[8px] border border-dashed border-[#eee] shrink-0">
                     <div className="flex flex-col items-center justify-center p-[12px]">
-                      <div className="flex w-full items-start justify-end gap-[16px]">
-                        <div className="relative min-h-[140px] flex-1" style={{ height: '211px' }}>
-                          <div className="absolute inset-0 overflow-hidden">
-                            <img
-                              alt="Cancelled Cheque"
-                              className="absolute inset-0 size-full object-contain"
-                              src={manualErrorChequePreviewUrl || imgCancelledCheque}
-                            />
-                          </div>
+                      <div className="relative min-h-[140px] w-full" style={{ height: '211px' }}>
+                        <div className="absolute inset-0 overflow-hidden">
+                          <img
+                            alt="Cancelled Cheque"
+                            className="absolute inset-0 size-full object-contain"
+                            src={manualErrorChequePreviewUrl || imgCancelledCheque}
+                          />
                         </div>
-                        <button
-                          type="button"
-                          onClick={clearManualErrorChequeSelection}
-                          className="mt-[4px] size-[24px] shrink-0 overflow-clip hover:opacity-70 transition-opacity"
-                          aria-label="Remove cancelled cheque"
-                          title="Remove"
-                        >
-                          <Trash2 className="size-full text-[#71859B]" strokeWidth={1.75} />
-                        </button>
                       </div>
                     </div>
                   </div>

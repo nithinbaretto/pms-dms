@@ -2,7 +2,6 @@ import type { ChangeEvent, ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Camera, ChevronRight, Upload, X } from "lucide-react";
 
-import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import { Dialog, DialogContent } from "../../../../../shared/ui/dialog";
 import CameraCaptureModal from "../../../components/CameraCaptureModal";
 import UploadImageGuidelines from "../../../components/UploadImageGuidelines";
@@ -101,7 +100,7 @@ const UploadKartaDocumentModal = ({
         <DialogContent className="max-h-[calc(100vh-48px)] w-[calc(100%-2rem)] max-w-[640px] overflow-y-auto rounded-[16px] border-0 p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] [&>button.absolute]:hidden">
           <div className="relative space-y-5 bg-white p-6">
             <div className="flex items-start justify-between gap-4 pr-8">
-              <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-none tracking-normal text-[#435160]">
+              <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
                 {TITLES[kind]}
               </h2>
               <button
@@ -124,34 +123,19 @@ const UploadKartaDocumentModal = ({
 
             <div className={`relative rounded-[8px] border-2 border-dotted bg-white p-4 ${error ? "border-[#d8787d]" : "border-[#EEEEEE]"}`}>
               {draft ? (
-                <>
-                  <button
-                    aria-label="Remove file"
-                    className="absolute right-3 top-3 flex size-4 items-center justify-center hover:opacity-70"
-                    onClick={() => {
-                      if (draft.previewUrl.startsWith("blob:")) {
-                        URL.revokeObjectURL(draft.previewUrl);
-                      }
-                      setDraft(null);
-                    }}
-                    type="button"
-                  >
-                    <img alt="" className="size-4" src={trashIcon} />
-                  </button>
-                  <div className="flex min-h-[160px] items-center justify-center">
-                    {draft.fileName.toLowerCase().endsWith(".pdf") ? (
-                      <p className="font-['Mulish',sans-serif] text-[14px] text-[#435160]">
-                        {draft.fileName}
-                      </p>
-                    ) : (
-                      <img
-                        alt=""
-                        className="max-h-[180px] max-w-full object-contain"
-                        src={draft.previewUrl}
-                      />
-                    )}
-                  </div>
-                </>
+                <div className="flex min-h-[160px] items-center justify-center">
+                  {draft.fileName.toLowerCase().endsWith(".pdf") ? (
+                    <p className="font-['Mulish',sans-serif] text-[14px] text-[#435160]">
+                      {draft.fileName}
+                    </p>
+                  ) : (
+                    <img
+                      alt=""
+                      className="max-h-[180px] max-w-full object-contain"
+                      src={draft.previewUrl}
+                    />
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col items-center gap-3 py-4 text-center">
                   <Upload className="size-6 text-[#71859B]" strokeWidth={1.75} />

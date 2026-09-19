@@ -698,7 +698,7 @@ const OnboardingContainer = (): ReactElement => {
     currentStep === "review-confirm";
 
   return (
-    <main className="relative flex min-h-screen flex-col overflow-x-hidden bg-[var(--color-onboarding-background)]">
+    <main className="relative flex min-h-screen flex-col overflow-x-clip bg-[var(--color-onboarding-background)]">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-60">
         <img
           alt=""
@@ -708,7 +708,7 @@ const OnboardingContainer = (): ReactElement => {
       </div>
 
       <div
-        className={`relative z-10 mx-auto w-full max-w-[1440px] flex-1 px-6 lg:px-[120px] ${isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:pt-16 lg:pb-8"
+        className={`relative z-10 mx-auto w-full min-h-min max-w-[1440px] flex-1 px-6 lg:px-[120px] ${isOnboardingFormStep ? "py-6 lg:pt-10 lg:pb-6" : "py-8 lg:pt-16 lg:pb-8"
           }`}
       >
         <img
@@ -726,8 +726,7 @@ const OnboardingContainer = (): ReactElement => {
           <div
             className={
               isOnboardingFormStep
-                ? `mt-8 lg:mt-15 ${currentStep === "upload-documents" ? "pb-0 lg:pb-0" : "pb-20 lg:pb-12"
-                }`
+                ? "mt-8 pb-20 lg:mt-15 lg:pb-12"
                 : "mt-10 w-full min-w-0 max-w-[520px] lg:absolute lg:right-0 lg:top-1/2 lg:mt-0 lg:w-[520px] lg:-translate-y-1/2 lg:translate-x-6"
             }
           >

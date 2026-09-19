@@ -541,30 +541,20 @@ const AddGstModal = ({
                 }`}
               >
                 {draft.fileURL && localPreview ? (
-                  <div className="flex w-full items-start gap-4">
-                    <div className="relative h-[220px] min-w-0 flex-1 overflow-hidden bg-white">
-                      {isPdfPreview(localPreview.name, localPreview.type) ? (
-                        <iframe
-                          className="h-full w-full border-0 bg-white"
-                          src={withPdfViewerParams(localPreview.previewUrl)}
-                          title="GST certificate preview"
-                        />
-                      ) : (
-                        <img
-                          alt="GST certificate preview"
-                          className="h-full w-full object-contain"
-                          src={localPreview.previewUrl}
-                        />
-                      )}
-                    </div>
-                    <button
-                      aria-label="Remove GST certificate"
-                      className="mt-1 size-6 shrink-0 text-[#71859B] hover:opacity-70"
-                      onClick={clearPreview}
-                      type="button"
-                    >
-                      <Trash2 className="size-full" strokeWidth={1.75} />
-                    </button>
+                  <div className="relative h-[220px] w-full overflow-hidden bg-white">
+                    {isPdfPreview(localPreview.name, localPreview.type) ? (
+                      <iframe
+                        className="h-full w-full border-0 bg-white"
+                        src={withPdfViewerParams(localPreview.previewUrl)}
+                        title="GST certificate preview"
+                      />
+                    ) : (
+                      <img
+                        alt="GST certificate preview"
+                        className="h-full w-full object-contain"
+                        src={localPreview.previewUrl}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 py-4 text-center">
@@ -836,7 +826,7 @@ const AddGstModal = ({
           }}
         >
           <div className="flex h-[33px] w-full shrink-0 items-center justify-between">
-            <DialogTitle className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[33px] !text-[#435160]">
+            <DialogTitle className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] !text-[#435160]">
               GST Certificate
             </DialogTitle>
             <button

@@ -269,7 +269,7 @@ export const mapGetNomineeDetailsToForm = (response: GetNomineeDetailsResponse):
     emailId: response.emailId.trim(),
     dateOfBirth: response.dateOfBirth.trim(),
     nomineeAddress: response.nomineeAddress.trim(),
-    guardianName: response.guardianName.trim(),
+    guardianName: sanitizeNomineeName(response.guardianName),
     guardianAddress: response.guardianAddress.trim(),
     isNomineeAddressSameAsApplicantAddress: response.isNomineeAddressSameAsApplicantAddress,
     isGuardianAddressSameAsNomineeAddress: response.isGuardianAddressSameAsNomineeAddress,

@@ -33,7 +33,13 @@ const BusinessDetailsStep = ({
 }: BusinessDetailsStepProps): ReactElement => {
   const setStep = useOnboardingStore((state) => state.setStep);
   const productCategories = useOnboardingStore((state) => state.productCategories);
+  const currentFlow = useOnboardingStore((state) => state.currentFlow);
+  const onboardingMethod = useOnboardingStore((state) => state.onboardingMethod);
   const showEntityTypeSection = isBusinessEntityTypeSelectionEnabled(productCategories);
+  const isAifManualFlow = currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
+  const subtitle = isAifManualFlow
+    ? "Please enter the details below to continue"
+    : "Your details have been fetched from APMI. Fields shown in grey cannot be changed";
 
   const {
     records,
@@ -79,7 +85,7 @@ const BusinessDetailsStep = ({
         nextLabel="Bank Details"
         progressPercent={20}
         stepLabel="Step 2 of 6"
-        subtitle="Your details have been fetched from APMI. Fields shown in grey cannot be changed"
+        subtitle={subtitle}
         title="Business Details"
       />
     );
@@ -95,7 +101,7 @@ const BusinessDetailsStep = ({
             </h1>
             {(SHOW_PROPRIETORSHIP_SIGNATORY || records.length >= 0) ? (
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
-                Your details have been fetched from APMI. Fields shown in grey cannot be changed
+                {subtitle}
               </p>
             ) : null}
           </header>

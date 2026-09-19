@@ -198,8 +198,12 @@ export function NomineeDetailsScreen({
   setIsEditMode,
 }: NomineeDetailsScreenProps) {
   const currentFlow = useOnboardingStore((state) => state.currentFlow);
+  const onboardingMethod = useOnboardingStore((state) => state.onboardingMethod);
+  const isAifManualFlow = currentFlow === 'aif-individual' && onboardingMethod === 'MANUAL';
   const detailsSourceLabel = currentFlow.startsWith('aif-') ? 'AMFI' : 'APMI';
-  const fetchedDetailsSubtitle = `Your details have been fetched from ${detailsSourceLabel}. Fields shown in grey cannot be changed`;
+  const fetchedDetailsSubtitle = isAifManualFlow
+    ? 'Please enter the details below to continue.'
+    : `Your details have been fetched from ${detailsSourceLabel}. Fields shown in grey cannot be changed`;
   const proofTypeKey = nomineeProofType as keyof typeof PROOF_NUMBER_PLACEHOLDERS;
   const proofNumberPlaceholder = PROOF_NUMBER_PLACEHOLDERS[proofTypeKey] ?? 'Enter Proof Number';
   const proofNumberMaxLength = PROOF_NUMBER_MAX_LENGTH[proofTypeKey];
@@ -488,6 +492,7 @@ export function NomineeDetailsScreen({
                             value={guardianName}
                             onChange={(e) => setGuardianName(e.target.value)}
                             placeholder="Enter Guardian Name"
+                            maxLength={NOMINEE_NAME_MAX_LENGTH}
                           />
                         </div>
 
@@ -821,6 +826,7 @@ export function NomineeDetailsScreen({
                             value={guardianName}
                             onChange={(e) => setGuardianName(e.target.value)}
                             placeholder="Enter Guardian Name"
+                            maxLength={NOMINEE_NAME_MAX_LENGTH}
                           />
                         </div>
 
