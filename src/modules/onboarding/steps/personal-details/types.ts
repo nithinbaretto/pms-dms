@@ -1,5 +1,6 @@
 export type EntityType =
   | "Individual"
+  | "Sole Proprietorship"
   | "Proprietorship"
   | "Company"
   | "Partnership"
@@ -38,6 +39,8 @@ export type PersonalDetailsModel = {
   personalDetails: EntitySummary;
   mobile: VerificationStatus;
   email: VerificationStatus;
+  contactPersonName: string;
+  isContactPersonSameAsDistributor: boolean;
   permanentAddress: Address;
   correspondenceAddress: Address;
   isCorrespoingSameAsPermanent: boolean;

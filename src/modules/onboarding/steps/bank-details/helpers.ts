@@ -5,6 +5,7 @@ import type {
   PennyDropCallResponse,
 } from "../../services/onboarding-api";
 import {
+  ACCOUNT_HOLDER_NAME_MAX_LENGTH,
   CHEQUE_ALLOWED_FILE_TYPES,
   CHEQUE_FILE_ERROR_MESSAGE,
   CHEQUE_MAX_FILE_SIZE_BYTES,
@@ -15,6 +16,15 @@ import type {
   BankValidationStatus,
   BankVerificationType,
 } from "./types";
+
+/** Account holder names may include letters, numbers, and symbols, up to 50 characters including spaces. */
+export const sanitizeAccountHolderName = (value: string): string => {
+  return value
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^ +/, "")
+    .slice(0, ACCOUNT_HOLDER_NAME_MAX_LENGTH);
+};
 
 export const createEmptyBankDetails = (): BankDetailsModel => ({
   accountHolderName: "",

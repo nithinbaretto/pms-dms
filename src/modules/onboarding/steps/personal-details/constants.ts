@@ -2,7 +2,7 @@ import type { EntityType, PersonalDetailsModel } from "./types";
 
 export const ENTITY_TYPE_OPTIONS: EntityType[] = [
   "Individual",
-  "Proprietorship",
+  "Sole Proprietorship",
   "Company",
   "Partnership",
   "LLP",
@@ -14,6 +14,14 @@ export const ENTITY_TYPE_OPTIONS: EntityType[] = [
 export const OTP_LENGTH = 6;
 export const OTP_RESEND_TIMER_SECONDS = 23;
 export const OTP_MAX_ATTEMPTS = 3;
+
+/** Max characters (including spaces) for distributor-entered address fields. */
+export const ADDRESS_MAX_LENGTH = 300;
+
+/** Max characters (including spaces) for Name and Contact Person Name. */
+export const PERSON_NAME_MAX_LENGTH = 50;
+
+export const clampAddressInput = (value: string): string => value.slice(0, ADDRESS_MAX_LENGTH);
 
 export const MOCK_PERSONAL_DETAILS: PersonalDetailsModel = {
   personalDetails: {
@@ -33,6 +41,8 @@ export const MOCK_PERSONAL_DETAILS: PersonalDetailsModel = {
     value: "username@domain.com",
     verified: false,
   },
+  contactPersonName: "Rajesh Gupta",
+  isContactPersonSameAsDistributor: true,
   permanentAddress: {
     lat: 19.0858,
     lng: 72.908,

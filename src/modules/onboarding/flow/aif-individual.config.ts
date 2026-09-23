@@ -13,6 +13,7 @@ export default {
     'verify-contact',
     'otp-verification',
     'personal-details',
+    'huf-entity-details',
     'business-details',
     'bank-details',
     'nominee-details',

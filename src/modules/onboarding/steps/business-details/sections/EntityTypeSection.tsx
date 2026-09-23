@@ -6,9 +6,16 @@ import type { BusinessEntityType } from "../signatory/types";
 type EntityTypeSectionProps = {
   value: BusinessEntityType;
   onChange: (value: BusinessEntityType) => void;
+  disabled?: boolean;
+  showSelectionCaption?: boolean;
 };
 
-const EntityTypeSection = ({ value, onChange }: EntityTypeSectionProps): ReactElement => {
+const EntityTypeSection = ({
+  value,
+  onChange,
+  disabled = false,
+  showSelectionCaption = false,
+}: EntityTypeSectionProps): ReactElement => {
   return (
     <section className="space-y-4">
       <div className="flex flex-col gap-[4px]">
@@ -29,11 +36,16 @@ const EntityTypeSection = ({ value, onChange }: EntityTypeSectionProps): ReactEl
             const selected = value === option;
             return (
               <button
+                aria-disabled={disabled}
                 className={`h-8 shrink-0 whitespace-nowrap rounded-full px-4 text-center font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal ${
                   selected ? "bg-white text-[#93161E] shadow-sm" : "bg-transparent text-[#5A6B7D]"
-                }`}
+                } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                disabled={disabled}
                 key={option}
                 onClick={() => {
+                  if (disabled) {
+                    return;
+                  }
                   onChange(option);
                 }}
                 type="button"
@@ -43,6 +55,11 @@ const EntityTypeSection = ({ value, onChange }: EntityTypeSectionProps): ReactEl
             );
           })}
         </div>
+        {showSelectionCaption ? (
+          <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-[18px] tracking-normal text-[#435160]">
+            {SIGNATORY_COPY.entitySelectionCaption}
+          </p>
+        ) : null}
       </div>
     </section>
   );

@@ -1,16 +1,15 @@
+import { isSoleProprietorshipEntityType } from "../../personal-details/helpers";
 import type { BusinessEntityType } from "./types";
 
-/**
- * Proprietorship Entity Type + Authorized Signatory on Business Details.
- * Hidden until backend returns the journey type. Map that type here when APIs are ready.
- */
-export const SHOW_PROPRIETORSHIP_SIGNATORY = false;
+/** PMS Individual: lock tabs and pre-select from personal details entity type. */
+export const isPmsIndividualEntityTypeLocked = (currentFlow: string): boolean =>
+  currentFlow === "pms-individual";
 
-/** Individual / Sole Proprietorship toggle on Business Details (AIF; also when signatory journey is on). */
-export const isBusinessEntityTypeSelectionEnabled = (
-  productCategories: readonly string[],
+export const shouldShowAuthorizedSignatory = (
+  personalEntityType: string,
+  selectedEntityType: BusinessEntityType,
 ): boolean =>
-  productCategories.includes("AIF") || SHOW_PROPRIETORSHIP_SIGNATORY;
+  isSoleProprietorshipEntityType(personalEntityType) && selectedEntityType === "Sole Proprietorship";
 
 export const ENTITY_TYPE_OPTIONS: BusinessEntityType[] = ["Individual", "Sole Proprietorship"];
 
@@ -20,6 +19,8 @@ export const SIGNATORY_COPY = {
   entityTitle: "Entity Details",
   entityDescription: "Choose your entity type to enable the relevant business and registration details.",
   entityTypeLabel: "Entity Type",
+  entitySelectionCaption:
+    "Please ensure the correct entity type is selected before proceeding.",
   title: "Authorized Signatory",
   description:
     "Add the individuals authorized to sign on behalf of this entity. Each signatory's details will be verified before your onboarding is approved.",
@@ -38,3 +39,10 @@ export const NAME_PATTERN = /^[A-Za-z]+(?:[ .'][A-Za-z]+)*$/;
 export const SIGNATORY_ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "application/pdf"] as const;
 export const SIGNATORY_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 export const SIGNATORY_FILE_ERROR_MESSAGE = "File must be PNG, JPEG or PDF up to 2MB";
+
+/** Backend documentName / documentType pairs for Sole Prop signatory save. */
+export const BUSINESS_SIGNATORY_DOC_META = {
+  identity: { documentName: "authSingatoryPoI", documentType: "authSingatoryPOI" },
+  address: { documentName: "authSingatoryPOA", documentType: "authSingatoryPOA" },
+  signature: { documentName: "authSingatorySingature", documentType: "authSingatorySingature" },
+} as const;

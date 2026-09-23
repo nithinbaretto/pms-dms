@@ -6,6 +6,7 @@ import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import noKartaImg from "../../../../../assets/images/no_karta.png";
 import KartaPersonAvatar from "../components/KartaPersonAvatar";
 import { HUF_ENTITY_DETAILS_COPY } from "../constants";
+import { formatHufPersonName } from "../helpers";
 import type { CoparcenerDetails } from "../types";
 
 type CoparcenerDetailsSectionProps = {
@@ -14,6 +15,11 @@ type CoparcenerDetailsSectionProps = {
   onEdit: (coparcener: CoparcenerDetails) => void;
   onRemove: (id: string) => void;
 };
+
+const COPARCENER_TILE_GRID_CLASS = "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4";
+
+const COPARCENER_TILE_CLASS =
+  "flex w-full min-w-0 items-center gap-3 rounded-[8px] border border-[#EEEEEE] bg-white px-3 py-3";
 
 const CoparcenerDetailsSection = ({
   coparceners,
@@ -46,18 +52,15 @@ const CoparcenerDetailsSection = ({
       </div>
 
       {coparceners.length > 0 ? (
-        <div className="flex flex-wrap gap-3">
+        <div className={COPARCENER_TILE_GRID_CLASS}>
           {coparceners.map((coparcener) => (
-            <div
-              className="flex w-full max-w-[412px] items-center gap-3 rounded-[8px] border border-[#EEEEEE] bg-white px-3 py-3"
-              key={coparcener.id}
-            >
+            <div className={COPARCENER_TILE_CLASS} key={coparcener.id}>
               <KartaPersonAvatar />
-              <div className="min-w-0 flex-1">
-                <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
-                  {coparcener.name}
+              <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
+                <p className="truncate font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
+                  {formatHufPersonName(coparcener.name)}
                 </p>
-                <p className="mt-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#5A6B7D]">
+                <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#5A6B7D]">
                   {coparcener.pan} | {coparcener.relationship}
                 </p>
               </div>

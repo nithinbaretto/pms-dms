@@ -1,3 +1,6 @@
+/** Max characters (including spaces) for Account Holder Name. */
+export const ACCOUNT_HOLDER_NAME_MAX_LENGTH = 50;
+
 export const BANK_DETAILS_STEP_LABEL = "Step 3 of 6";
 export const BANK_DETAILS_PROGRESS_PERCENT = 50;
 

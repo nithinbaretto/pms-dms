@@ -111,7 +111,7 @@ const OnboardingContainer = (): ReactElement => {
 
   useEffect(() => {
     if (!isHufEntityJourney() && currentStep === "huf-entity-details") {
-      setStep("entity-details");
+      setStep("business-details");
     }
   }, [currentStep, setStep]);
 
@@ -206,7 +206,19 @@ const OnboardingContainer = (): ReactElement => {
 
   const renderStep = (): ReactElement => {
     if (currentStep === "huf-entity-details" && isHufEntityJourney()) {
-      return <HufEntityDetailsStep />;
+      return (
+        <HufEntityDetailsStep
+          isEditMode={isEditMode}
+          onContinue={() => {
+            if (isEditMode) {
+              setIsEditMode(false);
+              setStep("review-confirm");
+              return;
+            }
+            setStep("business-details");
+          }}
+        />
+      );
     }
 
     if (currentStep === "entity-details") {

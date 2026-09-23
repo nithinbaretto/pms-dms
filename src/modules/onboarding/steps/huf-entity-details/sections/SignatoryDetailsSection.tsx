@@ -4,7 +4,7 @@ import { Check, ChevronDown, Plus } from "lucide-react";
 import editIcon from "../../../../../assets/icons/svg/edit.svg";
 import trashIcon from "../../../../../assets/icons/svg/trash_icon.svg";
 import noSignatoryImg from "../../../../../assets/images/no_signatory.png";
-import { formatMobileDisplay } from "../helpers";
+import { formatHufPersonName, formatMobileDisplay } from "../helpers";
 import { HUF_ENTITY_DETAILS_COPY } from "../constants";
 import type { SignatoryDetails, SignatoryMode } from "../types";
 
@@ -126,10 +126,10 @@ const SignatoryDetailsSection = ({
                       <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-[#93161E]">
                         <Check className="size-3 text-white" strokeWidth={3} />
                       </span>
-                      <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-['Mulish',sans-serif] text-[14px] font-medium leading-none text-[#231F20]">
-                            {signatory.name}
+                            {formatHufPersonName(signatory.name)}
                           </p>
                           <div className="flex shrink-0 items-center gap-2">
                             {signatory.source !== "karta" ? (
@@ -168,7 +168,7 @@ const SignatoryDetailsSection = ({
                             </button>
                           </div>
                         </div>
-                        <div className="mt-2 flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2">
                           <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#5A6B7D]">
                             {signatory.pan}
                           </p>

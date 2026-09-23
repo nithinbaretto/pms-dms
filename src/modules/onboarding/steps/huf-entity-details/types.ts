@@ -2,9 +2,19 @@ import type { Address } from "../personal-details/types";
 
 export type KartaSource = "fetched" | "manual";
 
+/** Same contract as business-details ValidateGstResult — manual path when not validated or API fails. */
+export type ValidateKarthaPanResult = {
+  isValidated: boolean;
+  karta: KartaDetails;
+  /** True when validateKarthaPanByAPMI threw — same as GST validateGstIn catch path. */
+  apiFailed?: boolean;
+};
+
 export type KartaDocumentFile = {
   fileName: string;
   previewUrl: string;
+  /** Blob URL from upload-document; used in saveEntityDetails. */
+  documentUrl?: string;
 };
 
 export type KartaDetails = {

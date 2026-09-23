@@ -16,6 +16,10 @@ type AddSignatoryModalProps = {
   editing: SignatoryDetails | null;
   onClose: () => void;
   onSave: (signatory: SignatoryDetails) => void;
+  uploadIdentityFile?: (file: File) => Promise<SignatoryDocumentFile | null>;
+  uploadAddressFile?: (file: File) => Promise<SignatoryDocumentFile | null>;
+  uploadSignatureFile?: (file: File) => Promise<SignatoryDocumentFile | null>;
+  isUploading?: boolean;
 };
 
 const labelClass =
@@ -127,6 +131,10 @@ const AddSignatoryForm = ({
   editing,
   onClose,
   onSave,
+  uploadIdentityFile,
+  uploadAddressFile,
+  uploadSignatureFile,
+  isUploading = false,
 }: Omit<AddSignatoryModalProps, "open">): ReactElement => {
   const [draft, setDraft] = useState<SignatoryDetails>(
     editing ? { ...editing } : createEmptySignatory(),
@@ -308,6 +316,7 @@ const AddSignatoryForm = ({
 
       {uploadKind ? (
         <UploadSignatoryDocumentModal
+          isUploading={isUploading}
           kind={uploadKind}
           onClose={() => {
             setUploadKind(null);
@@ -323,6 +332,13 @@ const AddSignatoryForm = ({
             setUploadKind(null);
           }}
           open
+          uploadFile={
+            uploadKind === "identity"
+              ? uploadIdentityFile
+              : uploadKind === "address"
+                ? uploadAddressFile
+                : uploadSignatureFile
+          }
         />
       ) : null}
     </>
@@ -335,6 +351,10 @@ const AddSignatoryModal = ({
   editing,
   onClose,
   onSave,
+  uploadIdentityFile,
+  uploadAddressFile,
+  uploadSignatureFile,
+  isUploading,
 }: AddSignatoryModalProps): ReactElement => {
   if (!open) {
     return <></>;
@@ -344,9 +364,13 @@ const AddSignatoryModal = ({
     <AddSignatoryForm
       editing={editing}
       existing={existing}
+      isUploading={isUploading}
       key={editing?.id ?? "new"}
       onClose={onClose}
       onSave={onSave}
+      uploadAddressFile={uploadAddressFile}
+      uploadIdentityFile={uploadIdentityFile}
+      uploadSignatureFile={uploadSignatureFile}
     />
   );
 };

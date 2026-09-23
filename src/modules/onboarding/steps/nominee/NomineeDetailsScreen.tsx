@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 import nomineeFormSvgPaths from '../../../../assets/figma-svg/svg-2tncnp7dy5';
 import emailOtpSvgPaths from '../../../../assets/figma-svg/svg-ftc9bj5bhu';
 import imgEmptyNominee from '../../../../assets/icons/svg/empty_nominee_icon.svg';
+import calendarIcon from '../../../../assets/icons/svg/calendar.svg';
 import { Checkbox } from '../../../../shared/ui/checkbox';
 import { Input } from '../../../../shared/ui/input';
 import {
@@ -214,14 +215,14 @@ export function NomineeDetailsScreen({
       {/* Desktop View */}
       <div className="hidden lg:block">
         <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-[24px]">
-            {/* Header */}
-            <div className="flex flex-col gap-[4px]">
-              <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Nominee Details</p>
-              <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">{fetchedDetailsSubtitle}</p>
-            </div>
+          {/* Header */}
+          <div className="flex flex-col gap-[4px]">
+            <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Nominee Details</p>
+            <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">{fetchedDetailsSubtitle}</p>
+          </div>
 
-            {/* Form Container */}
-            <div className="flex flex-col gap-[8px]">
+          {/* Form Container */}
+          <div className="flex flex-col gap-[8px]">
             {/* Step Progress */}
             <div className="flex items-center justify-between font-['Mulish',sans-serif] font-normal leading-[18px] text-[#231f20] text-[12px]">
               <p>Step 4 of 6</p>
@@ -241,17 +242,15 @@ export function NomineeDetailsScreen({
                   <div className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px]">
                     <button
                       onClick={() => setNomineeOption('later')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
-                        nomineeOption === 'later' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                      }`}
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${nomineeOption === 'later' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                        }`}
                     >
                       <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Add Nominee Later</p>
                     </button>
                     <button
                       onClick={() => setNomineeOption('now')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
-                        nomineeOption === 'now' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                      }`}
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${nomineeOption === 'now' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                        }`}
                     >
                       <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Add Nominee now</p>
                     </button>
@@ -303,7 +302,7 @@ export function NomineeDetailsScreen({
                           tabIndex={-1}
                           className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] h-full outline-none hover:bg-[#e8e8e8] transition-colors focus-visible:outline-none rounded-l-[8px]"
                         >
-                          <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b]">{nomineeProofType}</p>
+                          <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b] whitespace-nowrap">{nomineeProofType === 'Passport' ? 'Passport (NRI)' : nomineeProofType}</p>
                           <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
@@ -316,7 +315,7 @@ export function NomineeDetailsScreen({
                           maxLength={proofNumberMaxLength}
                           inputMode={isAadhaarProof ? 'numeric' : 'text'}
                           autoCapitalize={isAadhaarProof ? 'off' : 'characters'}
-                          className={`h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0 ${isAadhaarProof ? '' : 'uppercase'}`}
+                          className={`h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0 ${isAadhaarProof ? '' : 'uppercase placeholder:normal-case'}`}
                         />
                       </div>
 
@@ -395,18 +394,16 @@ export function NomineeDetailsScreen({
                           <button
                             type="button"
                             disabled
-                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
-                              nomineeIsMinor === 'yes' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                            }`}
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${nomineeIsMinor === 'yes' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                              }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Yes</p>
                           </button>
                           <button
                             type="button"
                             disabled
-                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
-                              nomineeIsMinor === 'no' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                            }`}
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${nomineeIsMinor === 'no' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                              }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">No</p>
                           </button>
@@ -425,9 +422,7 @@ export function NomineeDetailsScreen({
                                   {nomineeDob || '00/00/0000'}
                                 </p>
                               </div>
-                              <svg className="size-[14px]" fill="none" viewBox="0 0 10.5 11.375">
-                                <path d={nomineeFormSvgPaths.p3c25e700} fill="#231F20" />
-                              </svg>
+                              <img src={calendarIcon} alt="" className="h-[12px] w-[11px] shrink-0" />
                             </div>
                           </button>
                         </div>
@@ -448,7 +443,7 @@ export function NomineeDetailsScreen({
                           <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                         </button>
                       </div>
-                      <div className={`${nomineeAddress ?'bg-[#f5f5f5]':'bg-white'} rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                      <div className={`${nomineeAddress ? 'bg-[#f5f5f5]' : 'bg-white'} rounded-[8.75px] border border-[#e5e5e6] relative`}>
                         <div className={`flex items-center px-[14px] ${nomineeAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                           <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${nomineeAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                             {nomineeAddress || 'Enter Address'}
@@ -510,7 +505,7 @@ export function NomineeDetailsScreen({
                               <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                             </button>
                           </div>
-                          <div className={`${guardianAddress ?'bg-[#f5f5f5]':'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                          <div className={`${guardianAddress ? 'bg-[#f5f5f5]' : 'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
                             <div className={`flex items-center px-[14px] ${guardianAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                               <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${guardianAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                                 {guardianAddress || 'Enter Address'}
@@ -539,8 +534,8 @@ export function NomineeDetailsScreen({
                 )}
               </div>
             </div>
-            </div>
           </div>
+        </div>
       </div>
 
       {/* Mobile/Tablet View */}
@@ -573,17 +568,15 @@ export function NomineeDetailsScreen({
                   <div className="bg-[#f5f5f5] rounded-[16777200px] p-[4px] flex gap-[4px]">
                     <button
                       onClick={() => setNomineeOption('later')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
-                        nomineeOption === 'later' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                      }`}
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${nomineeOption === 'later' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                        }`}
                     >
                       <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Add Nominee Later</p>
                     </button>
                     <button
                       onClick={() => setNomineeOption('now')}
-                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${
-                        nomineeOption === 'now' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                      }`}
+                      className={`px-[14px] py-[5px] rounded-[16777200px] border border-transparent transition-colors focus-visible:border-[var(--color-onboarding-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(147,22,30,0.2)] focus-visible:ring-offset-0 ${nomineeOption === 'now' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                        }`}
                     >
                       <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Add Nominee now</p>
                     </button>
@@ -637,7 +630,7 @@ export function NomineeDetailsScreen({
                           tabIndex={-1}
                           className="bg-[#f5f5f5] flex gap-[4px] items-center px-[6px] h-full outline-none hover:bg-[#e8e8e8] transition-colors focus-visible:outline-none  rounded-l-[8px]"
                         >
-                          <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b]">{nomineeProofType}</p>
+                          <p className="font-['Mulish',sans-serif] font-normal text-[13px] text-[#71859b] whitespace-nowrap">{nomineeProofType === 'Passport' ? 'Passport (NRI)' : nomineeProofType}</p>
                           <svg className="h-[10px] w-[10px]" fill="none" viewBox="0 0 8.62789 4.87783">
                             <path d={nomineeFormSvgPaths.p3ea1e500} fill="#5A6B7D" />
                           </svg>
@@ -650,7 +643,7 @@ export function NomineeDetailsScreen({
                           maxLength={proofNumberMaxLength}
                           inputMode={isAadhaarProof ? 'numeric' : 'text'}
                           autoCapitalize={isAadhaarProof ? 'off' : 'characters'}
-                          className={`h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0 ${isAadhaarProof ? '' : 'uppercase'}`}
+                          className={`h-full flex-1 border-0 bg-transparent px-[12px] shadow-none focus-visible:border-transparent focus-visible:ring-0 ${isAadhaarProof ? '' : 'uppercase placeholder:normal-case'}`}
                         />
                       </div>
 
@@ -729,18 +722,16 @@ export function NomineeDetailsScreen({
                           <button
                             type="button"
                             disabled
-                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
-                              nomineeIsMinor === 'yes' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                            }`}
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${nomineeIsMinor === 'yes' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                              }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">Yes</p>
                           </button>
                           <button
                             type="button"
                             disabled
-                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${
-                              nomineeIsMinor === 'no' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
-                            }`}
+                            className={`px-[14px] py-[5px] rounded-[16777200px] cursor-not-allowed ${nomineeIsMinor === 'no' ? 'bg-white text-[#93161e]' : 'text-[#5a6b7d]'
+                              }`}
                           >
                             <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px]">No</p>
                           </button>
@@ -759,9 +750,7 @@ export function NomineeDetailsScreen({
                                   {nomineeDob || '00/00/0000'}
                                 </p>
                               </div>
-                              <svg className="size-[14px]" fill="none" viewBox="0 0 10.5 11.375">
-                                <path d={nomineeFormSvgPaths.p3c25e700} fill="#231F20" />
-                              </svg>
+                              <img src={calendarIcon} alt="" className="h-[12px] w-[11px] shrink-0" />
                             </div>
                           </button>
                         </div>
@@ -782,7 +771,7 @@ export function NomineeDetailsScreen({
                           <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                         </button>
                       </div>
-                      <div className={`${nomineeAddress ?'bg-[#f5f5f5]':'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                      <div className={`${nomineeAddress ? 'bg-[#f5f5f5]' : 'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
                         <div className={`flex items-center px-[14px]  ${nomineeAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                           <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${nomineeAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                             {nomineeAddress || 'Enter Address'}
@@ -844,7 +833,7 @@ export function NomineeDetailsScreen({
                               <p className="font-['Mulish',sans-serif] font-normal leading-[18px] text-[#93161e] text-[12px]">Edit</p>
                             </button>
                           </div>
-                          <div className={`${guardianAddress ?'bg-[#f5f5f5]':'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
+                          <div className={`${guardianAddress ? 'bg-[#f5f5f5]' : 'bg-white'}  rounded-[8.75px] border border-[#e5e5e6] relative`}>
                             <div className={`flex items-center px-[14px] ${guardianAddress ? 'py-[14px]' : 'py-[7px]'}`}>
                               <p className={`font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[13px] flex-1 overflow-hidden text-ellipsis ${guardianAddress ? 'text-[#5a6b7d]' : 'text-[#71859b]'}`}>
                                 {guardianAddress || 'Enter Address'}
@@ -924,62 +913,60 @@ export function NomineeDetailsScreen({
         <>
           {/* Backdrop + scroll container */}
           <div
-            className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 overflow-y-auto transition-opacity duration-200 ease-out ${
-              dobPickerAnimating ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`fixed inset-0 backdrop-blur-[3px] bg-[rgba(35,31,32,0.5)] z-40 overflow-y-auto transition-opacity duration-200 ease-out ${dobPickerAnimating ? 'opacity-100' : 'opacity-0'
+              }`}
             onClick={handleCloseDobPicker}
           >
-          <div className="flex min-h-full items-center justify-center p-[20px]">
-          {/* Modal */}
-          <div className={`bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-full max-w-[480px] flex flex-col transition-transform duration-200 ease-out overflow-hidden ${
-            dobPickerAnimating ? 'scale-100' : 'scale-95'
-          }`} onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col gap-[24px] p-[24px]">
-              {/* Header */}
-              <div className="flex items-center justify-between w-full">
-                <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Select Date of Birth</p>
-                <button
-                  onClick={handleCloseDobPicker}
-                  className="size-[15px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
-                >
-                  <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
-                    <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
-                  </svg>
-                </button>
-              </div>
+            <div className="flex min-h-full items-center justify-center p-[20px]">
+              {/* Modal */}
+              <div className={`bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] w-full max-w-[480px] flex flex-col transition-transform duration-200 ease-out overflow-hidden ${dobPickerAnimating ? 'scale-100' : 'scale-95'
+                }`} onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col gap-[24px] p-[24px]">
+                  {/* Header */}
+                  <div className="flex items-center justify-between w-full">
+                    <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#435160] text-[22px]">Select Date of Birth</p>
+                    <button
+                      onClick={handleCloseDobPicker}
+                      className="size-[15px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0"
+                    >
+                      <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
+                        <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
+                      </svg>
+                    </button>
+                  </div>
 
-              {/* Date Selectors */}
-              <div className="flex gap-[12px]">
-                <DobSelect
-                  label="Day"
-                  value={selectedDay}
-                  onChange={setSelectedDay}
-                  options={getDobDayOptions(selectedYear, selectedMonth)}
-                />
-                <DobSelect
-                  label="Month"
-                  value={selectedMonth}
-                  onChange={setSelectedMonth}
-                  options={getDobMonthOptions(selectedYear)}
-                />
-                <DobSelect
-                  label="Year"
-                  value={selectedYear}
-                  onChange={setSelectedYear}
-                  options={getDobYearOptions()}
-                />
-              </div>
+                  {/* Date Selectors */}
+                  <div className="flex gap-[12px]">
+                    <DobSelect
+                      label="Day"
+                      value={selectedDay}
+                      onChange={setSelectedDay}
+                      options={getDobDayOptions(selectedYear, selectedMonth)}
+                    />
+                    <DobSelect
+                      label="Month"
+                      value={selectedMonth}
+                      onChange={setSelectedMonth}
+                      options={getDobMonthOptions(selectedYear)}
+                    />
+                    <DobSelect
+                      label="Year"
+                      value={selectedYear}
+                      onChange={setSelectedYear}
+                      options={getDobYearOptions()}
+                    />
+                  </div>
 
-              {/* Save Button */}
-              <button
-                onClick={handleSaveDob}
-                className="bg-[#93161e] hover:bg-[#7a1319] h-[44px] rounded-[8px] flex items-center justify-center transition-colors"
-              >
-                <p className="font-['Mulish',sans-serif] font-normal text-[14px] text-white">Save</p>
-              </button>
+                  {/* Save Button */}
+                  <button
+                    onClick={handleSaveDob}
+                    className="bg-[#93161e] hover:bg-[#7a1319] h-[44px] rounded-[8px] flex items-center justify-center transition-colors"
+                  >
+                    <p className="font-['Mulish',sans-serif] font-normal text-[14px] text-white">Save</p>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          </div>
           </div>
         </>
       )}

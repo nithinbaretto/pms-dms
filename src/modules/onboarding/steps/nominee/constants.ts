@@ -21,8 +21,8 @@ export const DEFAULT_PROOF_OF_IDENTITY = "Aadhar";
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MOBILE_PATTERN = /^\d{10}$/;
 export const DOB_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+/** Max characters (including spaces) for Nominee Name and Guardian Name. */
 export const NOMINEE_NAME_MAX_LENGTH = 50;
-export const NOMINEE_NAME_PATTERN = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
 export const AADHAAR_REGEX = /^\d{12}$/;
 export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 export const DRIVING_LICENSE_REGEX = /^[A-Z]{2}[0-9]{13}$/;
@@ -32,7 +32,7 @@ export const PROOF_NUMBER_PLACEHOLDERS: Record<(typeof PROOF_OF_IDENTITY_OPTIONS
   Aadhar: "XXXX XXXX XXXX",
   PAN: "ABCDE1234F",
   "Driving License": "MH1420110012345",
-  Passport: "A1234567",
+  Passport: "Enter Passport Number",
 };
 
 export const PROOF_NUMBER_MAX_LENGTH: Record<(typeof PROOF_OF_IDENTITY_OPTIONS)[number], number> = {

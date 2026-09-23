@@ -3,7 +3,9 @@ import { Loader2 } from "lucide-react";
 
 import verifiedIcon from "../../../../../assets/icons/svg/verified_icon.svg";
 import { Button } from "../../../../../shared/ui/button";
+import { Checkbox } from "../../../../../shared/ui/checkbox";
 import { Input } from "../../../../../shared/ui/input";
+import { PERSON_NAME_MAX_LENGTH } from "../constants";
 import type { VerificationStatus } from "../types";
 
 type ContactDetailsSectionProps = {
@@ -15,6 +17,11 @@ type ContactDetailsSectionProps = {
   isSendingOtp?: boolean;
   mobileErrorMessage?: string | null;
   emailErrorMessage?: string | null;
+  showContactPerson?: boolean;
+  contactPersonName?: string;
+  isContactPersonSameAsDistributor?: boolean;
+  onContactPersonNameChange?: (value: string) => void;
+  onSameAsDistributorChange?: (sameAsDistributor: boolean) => void;
   onMobileChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onStartVerify: (channel: "mobile" | "email") => void;
@@ -28,6 +35,11 @@ const ContactDetailsSection = ({
   isSendingOtp = false,
   mobileErrorMessage,
   emailErrorMessage,
+  showContactPerson = false,
+  contactPersonName = "",
+  isContactPersonSameAsDistributor = true,
+  onContactPersonNameChange,
+  onSameAsDistributorChange,
   onMobileChange,
   onEmailChange,
   onStartVerify,
@@ -102,13 +114,17 @@ const ContactDetailsSection = ({
             }`}
           >
             <Input
-              className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 shadow-none placeholder:text-[#71859B] focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="h-full min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 lowercase shadow-none placeholder:text-[#71859B] placeholder:normal-case focus-visible:border-transparent focus-visible:ring-0 disabled:cursor-not-allowed disabled:bg-transparent disabled:opacity-100"
               disabled={emailLocked}
               onChange={(event) => {
-                onEmailChange(event.target.value);
+                onEmailChange(event.target.value.toLowerCase());
               }}
-              placeholder="Enter Email ID"
+              placeholder="Enter Email"
               readOnly={emailLocked}
+              spellCheck={false}
+              type="email"
               value={email.value}
             />
             {email.verified ? (
@@ -131,7 +147,40 @@ const ContactDetailsSection = ({
           ) : null}
         </div>
 
-        <div aria-hidden="true" className="hidden lg:block" />
+        {showContactPerson ? (
+          <div className="min-w-0 space-y-2">
+            <label className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]">
+              Contact Person Name <span className="text-[#E8402F]">*</span>
+            </label>
+            <Input
+              maxLength={PERSON_NAME_MAX_LENGTH}
+              onChange={(event) => {
+                if (isContactPersonSameAsDistributor) {
+                  return;
+                }
+                onContactPersonNameChange?.(event.target.value);
+              }}
+              placeholder="Enter Contact Person Name"
+              readOnly={isContactPersonSameAsDistributor}
+              value={contactPersonName}
+            />
+            <label className="flex cursor-pointer items-center gap-2">
+              <Checkbox
+                checked={isContactPersonSameAsDistributor}
+                className="border-[#eeeeee] data-[state=checked]:border-[#93161E] data-[state=checked]:bg-[#93161E] data-[state=checked]:text-white"
+                iconClassName="size-[10px]"
+                onCheckedChange={(checked) => {
+                  onSameAsDistributorChange?.(Boolean(checked));
+                }}
+              />
+              <span className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal text-[#435160]">
+                Same as distributor
+              </span>
+            </label>
+          </div>
+        ) : (
+          <div aria-hidden="true" className="hidden lg:block" />
+        )}
       </div>
     </section>
   );

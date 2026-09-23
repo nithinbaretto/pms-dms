@@ -120,10 +120,6 @@ const KraVerifyContactStep = ({
               </span>
             </div>
           </div>
-
-          <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
-            Verify your identity with your ARN to proceed securely.
-          </p>
         </header>
 
         <div className="flex flex-col items-start gap-3">

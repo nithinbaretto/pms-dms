@@ -61,8 +61,13 @@ export const normalizeProofNumberForSave = (type: string, value: string): string
   return value.trim().toUpperCase();
 };
 
+/** Nominee and guardian names may include letters, numbers, and symbols, up to 50 characters including spaces. */
 export const sanitizeNomineeName = (value: string): string => {
-  return value.replace(/[^A-Za-z ]/g, "").slice(0, NOMINEE_NAME_MAX_LENGTH);
+  return value
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^ +/, "")
+    .slice(0, NOMINEE_NAME_MAX_LENGTH);
 };
 
 const startOfToday = (): Date => {

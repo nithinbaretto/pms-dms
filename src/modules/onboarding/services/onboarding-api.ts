@@ -61,6 +61,7 @@ export type GetPersonalDetailsResponse = {
   entityType: string;
   email: string;
   mobile: string;
+  contactPersonName: string;
   permanentAddress: string;
   correspondenceAddress: string;
   Application_status: string;
@@ -76,6 +77,8 @@ export type SavePersonalDetailsRequest = {
   primaryMobile: string;
   dob: string;
   name: string;
+  contactPersonName: string;
+  isContactPersonSameAsDistributor: boolean;
   permanentAddress: string;
   dataSource: string;
 };
@@ -84,6 +87,93 @@ export type SavePersonalDetailsResponse = {
   Message: string;
   Application_status: string;
   nextInfoSection?: string;
+};
+
+export type EntityDocumentPayload = {
+  documentName: string;
+  documentType: string;
+  documentUrl: string;
+};
+
+export type ValidateKarthaPanRequest = {
+  leadId: string;
+  panNumber: string;
+  aprnNumber: string;
+};
+
+export type ValidateKarthaPanResponse = {
+  isValidated: boolean;
+  karthaName: string;
+  karthaPan: string;
+  karthaEmail: string;
+  karthaMobile: string;
+  karthaPermanentAddress: string;
+  karthaCorrespondenceAddress: string;
+};
+
+export type SaveEntityKarthaDetails = {
+  name: string;
+  panNumber: string;
+  email: string;
+  mobileNumber: string;
+  permanentAddress: string;
+  correspondenceAddress: string;
+  poiType: string;
+  poiNumber: string;
+  isApmiVerified: boolean;
+  isKarthaPAddressSameAsApplicant: boolean;
+  isKarthaCAddressSameAsPermanent: boolean;
+  isPermanentAddressModified: boolean;
+  isKartaCorrespondanceAddressModified: boolean;
+  documents: EntityDocumentPayload[];
+};
+
+export type SaveEntityCoparcenerItem = {
+  coPercenerName: string;
+  coPercenerPan: string;
+  relationshipWithKartha: string;
+};
+
+export type SaveEntityAuthSignatoryItem = {
+  authSignatoryName: string;
+  authSignatoryPan: string;
+  authSignatoryContact: string;
+  authSignatoryEmail: string;
+  authSignatoryType: string;
+  authSignatoryIsOpted: boolean;
+  authSignatoryIsSelected: boolean;
+  documents: EntityDocumentPayload[];
+};
+
+export type EntityAuthSignatoryData = {
+  modeOfOperation: string | null;
+  selectedNoOfSignatory: number | null;
+  authSignatoryDetails: SaveEntityAuthSignatoryItem[];
+};
+
+export type SaveEntityDetailsRequest = {
+  leadId: string;
+  entityType: string;
+  karthaDetails: SaveEntityKarthaDetails;
+  coPercenerDetails: SaveEntityCoparcenerItem[];
+  authSignatoryData: {
+    modeOfOperation: string;
+    selectedNoOfSignatory: number;
+    authSignatoryDetails: SaveEntityAuthSignatoryItem[];
+  };
+};
+
+export type SaveEntityDetailsResponse = {
+  Message: string;
+  Application_status: string;
+};
+
+export type EntityDetailsResponse = {
+  leadId: string;
+  entityType: string;
+  karthaDetails: SaveEntityKarthaDetails | null;
+  coPercenerDetails: SaveEntityCoparcenerItem[];
+  authSignatoryData: EntityAuthSignatoryData;
 };
 
 export type ValidatePanResponse = {
@@ -208,6 +298,11 @@ export type GstInItem = {
 export type BusinessDetailsResponse = {
   selectedBranch: string;
   gstInDetails: GstInItem[];
+  entityType: string;
+  riaNumber: string;
+  dataSource: string;
+  isRia: boolean;
+  authSignatoryData: EntityAuthSignatoryData;
 };
 
 export type BranchListItem = {
@@ -281,6 +376,15 @@ export type SaveGstDetailsRequest = {
   gstInDetails: GstInItem[];
   leadId: string;
   selectedBranch: string;
+  entityType: string;
+  riaNumber: string;
+  dataSource: string;
+  isRia: boolean;
+  authSignatoryData: {
+    modeOfOperation: string;
+    selectedNoOfSignatory: number;
+    authSignatoryDetails: SaveEntityAuthSignatoryItem[];
+  };
 };
 
 export type SaveGstDetailsResponse = {
@@ -475,6 +579,7 @@ export type ReviewPersonalSection = {
   dob: string;
   email: string;
   mobile: string;
+  contactPersonName: string;
   permanentAddress: string;
   correspondenceAddress: string;
   aprnNumber: string;
@@ -695,6 +800,7 @@ type GetPersonalDetailsApiResponse = {
   entityType?: string;
   email?: string;
   mobile?: string;
+  contactPersonName?: string;
   permanentAddress?: string;
   correspondenceAddress?: string;
   Application_status?: string;
@@ -776,6 +882,15 @@ type GstInItemApi = {
 type GetBusinessDetailsApiResponse = {
   selectedBranch?: string;
   gstInDetails?: GstInItemApi[];
+  entityType?: string;
+  riaNumber?: string;
+  dataSource?: string;
+  isRia?: boolean;
+  authSignatoryData?: {
+    modeOfOperation?: string | null;
+    selectedNoOfSignatory?: number | null;
+    authSignatoryDetails?: unknown[];
+  };
 };
 
 type BranchListItemApi = {
@@ -837,13 +952,23 @@ type SaveGstInItemApiRequest = {
   gstInName: string;
   gstInState: string;
   isSelected: boolean;
+  fileURL: string;
   documents: SaveGstDocumentApiRequest | null;
 };
 
 type SaveGstDetailsApiRequest = {
   leadId: string;
   selectedBranch: string;
+  entityType: string;
+  riaNumber: string;
+  dataSource: string;
+  isRia: boolean;
   gstInDetails: SaveGstInItemApiRequest[];
+  authSignatoryData: {
+    modeOfOperation: string;
+    selectedNoOfSignatory: number;
+    authSignatoryDetails: SaveEntityAuthSignatoryItem[];
+  };
 };
 
 type GetNomineeDetailsApiResponse = {
@@ -948,6 +1073,13 @@ const API_ENDPOINTS = {
     import.meta.env.VITE_PMS_INDIVIDUAL_GET_PERSONAL_DETAILS_URL ?? withBase("/dms-api/applicant/getPersonalDetails"),
   savePersonalDetails:
     import.meta.env.VITE_PMS_INDIVIDUAL_SAVE_PERSONAL_DETAILS_URL ?? withBase("/dms-api/applicant/savePersonalDetails"),
+  validateKarthaPanByAPMI:
+    import.meta.env.VITE_PMS_VALIDATE_KARTHA_PAN_URL ??
+    withBase("/dms-api/apmi/validateKarthaPanByAPMI"),
+  getEntityDetails:
+    import.meta.env.VITE_PMS_GET_ENTITY_DETAILS_URL ?? withBase("/dms-api/entity/getEntityDetails"),
+  saveEntityDetails:
+    import.meta.env.VITE_PMS_SAVE_ENTITY_DETAILS_URL ?? withBase("/dms-api/entity/saveEntityDetails"),
   getBusinessDetails:
     import.meta.env.VITE_PMS_GET_BUSINESS_DETAILS_URL ?? withBase("/dms-api/businessDetails/getBusinessDetails"),
   /** Ready for future pincode/geo branch search — not wired in UI yet. */
@@ -1343,6 +1475,7 @@ const mapReviewDetailsResponse = (payload: Record<string, unknown>, leadId: stri
         pickString(personalSource, ["arnNumber", "arn"]) ||
         pickString(payload, ["arnNumber", "arn"]),
       entityType: pickString(personalSource, ["entityType"]),
+      contactPersonName: pickString(personalSource, ["contactPersonName"]),
     },
     business: {
       selectedBranch: pickString(businessSource, ["selectedBranch", "branchName", "branch"]),
@@ -1754,6 +1887,7 @@ export const onboardingApi = {
       entityType: asStringOrNull(data.entityType) ?? "",
       email: asStringOrNull(data.email) ?? "",
       mobile: asStringOrNull(data.mobile) ?? "",
+      contactPersonName: asStringOrNull(data.contactPersonName) ?? "",
       permanentAddress: asStringOrNull(data.permanentAddress) ?? "",
       correspondenceAddress: asStringOrNull(data.correspondenceAddress) ?? "",
       Application_status:
@@ -1775,6 +1909,8 @@ export const onboardingApi = {
       primaryMobile: request.primaryMobile.trim(),
       dob: request.dob.trim(),
       name: request.name.trim(),
+      contactPersonName: request.contactPersonName.trim(),
+      isContactPersonSameAsDistributor: request.isContactPersonSameAsDistributor,
       permanentAddress: request.permanentAddress.trim(),
       dataSource: request.dataSource,
     };
@@ -1787,6 +1923,125 @@ export const onboardingApi = {
       Application_status:
         asStringOrNull(data.Application_status) ?? asStringOrNull(data.application_status) ?? "",
       nextInfoSection: asStringOrNull(data.nextInfoSection) ?? undefined,
+    };
+  },
+
+  async validateKarthaPanByAPMI(request: ValidateKarthaPanRequest): Promise<ValidateKarthaPanResponse> {
+    const response = await apiPost<Record<string, unknown>>(API_ENDPOINTS.validateKarthaPanByAPMI, {
+      leadId: request.leadId,
+      panNumber: request.panNumber.trim().toUpperCase(),
+      aprnNumber: request.aprnNumber?.trim() ?? "",
+    });
+    const data = extractPayload(response);
+
+    return {
+      isValidated: asBooleanOrUndefined(data.isValidated) ?? false,
+      karthaName: asStringOrNull(data.karthaName) ?? "",
+      karthaPan: asStringOrNull(data.karthaPan) ?? "",
+      karthaEmail: asStringOrNull(data.karthaEmail) ?? "",
+      karthaMobile: asStringOrNull(data.karthaMobile) ?? "",
+      karthaPermanentAddress: asStringOrNull(data.karthaPermanentAddress) ?? "",
+      karthaCorrespondenceAddress: asStringOrNull(data.karthaCorrespondenceAddress) ?? "",
+    };
+  },
+
+  async getEntityDetails(leadId: string): Promise<EntityDetailsResponse> {
+    const response = await apiPost<Record<string, unknown>>(API_ENDPOINTS.getEntityDetails, {
+      leadId,
+    });
+    const data = extractPayload(response);
+
+    const mapDocuments = (value: unknown): EntityDocumentPayload[] => {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+
+      return value
+        .filter(isRecord)
+        .map((item) => ({
+          documentName: asStringOrNull(item.documentName) ?? "",
+          documentType: asStringOrNull(item.documentType) ?? "",
+          documentUrl:
+            asStringOrNull(item.documentUrl) ??
+            asStringOrNull(item.fileURL) ??
+            asStringOrNull(item.fileUrl) ??
+            "",
+        }))
+        .filter((item) => item.documentUrl.trim().length > 0);
+    };
+
+    const karthaRaw = data.karthaDetails;
+    const karthaDetails: SaveEntityKarthaDetails | null = isRecord(karthaRaw)
+      ? {
+          name: asStringOrNull(karthaRaw.name) ?? "",
+          panNumber: asStringOrNull(karthaRaw.panNumber) ?? "",
+          email: asStringOrNull(karthaRaw.email) ?? "",
+          mobileNumber: asStringOrNull(karthaRaw.mobileNumber) ?? "",
+          permanentAddress: asStringOrNull(karthaRaw.permanentAddress) ?? "",
+          correspondenceAddress: asStringOrNull(karthaRaw.correspondenceAddress) ?? "",
+          poiType: asStringOrNull(karthaRaw.poiType) ?? "PAN",
+          poiNumber: asStringOrNull(karthaRaw.poiNumber) ?? "",
+          isApmiVerified: asBooleanOrUndefined(karthaRaw.isApmiVerified) ?? false,
+          isKarthaPAddressSameAsApplicant:
+            asBooleanOrUndefined(karthaRaw.isKarthaPAddressSameAsApplicant) ?? false,
+          isKarthaCAddressSameAsPermanent:
+            asBooleanOrUndefined(karthaRaw.isKarthaCAddressSameAsPermanent) ?? false,
+          isPermanentAddressModified:
+            asBooleanOrUndefined(karthaRaw.isPermanentAddressModified) ?? false,
+          isKartaCorrespondanceAddressModified:
+            asBooleanOrUndefined(karthaRaw.isKartaCorrespondanceAddressModified) ?? false,
+          documents: mapDocuments(karthaRaw.documents),
+        }
+      : null;
+
+    const coPercenerDetails: SaveEntityCoparcenerItem[] = Array.isArray(data.coPercenerDetails)
+      ? data.coPercenerDetails.filter(isRecord).map((item) => ({
+          coPercenerName: asStringOrNull(item.coPercenerName) ?? "",
+          coPercenerPan: asStringOrNull(item.coPercenerPan) ?? "",
+          relationshipWithKartha: asStringOrNull(item.relationshipWithKartha) ?? "",
+        }))
+      : [];
+
+    const authRaw = isRecord(data.authSignatoryData) ? data.authSignatoryData : {};
+    const authSignatoryDetails: SaveEntityAuthSignatoryItem[] = Array.isArray(
+      authRaw.authSignatoryDetails,
+    )
+      ? authRaw.authSignatoryDetails.filter(isRecord).map((item) => ({
+          authSignatoryName: asStringOrNull(item.authSignatoryName) ?? "",
+          authSignatoryPan: asStringOrNull(item.authSignatoryPan) ?? "",
+          authSignatoryContact: asStringOrNull(item.authSignatoryContact) ?? "",
+          authSignatoryEmail: asStringOrNull(item.authSignatoryEmail) ?? "",
+          authSignatoryType: asStringOrNull(item.authSignatoryType) ?? "",
+          authSignatoryIsOpted: asBooleanOrUndefined(item.authSignatoryIsOpted) ?? true,
+          authSignatoryIsSelected: asBooleanOrUndefined(item.authSignatoryIsSelected) ?? true,
+          documents: mapDocuments(item.documents),
+        }))
+      : [];
+
+    return {
+      leadId: asStringOrNull(data.leadId) ?? leadId,
+      entityType: asStringOrNull(data.entityType) ?? "",
+      karthaDetails,
+      coPercenerDetails,
+      authSignatoryData: {
+        modeOfOperation: asStringOrNull(authRaw.modeOfOperation),
+        selectedNoOfSignatory:
+          typeof authRaw.selectedNoOfSignatory === "number"
+            ? authRaw.selectedNoOfSignatory
+            : null,
+        authSignatoryDetails,
+      },
+    };
+  },
+
+  async saveEntityDetails(request: SaveEntityDetailsRequest): Promise<SaveEntityDetailsResponse> {
+    const response = await apiPost<Record<string, unknown>>(API_ENDPOINTS.saveEntityDetails, request);
+    const data = extractPayload(response);
+
+    return {
+      Message: asStringOrNull(data.Message) ?? asStringOrNull(data.message) ?? "",
+      Application_status:
+        asStringOrNull(data.Application_status) ?? asStringOrNull(data.application_status) ?? "",
     };
   },
 
@@ -1923,6 +2178,41 @@ export const onboardingApi = {
     const data = extractPayload(response) as GetBusinessDetailsApiResponse;
     const rawList = Array.isArray(data.gstInDetails) ? data.gstInDetails : [];
 
+    const mapDocuments = (value: unknown): EntityDocumentPayload[] => {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+
+      return value
+        .filter(isRecord)
+        .map((item) => ({
+          documentName: asStringOrNull(item.documentName) ?? "",
+          documentType: asStringOrNull(item.documentType) ?? "",
+          documentUrl:
+            asStringOrNull(item.documentUrl) ??
+            asStringOrNull(item.fileURL) ??
+            asStringOrNull(item.fileUrl) ??
+            "",
+        }))
+        .filter((item) => item.documentUrl.trim().length > 0);
+    };
+
+    const authRaw = isRecord(data.authSignatoryData) ? data.authSignatoryData : {};
+    const authSignatoryDetails: SaveEntityAuthSignatoryItem[] = Array.isArray(
+      authRaw.authSignatoryDetails,
+    )
+      ? authRaw.authSignatoryDetails.filter(isRecord).map((item) => ({
+          authSignatoryName: asStringOrNull(item.authSignatoryName) ?? "",
+          authSignatoryPan: asStringOrNull(item.authSignatoryPan) ?? "",
+          authSignatoryContact: asStringOrNull(item.authSignatoryContact) ?? "",
+          authSignatoryEmail: asStringOrNull(item.authSignatoryEmail) ?? "",
+          authSignatoryType: asStringOrNull(item.authSignatoryType) ?? "",
+          authSignatoryIsOpted: asBooleanOrUndefined(item.authSignatoryIsOpted) ?? true,
+          authSignatoryIsSelected: asBooleanOrUndefined(item.authSignatoryIsSelected) ?? true,
+          documents: mapDocuments(item.documents),
+        }))
+      : [];
+
     return {
       selectedBranch: asStringOrNull(data.selectedBranch) ?? "",
       gstInDetails: rawList.map((item) => {
@@ -1945,6 +2235,18 @@ export const onboardingApi = {
           requiresCertificate: Boolean(documentUrl.trim()),
         };
       }),
+      entityType: asStringOrNull(data.entityType) ?? "",
+      riaNumber: asStringOrNull(data.riaNumber) ?? "",
+      dataSource: asStringOrNull(data.dataSource) ?? "",
+      isRia: asBooleanOrUndefined(data.isRia) ?? false,
+      authSignatoryData: {
+        modeOfOperation: asStringOrNull(authRaw.modeOfOperation),
+        selectedNoOfSignatory:
+          typeof authRaw.selectedNoOfSignatory === "number"
+            ? authRaw.selectedNoOfSignatory
+            : Number.parseInt(asStringOrNull(authRaw.selectedNoOfSignatory) ?? "", 10) || null,
+        authSignatoryDetails,
+      },
     };
   },
 
@@ -2146,6 +2448,10 @@ export const onboardingApi = {
     const payload: SaveGstDetailsApiRequest = {
       leadId: request.leadId,
       selectedBranch: request.selectedBranch.trim(),
+      entityType: request.entityType.trim(),
+      riaNumber: request.riaNumber.trim(),
+      dataSource: request.dataSource.trim(),
+      isRia: request.isRia,
       gstInDetails: request.gstInDetails.map((item) => {
         const gstInId = item.gstInId.trim().toUpperCase();
         const fileURL = item.fileURL.trim();
@@ -2162,9 +2468,24 @@ export const onboardingApi = {
           gstInName: item.gstInName.trim(),
           gstInState: item.gstInState.trim(),
           isSelected: item.isSelected,
+          fileURL,
           documents,
         };
       }),
+      authSignatoryData: {
+        modeOfOperation: request.authSignatoryData.modeOfOperation,
+        selectedNoOfSignatory: request.authSignatoryData.selectedNoOfSignatory,
+        authSignatoryDetails: request.authSignatoryData.authSignatoryDetails.map((item) => ({
+          authSignatoryName: item.authSignatoryName.trim(),
+          authSignatoryPan: item.authSignatoryPan.trim().toUpperCase(),
+          authSignatoryType: item.authSignatoryType.trim(),
+          authSignatoryEmail: item.authSignatoryEmail.trim(),
+          authSignatoryContact: item.authSignatoryContact.trim(),
+          authSignatoryIsOpted: item.authSignatoryIsOpted,
+          authSignatoryIsSelected: item.authSignatoryIsSelected,
+          documents: item.documents,
+        })),
+      },
     };
 
     const response = await apiPost<SaveGstDetailsApiResponse>(API_ENDPOINTS.saveGstDetails, payload);

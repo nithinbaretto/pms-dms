@@ -77,7 +77,7 @@ const GstSelectionSection = ({
           />
         </>
       ) : (
-        <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 py-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
           <img
             alt=""
             className="h-[66px] w-[108px] object-contain"
@@ -85,7 +85,7 @@ const GstSelectionSection = ({
             src={noGstFoundImg}
             width={108}
           />
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             <p className="text-[16px] font-medium leading-[24px] text-[#231f20]">
               {GST_EMPTY_TITLE}
             </p>

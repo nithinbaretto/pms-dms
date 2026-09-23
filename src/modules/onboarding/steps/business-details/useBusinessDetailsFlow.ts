@@ -12,6 +12,25 @@ import {
   mapRecordToGstInItem,
   resolveStateName,
 } from "./helpers";
+import {
+  isKnownBusinessEntityType,
+  mapAuthSignatoryDataToSave,
+  mapAuthSignatoryDetailsFromApi,
+  toBusinessEntityType,
+} from "./signatory/api-mappers";
+import {
+  BUSINESS_SIGNATORY_DOC_META,
+  DEFAULT_BUSINESS_ENTITY_TYPE,
+  isPmsIndividualEntityTypeLocked,
+  shouldShowAuthorizedSignatory,
+} from "./signatory/constants";
+import type {
+  BusinessEntityType,
+  SignatoryDetails,
+  SignatoryDocumentFile,
+  SignatoryDocumentKind,
+  SignatoryMode,
+} from "./signatory/types";
 import type {
   BranchOption,
   GstRecord,
@@ -26,6 +45,10 @@ type UseBusinessDetailsFlowResult = {
   selectedBranch: string;
   branchOptions: BranchOption[];
   stateOptions: string[];
+  entityType: BusinessEntityType;
+  signatories: SignatoryDetails[];
+  signatoryMode: SignatoryMode;
+  anySignatoryCount: number;
   isLoading: boolean;
   isSaving: boolean;
   isValidatingGst: boolean;
@@ -37,6 +60,10 @@ type UseBusinessDetailsFlowResult = {
   closeAddGstModal: () => void;
   loadBusinessDetails: () => Promise<void>;
   selectBranch: (branch: string) => void;
+  setEntityType: (value: BusinessEntityType) => void;
+  setSignatories: (value: SignatoryDetails[] | ((current: SignatoryDetails[]) => SignatoryDetails[])) => void;
+  setSignatoryMode: (value: SignatoryMode) => void;
+  setAnySignatoryCount: (value: number | ((current: number) => number)) => void;
   toggleGstSelection: (id: string) => void;
   selectAllGst: () => void;
   removeGstEntry: (id: string) => void;
@@ -44,18 +71,44 @@ type UseBusinessDetailsFlowResult = {
   validateGstNumber: (gstInNumber: string) => Promise<ValidateGstResult | null>;
   uploadGstDocument: (file: File) => Promise<string | null>;
   uploadGstDocumentForRecord: (id: string, file: File) => Promise<boolean>;
+  uploadSignatoryDocument: (
+    file: File,
+    kind: SignatoryDocumentKind,
+  ) => Promise<SignatoryDocumentFile | null>;
   saveBusinessDetails: () => Promise<SaveBusinessDetailsResult | null>;
 };
 
 export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
-  const { leadId, pan, panNumber, applicationIds, personalDetails } = useOnboardingStore();
+  const {
+    leadId,
+    pan,
+    panNumber,
+    applicationIds,
+    personalDetails,
+    onboardingMethod,
+    kraDataSource,
+    currentFlow,
+  } = useOnboardingStore();
   const resolvedPan = (pan || panNumber).trim().toUpperCase();
   const permanentPincode = extractPincodeFromAddress(personalDetails?.permanentAddress);
+  const personalEntityType = personalDetails?.personalDetails.entityType ?? "";
+  const lockEntityTypeFromPersonal = isPmsIndividualEntityTypeLocked(currentFlow);
 
   const [records, setRecords] = useState<GstRecord[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("");
   const [branchOptions, setBranchOptions] = useState<BranchOption[]>(BRANCH_OPTIONS);
   const [stateOptions, setStateOptions] = useState<string[]>(getFallbackStateOptions);
+  const [entityType, setEntityType] = useState<BusinessEntityType>(() =>
+    lockEntityTypeFromPersonal && isKnownBusinessEntityType(personalEntityType)
+      ? toBusinessEntityType(personalEntityType)
+      : DEFAULT_BUSINESS_ENTITY_TYPE,
+  );
+  const [signatories, setSignatories] = useState<SignatoryDetails[]>([]);
+  const [signatoryMode, setSignatoryMode] = useState<SignatoryMode>("jointly");
+  const [anySignatoryCount, setAnySignatoryCount] = useState(1);
+  const [riaNumber, setRiaNumber] = useState("");
+  const [isRia, setIsRia] = useState(false);
+  const [dataSource, setDataSource] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isValidatingGst, setIsValidatingGst] = useState(false);
@@ -118,6 +171,29 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
       const branch = response.selectedBranch.trim();
       setSelectedBranch(branch);
 
+      const apiEntityType = response.entityType.trim();
+      if (isPmsIndividualEntityTypeLocked(currentFlow)) {
+        setEntityType(
+          isKnownBusinessEntityType(personalEntityType)
+            ? toBusinessEntityType(personalEntityType)
+            : DEFAULT_BUSINESS_ENTITY_TYPE,
+        );
+      } else if (isKnownBusinessEntityType(apiEntityType)) {
+        setEntityType(toBusinessEntityType(apiEntityType));
+      } else if (isKnownBusinessEntityType(personalEntityType)) {
+        setEntityType(toBusinessEntityType(personalEntityType));
+      } else {
+        setEntityType(DEFAULT_BUSINESS_ENTITY_TYPE);
+      }
+
+      const mappedSignatory = mapAuthSignatoryDetailsFromApi(response.authSignatoryData);
+      setSignatories(mappedSignatory.signatories);
+      setSignatoryMode(mappedSignatory.signatoryMode);
+      setAnySignatoryCount(mappedSignatory.anySignatoryCount);
+      setRiaNumber(response.riaNumber.trim());
+      setIsRia(response.isRia);
+      setDataSource(response.dataSource.trim());
+
       if (branch) {
         setBranchOptions((current) => {
           if (current.some((option) => option.id === branch || option.label === branch)) {
@@ -129,10 +205,11 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
     } catch {
       setError("Unable to load business details. Please try again.");
       setRecords([]);
+      setSignatories([]);
     } finally {
       setIsLoading(false);
     }
-  }, [leadId]);
+  }, [currentFlow, leadId, personalEntityType]);
 
   useEffect(() => {
     void loadBusinessDetails();
@@ -294,6 +371,48 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
     [uploadGstDocument],
   );
 
+  const uploadSignatoryDocument = useCallback(
+    async (file: File, kind: SignatoryDocumentKind): Promise<SignatoryDocumentFile | null> => {
+      if (!leadId || !resolvedPan) {
+        setError("Document upload failed. Missing lead or PAN information.");
+        return null;
+      }
+
+      const meta = BUSINESS_SIGNATORY_DOC_META[kind];
+      setIsUploading(true);
+      setError(null);
+
+      try {
+        const response = await onboardingApi.uploadDocument({
+          file,
+          payload: {
+            leadId,
+            panNumber: resolvedPan,
+            applicationId: applicationIds,
+            documentName: meta.documentName,
+            documentType: meta.documentType,
+            metadata: {},
+          },
+        });
+        if (!response.fileURL.trim()) {
+          setError("Document upload failed. Please retry.");
+          return null;
+        }
+        return {
+          fileName: file.name,
+          previewUrl: response.fileURL,
+          documentUrl: response.fileURL,
+        };
+      } catch {
+        setError("Document upload failed. Please retry.");
+        return null;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [applicationIds, leadId, resolvedPan],
+  );
+
   const saveBusinessDetails = useCallback(async (): Promise<SaveBusinessDetailsResult | null> => {
     if (!leadId) {
       setError("Unable to save business details. Missing lead information.");
@@ -305,6 +424,13 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
       return null;
     }
 
+    const includeSignatories = shouldShowAuthorizedSignatory(personalEntityType, entityType);
+    const entityTypeForSave = entityType;
+    const resolvedDataSource =
+      dataSource.trim() ||
+      kraDataSource?.trim() ||
+      (onboardingMethod === "MANUAL" ? "MANUAL" : onboardingMethod === "KRA" ? "KRA" : "APMI");
+
     setIsSaving(true);
     setError(null);
 
@@ -313,6 +439,16 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
         leadId,
         selectedBranch,
         gstInDetails: records.map(mapRecordToGstInItem),
+        entityType: entityTypeForSave,
+        riaNumber,
+        dataSource: resolvedDataSource,
+        isRia,
+        authSignatoryData: mapAuthSignatoryDataToSave(
+          signatories,
+          signatoryMode,
+          anySignatoryCount,
+          includeSignatories,
+        ),
       });
 
       return {
@@ -324,13 +460,41 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
     } finally {
       setIsSaving(false);
     }
-  }, [leadId, records, selectedBranch]);
+  }, [
+    anySignatoryCount,
+    dataSource,
+    entityType,
+    isRia,
+    kraDataSource,
+    leadId,
+    onboardingMethod,
+    personalEntityType,
+    records,
+    riaNumber,
+    selectedBranch,
+    signatories,
+    signatoryMode,
+  ]);
+
+  const handleSetEntityType = useCallback(
+    (value: BusinessEntityType): void => {
+      if (lockEntityTypeFromPersonal) {
+        return;
+      }
+      setEntityType(value);
+    },
+    [lockEntityTypeFromPersonal],
+  );
 
   return {
     records,
     selectedBranch,
     branchOptions,
     stateOptions,
+    entityType,
+    signatories,
+    signatoryMode,
+    anySignatoryCount,
     isLoading,
     isSaving,
     isValidatingGst,
@@ -346,6 +510,10 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
     },
     loadBusinessDetails,
     selectBranch,
+    setEntityType: handleSetEntityType,
+    setSignatories,
+    setSignatoryMode,
+    setAnySignatoryCount,
     toggleGstSelection,
     selectAllGst,
     removeGstEntry,
@@ -353,6 +521,7 @@ export const useBusinessDetailsFlow = (): UseBusinessDetailsFlowResult => {
     validateGstNumber,
     uploadGstDocument,
     uploadGstDocumentForRecord,
+    uploadSignatoryDocument,
     saveBusinessDetails,
   };
 };

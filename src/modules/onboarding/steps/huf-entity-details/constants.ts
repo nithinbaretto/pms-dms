@@ -4,7 +4,7 @@ export const HUF_ENTITY_DETAILS_COPY = {
   pageTitle: "Entity Details",
   pageSubtitle:
     "Your details have been fetched from APMI. Fields shown in grey cannot be changed",
-  stepLabel: "Step 2 of 6",
+  stepLabel: "Step 2 of 7",
   progressPercent: 18,
   nextLabel: "Business Details",
   entitySectionTitle: "Entity Details",
@@ -16,6 +16,7 @@ export const HUF_ENTITY_DETAILS_COPY = {
     description:
       "The Karta is the authorized representative of the HUF. Enter the Karta's details to proceed with the empanelment process.",
     addLabel: "Add Karta",
+    editLabel: "Edit Karta",
     emptyTitle: "No Karta Details Found",
     emptyDescription: "Add details of the Karta to proceed with HUF empanelment",
   },
@@ -38,9 +39,6 @@ export const HUF_ENTITY_DETAILS_COPY = {
 } as const;
 
 export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-/** Mock fetch succeeds only for this PAN. Any other valid PAN opens manual entry. */
-export const MOCK_KARTA_SUCCESS_PAN = "EJSPT8485H";
-export const KARTA_FETCH_DELAY_MS = 600;
 
 export const KARTA_PROOF_OPTIONS = ["PAN", "Aadhar", "Driving License", "Passport"] as const;
 
@@ -57,8 +55,6 @@ export const COPARCENER_RELATIONSHIP_OPTIONS = [
   "Son",
   "Daughter",
   "Spouse",
-  "Wife",
-  "Husband",
   "Brother",
   "Sister",
   "Grandfather",
@@ -66,3 +62,24 @@ export const COPARCENER_RELATIONSHIP_OPTIONS = [
   "Grandson",
   "Granddaughter",
 ] as const;
+
+/** Backend documentName / documentType pairs for entity save. */
+export const HUF_ENTITY_DOC_META = {
+  karthaPoi: { documentName: "KarthaPOI", documentType: "KarthaPOI" },
+  karthaPoa: { documentName: "KarthaPOA", documentType: "KarthaPOA" },
+  authSignatoryPoi: { documentName: "AuthSignatoryPOI", documentType: "AuthSignatoryPOI" },
+  authSignatoryPoa: { documentName: "AuthSignatoryPOA", documentType: "AuthSignatoryPOA" },
+  authSignatorySignature: {
+    documentName: "AuthSignatorySpecimenSignature",
+    documentType: "AuthSignatorySpecimenSignature",
+  },
+} as const;
+
+export const AUTH_SIGNATORY_TYPE = {
+  karta: "Kartha",
+  coparcener: "co-parcener",
+  manual: "manual",
+} as const;
+
+export const KARTA_PAN_NOT_FOUND_MESSAGE =
+  "PAN not found in records. Please enter details manually below.";

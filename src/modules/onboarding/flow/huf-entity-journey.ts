@@ -1,7 +1,19 @@
-/**
- * HUF Entity Details is one shared step for PMS, AIF, and AIF manual.
- * Hidden until backend returns the journey type. Map that type here when APIs are ready.
- */
-export const SHOW_HUF_ENTITY_DETAILS = false;
+import { useOnboardingStore } from "../state/onboarding-store";
 
-export const isHufEntityJourney = (): boolean => SHOW_HUF_ENTITY_DETAILS;
+/** HUF Entity Details applies when personal details entity type is HUF (PMS + AIF). */
+export const isHufEntityJourney = (): boolean => {
+  const entityType =
+    useOnboardingStore.getState().personalDetails?.personalDetails.entityType ?? "";
+  return entityType.trim().toLowerCase() === "huf";
+};
+
+/** After personal details save, HUF inserts entity step before business details. */
+export const resolveStepAfterPersonalDetails = (
+  entityType: string,
+  mappedStep: string | null,
+): string | null => {
+  if (entityType.trim().toLowerCase() === "huf") {
+    return "huf-entity-details";
+  }
+  return mappedStep;
+};

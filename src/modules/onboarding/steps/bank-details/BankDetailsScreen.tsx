@@ -25,6 +25,7 @@ import { Input } from '../../../../shared/ui/input';
 import CameraCaptureModal from '../../components/CameraCaptureModal';
 import OnboardingStepFooter from '../../components/OnboardingStepFooter';
 import {
+  ACCOUNT_HOLDER_NAME_MAX_LENGTH,
   BANK_DETAILS_PROGRESS_PERCENT,
   BANK_DETAILS_STEP_LABEL,
   QR_DEFAULT_EXPIRY_SECONDS,
@@ -39,6 +40,7 @@ import {
   maskBankAccountNumber,
   normalizeBankAccountInput,
   normalizeIfscInput,
+  sanitizeAccountHolderName,
 } from './helpers';
 
 const editIconMaskStyle = {
@@ -246,6 +248,7 @@ interface BankDetailsScreenProps {
   setShowChangeBankScreen: (value: boolean) => void;
   hasBankData?: boolean;
   isAddBankEntry?: boolean;
+  fetchedDetailsSubtitle?: string;
   changeBankTab: 'qr' | 'manual';
   setChangeBankTab: (tab: 'qr' | 'manual') => void;
   qrGenerated: boolean;
@@ -330,6 +333,7 @@ export function BankDetailsScreen({
   setShowChangeBankScreen,
   hasBankData = false,
   isAddBankEntry = false,
+  fetchedDetailsSubtitle = "Your details have been fetched from APMI. Fields shown in grey cannot be changed",
   changeBankTab,
   setChangeBankTab,
   qrGenerated,
@@ -559,7 +563,7 @@ export function BankDetailsScreen({
         return;
       }
 
-      setManualErrorAccountHolderName(contactPersonName.trim() || 'Rajesh Gupta');
+      setManualErrorAccountHolderName(sanitizeAccountHolderName(contactPersonName.trim() || 'Rajesh Gupta'));
       setManualErrorBankBranch(ifscData.branchAddress);
       setManualErrorReenterAccountNumber(normalizedManualAccountNumber);
       setBankValidationStatus('success');
@@ -751,7 +755,7 @@ export function BankDetailsScreen({
               <div className="flex flex-col gap-[4px] items-start w-full">
                 <p className="font-['Mulish',sans-serif] font-medium leading-[24px] text-[#231f20] text-[16px]">Bank Details</p>
                 {isAddBankEntry ? null : (
-                  <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+                  <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">{fetchedDetailsSubtitle}</p>
                 )}
               </div>
 
@@ -1248,8 +1252,9 @@ export function BankDetailsScreen({
                       </div>
                       <Input
                         type="text"
+                        maxLength={ACCOUNT_HOLDER_NAME_MAX_LENGTH}
                         value={manualErrorAccountHolderName}
-                        onChange={(e) => setManualErrorAccountHolderName(e.target.value)}
+                        onChange={(e) => setManualErrorAccountHolderName(sanitizeAccountHolderName(e.target.value))}
                         placeholder="Rajesh Gupta"
                       />
                     </div>
@@ -1439,8 +1444,9 @@ export function BankDetailsScreen({
                     </div>
                     <Input
                       type="text"
+                      maxLength={ACCOUNT_HOLDER_NAME_MAX_LENGTH}
                       value={manualErrorAccountHolderName}
-                      onChange={(e) => setManualErrorAccountHolderName(e.target.value)}
+                      onChange={(e) => setManualErrorAccountHolderName(sanitizeAccountHolderName(e.target.value))}
                       placeholder="Rajesh Gupta"
                     />
                   </div>
@@ -1527,7 +1533,7 @@ export function BankDetailsScreen({
           <div className="hidden lg:flex flex-col gap-[4px]">
             <p className="font-['Mulish',sans-serif] font-medium leading-[33px] text-[#231f20] text-[22px]">Bank Details</p>
             {isAddBankEntry ? null : (
-              <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[22.5px] text-[#435160] text-[15px]">{fetchedDetailsSubtitle}</p>
             )}
           </div>
 
@@ -1535,7 +1541,7 @@ export function BankDetailsScreen({
           <div className="lg:hidden z-20 mt-4 flex flex-col gap-[4px]">
             <h1 className="font-['Mulish',sans-serif] font-medium leading-[24px] text-[#231f20] text-[16px]">Bank Details</h1>
             {isAddBankEntry ? null : (
-              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">Your details have been fetched from APMI. Fields shown in grey cannot be changed</p>
+              <p className="font-['Mulish',sans-serif] font-normal leading-[19.5px] text-[#435160] text-[13px]">{fetchedDetailsSubtitle}</p>
             )}
           </div>
 

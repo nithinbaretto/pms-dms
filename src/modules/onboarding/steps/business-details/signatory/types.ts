@@ -7,6 +7,8 @@ export type SignatoryDocumentKind = "identity" | "address" | "signature";
 export type SignatoryDocumentFile = {
   fileName: string;
   previewUrl: string;
+  /** Blob URL from upload-document; used in saveGstDetails. */
+  documentUrl?: string;
 };
 
 export type SignatoryDetails = {

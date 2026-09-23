@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Input } from "../../../../shared/ui/input";
 import OnboardingStepFooter from "../../components/OnboardingStepFooter";
+import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import { HUF_ENTITY_DETAILS_COPY, HUF_ENTITY_TYPE } from "./constants";
 import AddCoparcenerModal from "./modals/AddCoparcenerModal";
 import AddKartaModal from "./modals/AddKartaModal";
@@ -12,15 +13,45 @@ import ViewSignatoryModal from "./modals/ViewSignatoryModal";
 import CoparcenerDetailsSection from "./sections/CoparcenerDetailsSection";
 import KartaDetailsSection from "./sections/KartaDetailsSection";
 import SignatoryDetailsSection from "./sections/SignatoryDetailsSection";
-import type { CoparcenerDetails, KartaDetails, SignatoryDetails, SignatoryMode } from "./types";
+import type { CoparcenerDetails, SignatoryDetails } from "./types";
+import {
+  HUF_KARTA_UPLOAD_META,
+  HUF_SIGNATORY_UPLOAD_META,
+  useHufEntityDetailsFlow,
+} from "./useHufEntityDetailsFlow";
 
-const HufEntityDetailsStep = (): ReactElement => {
+type HufEntityDetailsStepProps = {
+  onContinue: () => void;
+  isEditMode?: boolean;
+};
+
+const HufEntityDetailsStep = ({
+  onContinue,
+  isEditMode = false,
+}: HufEntityDetailsStepProps): ReactElement => {
   const copy = HUF_ENTITY_DETAILS_COPY;
-  const [karta, setKarta] = useState<KartaDetails | null>(null);
-  const [coparceners, setCoparceners] = useState<CoparcenerDetails[]>([]);
-  const [signatories, setSignatories] = useState<SignatoryDetails[]>([]);
-  const [signatoryMode, setSignatoryMode] = useState<SignatoryMode>("jointly");
-  const [anySignatoryCount, setAnySignatoryCount] = useState(1);
+  const {
+    karta,
+    setKarta,
+    coparceners,
+    setCoparceners,
+    signatories,
+    setSignatories,
+    signatoryMode,
+    setSignatoryMode,
+    anySignatoryCount,
+    setAnySignatoryCount,
+    isLoading,
+    isSaving,
+    isUploading,
+    isValidatingKartha,
+    error,
+    canContinue,
+    uploadEntityDocument,
+    validateKarthaPan,
+    saveEntityDetails,
+  } = useHufEntityDetailsFlow();
+
   const [addKartaOpen, setAddKartaOpen] = useState(false);
   const [viewKartaOpen, setViewKartaOpen] = useState(false);
   const [coparcenerModalOpen, setCoparcenerModalOpen] = useState(false);
@@ -29,12 +60,29 @@ const HufEntityDetailsStep = (): ReactElement => {
   const [editingSignatory, setEditingSignatory] = useState<SignatoryDetails | null>(null);
   const [viewingSignatory, setViewingSignatory] = useState<SignatoryDetails | null>(null);
 
-  const canContinue = Boolean(
-    karta &&
-    coparceners.length > 0 &&
-    signatories.length > 0 &&
-    (signatoryMode === "jointly" || anySignatoryCount >= 1),
-  );
+  const uploadKartaIdentity = (file: File) =>
+    uploadEntityDocument(file, HUF_KARTA_UPLOAD_META.identity);
+  const uploadKartaAddress = (file: File) =>
+    uploadEntityDocument(file, HUF_KARTA_UPLOAD_META.address);
+  const uploadSignatoryIdentity = (file: File) =>
+    uploadEntityDocument(file, HUF_SIGNATORY_UPLOAD_META.identity);
+  const uploadSignatoryAddress = (file: File) =>
+    uploadEntityDocument(file, HUF_SIGNATORY_UPLOAD_META.address);
+  const uploadSignatorySignature = (file: File) =>
+    uploadEntityDocument(file, HUF_SIGNATORY_UPLOAD_META.signature);
+
+  if (isLoading) {
+    return (
+      <OnboardingStepSkeleton
+        nextLabel={copy.nextLabel}
+        progressPercent={copy.progressPercent}
+        showPrevious={false}
+        stepLabel={copy.stepLabel}
+        subtitle={copy.pageSubtitle}
+        title={copy.pageTitle}
+      />
+    );
+  }
 
   return (
     <>
@@ -55,9 +103,12 @@ const HufEntityDetailsStep = (): ReactElement => {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[16px] border border-[#eeeeee] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+        <section className="overflow-visible rounded-[16px] border border-[#eeeeee] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
           <div className="h-2 w-full bg-[#e6e7e8]">
-            <div className="h-full w-[18%] rounded-r-full bg-[#37b400]" />
+            <div
+              className="h-full rounded-r-full bg-[#37b400]"
+              style={{ width: `${copy.progressPercent}%` }}
+            />
           </div>
 
           <div className="space-y-6 p-4 md:p-6">
@@ -71,20 +122,22 @@ const HufEntityDetailsStep = (): ReactElement => {
                 </p>
               </div>
 
-              <div className="max-w-[412px] space-y-1">
-                <label
-                  className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]"
-                  htmlFor="huf-entity-type"
-                >
-                  {copy.entityTypeLabel} <span className="text-[#E8402F]">*</span>
-                </label>
-                <Input
-                  className="disabled:bg-[#F5F5F5]"
-                  disabled
-                  id="huf-entity-type"
-                  readOnly
-                  value={HUF_ENTITY_TYPE}
-                />
+              <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+                <div className="min-w-0 space-y-1">
+                  <label
+                    className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#231F20]"
+                    htmlFor="huf-entity-type"
+                  >
+                    {copy.entityTypeLabel} <span className="text-[#E8402F]">*</span>
+                  </label>
+                  <Input
+                    className="disabled:bg-[#F5F5F5]"
+                    disabled
+                    id="huf-entity-type"
+                    readOnly
+                    value={HUF_ENTITY_TYPE}
+                  />
+                </div>
               </div>
             </section>
 
@@ -113,7 +166,7 @@ const HufEntityDetailsStep = (): ReactElement => {
                 setCoparcenerModalOpen(true);
               }}
               onRemove={(id) => {
-                setCoparceners((current) => current.filter((item) => item.id !== id));
+                setCoparceners(coparceners.filter((item) => item.id !== id));
               }}
             />
 
@@ -133,35 +186,59 @@ const HufEntityDetailsStep = (): ReactElement => {
               }}
               onModeChange={setSignatoryMode}
               onRemove={(id) => {
-                setSignatories((current) => {
-                  const next = current.filter((item) => item.id !== id);
-                  setAnySignatoryCount((count) => Math.min(count, Math.max(next.length, 1)));
-                  return next;
-                });
+                const next = signatories.filter((item) => item.id !== id);
+                setSignatories(next);
+                setAnySignatoryCount(Math.min(anySignatoryCount, Math.max(next.length, 1)));
               }}
               onView={setViewingSignatory}
               signatories={signatories}
             />
+
+            {error ? (
+              <p className="text-[13px] leading-[18px] text-[var(--color-onboarding-danger)]">{error}</p>
+            ) : null}
           </div>
         </section>
       </div>
 
       <OnboardingStepFooter
-        continueDisabled={!canContinue}
+        continueDisabled={!canContinue || isSaving}
+        continueLabel={isEditMode ? "Go to Review" : "Continue"}
+        isLoading={isSaving}
+        loadingLabel="Saving..."
         nextLabel={copy.nextLabel}
         showPrevious={false}
-        onContinue={() => undefined}
+        onContinue={() => {
+          void (async () => {
+            const saved = await saveEntityDetails();
+            if (saved) {
+              onContinue();
+            }
+          })();
+        }}
       />
 
       <AddKartaModal
+        editingKarta={null}
+        isUploading={isUploading}
+        isValidatingPan={isValidatingKartha}
         onClose={() => {
           setAddKartaOpen(false);
         }}
         onSave={(nextKarta) => {
           setKarta(nextKarta);
+          const nextPan = nextKarta.pan.trim().toUpperCase();
+          setSignatories(
+            signatories.filter(
+              (item) => item.source !== "karta" || item.pan.trim().toUpperCase() === nextPan,
+            ),
+          );
           setAddKartaOpen(false);
         }}
+        onValidatePan={validateKarthaPan}
         open={addKartaOpen}
+        uploadAddressFile={uploadKartaAddress}
+        uploadIdentityFile={uploadKartaIdentity}
       />
 
       <ViewKartaModal
@@ -191,6 +268,7 @@ const HufEntityDetailsStep = (): ReactElement => {
         coparceners={coparceners}
         editing={editingSignatory}
         existing={signatories}
+        isUploading={isUploading}
         karta={karta}
         onClose={() => {
           setSignatoryModalOpen(false);
@@ -198,9 +276,12 @@ const HufEntityDetailsStep = (): ReactElement => {
         }}
         onSave={(nextSignatories) => {
           setSignatories(nextSignatories);
-          setAnySignatoryCount((count) => Math.min(count, Math.max(nextSignatories.length, 1)));
+          setAnySignatoryCount(Math.min(anySignatoryCount, Math.max(nextSignatories.length, 1)));
         }}
         open={signatoryModalOpen}
+        uploadAddressFile={uploadSignatoryAddress}
+        uploadIdentityFile={uploadSignatoryIdentity}
+        uploadSignatureFile={uploadSignatorySignature}
       />
 
       <ViewSignatoryModal

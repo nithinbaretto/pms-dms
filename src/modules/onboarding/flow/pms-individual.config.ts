@@ -8,6 +8,7 @@ export default {
     'aprn-verification',
     'otp-verification',
     'personal-details',
+    'huf-entity-details',
     'business-details',
     'bank-details',
     'nominee-details',

@@ -33,6 +33,7 @@ import { abbreviateStateName, formatStateLabel } from "../helpers";
 import type { ManualGstDraft, ValidateGstResult } from "../types";
 import {
   formatGstName,
+  GST_LEGAL_NAME_MAX_LENGTH,
   isDuplicateGstNumber,
   isValidGstNumber,
   sanitizeGstLegalName,
@@ -506,6 +507,7 @@ const AddGstModal = ({
             </label>
             <Input
               className="h-[38px] min-w-0 w-full bg-white disabled:bg-white [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff]"
+              maxLength={GST_LEGAL_NAME_MAX_LENGTH}
               onChange={(event) => {
                 setDraft((current) => ({
                   ...current,

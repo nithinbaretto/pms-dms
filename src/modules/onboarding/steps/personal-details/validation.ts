@@ -1,15 +1,30 @@
+import { PERSON_NAME_MAX_LENGTH } from "./constants";
+import { isSoleProprietorshipEntityType } from "./helpers";
 import type { Address, PersonalDetailsModel } from "./types";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_PATTERN = /^\d{10}$/;
 const PINCODE_PATTERN = /^\d{6}$/;
-const PERSON_NAME_PATTERN = /^[A-Za-z]+(?: [A-Za-z]+)*$/;
 const DOB_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+const ADULT_AGE_YEARS = 18;
 
 const startOfToday = (): Date => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today;
+};
+
+const startOfDateYearsAgo = (years: number): Date => {
+  const date = startOfToday();
+  date.setFullYear(date.getFullYear() - years);
+  return date;
+};
+
+const toDateInputValue = (date: Date): string => {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 };
 
 const parsePersonalDob = (value: string): Date | null => {
@@ -35,12 +50,8 @@ const parsePersonalDob = (value: string): Date | null => {
   return parsed;
 };
 
-export const getTodayDateInputValue = (): string => {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${today.getFullYear()}-${month}-${day}`;
-};
+export const getMaxAdultDobDateInputValue = (): string =>
+  toDateInputValue(startOfDateYearsAgo(ADULT_AGE_YEARS));
 
 export const isPersonalDobValid = (value: string): boolean => {
   const parsed = parsePersonalDob(value);
@@ -48,16 +59,26 @@ export const isPersonalDobValid = (value: string): boolean => {
     return false;
   }
 
-  return parsed.getTime() <= startOfToday().getTime();
+  return parsed.getTime() <= startOfDateYearsAgo(ADULT_AGE_YEARS).getTime();
 };
 
+/** Names may include letters, numbers, and symbols, up to 50 characters including spaces. */
 export const sanitizePersonName = (value: string): string => {
-  return value.replace(/[^A-Za-z ]/g, "").replace(/ {2,}/g, " ").replace(/^ +/, "");
+  return value
+    .replace(/[\u0000-\u001F\u007F]/g, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^ +/, "")
+    .slice(0, PERSON_NAME_MAX_LENGTH);
 };
 
 export const isPersonNameValid = (value: string): boolean => {
-  return PERSON_NAME_PATTERN.test(value.trim());
+  const trimmed = value.trim();
+  return trimmed.length > 0 && value.length <= PERSON_NAME_MAX_LENGTH;
 };
+
+export const sanitizeContactPersonName = sanitizePersonName;
+
+export const isContactPersonNameValid = isPersonNameValid;
 
 export const isAddressValid = (address: Address): boolean => {
   const hasStructuredFields =
@@ -97,8 +118,15 @@ export const isPersonalDetailsStepValid = (
       )
     : Boolean(data.personalDetails.entityType);
 
+  const contactPersonValid = isSoleProprietorshipEntityType(data.personalDetails.entityType)
+    ? data.isContactPersonSameAsDistributor
+      ? data.personalDetails.name.trim().length > 0
+      : isContactPersonNameValid(data.contactPersonName)
+    : true;
+
   return Boolean(
     identityValid &&
+      contactPersonValid &&
       isMobileValid(data.mobile.value) &&
       data.mobile.verified &&
       isEmailValid(data.email.value) &&

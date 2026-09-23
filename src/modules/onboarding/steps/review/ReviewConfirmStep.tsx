@@ -22,7 +22,6 @@ import {
 import { REVIEW_SECTION_LABELS } from "./constants";
 import {
   displayValue,
-  displayYesNo,
   fileTypeLabelFromUrl,
   formatAccountType,
   formatPrimaryContact,
@@ -498,6 +497,12 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                       label="Entity Type"
                       value={displayValue(review?.personal.entityType)}
                     />
+                    {review?.personal.contactPersonName ? (
+                      <SummaryField
+                        label="Contact Person Name"
+                        value={displayValue(review.personal.contactPersonName)}
+                      />
+                    ) : null}
                     <SummaryField
                       label="Permanent Address"
                       value={displayValue(review?.personal.permanentAddress)}
@@ -627,23 +632,22 @@ const ReviewConfirmStep = ({ onBack, onEditSection }: ReviewConfirmStepProps): R
                       label="Branch Name & Address"
                       value={displayValue(review?.bank.branchName)}
                     />
-                    {review?.bank.chequeUploaded || review?.bank.cancelledChequeUrl ? (
-                      <SummaryField
-                        label="Cheque Upload"
-                        value={displayYesNo(true)}
-                      />
-                    ) : null}
                   </div>
-                  {review?.bank.cancelledChequeUrl ? (
-                    <div className="mt-[16px] grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
-                      <ReviewDocumentCard
-                        label="Cancelled Cheque"
-                        storageUrl={review.bank.cancelledChequeUrl}
-                        isLoading={previewLoadingKey === review.bank.cancelledChequeUrl.trim()}
-                        onView={(url) => {
-                          void handleViewDocument(url);
-                        }}
-                      />
+                  {review?.bank.cancelledChequeUrl?.trim() ? (
+                    <div className="mt-[16px] flex flex-col gap-[8px]">
+                      <div className="grid grid-cols-1 gap-[12px] sm:grid-cols-2 lg:grid-cols-4">
+                        <ReviewDocumentCard
+                          label="Cancelled Cheque"
+                          storageUrl={review.bank.cancelledChequeUrl}
+                          isLoading={previewLoadingKey === review.bank.cancelledChequeUrl.trim()}
+                          onView={(url) => {
+                            void handleViewDocument(url);
+                          }}
+                        />
+                      </div>
+                      <p className="font-['Mulish',sans-serif] font-normal leading-none tracking-normal text-[#71859B] text-[12px]">
+                        Cheque Upload
+                      </p>
                     </div>
                   ) : null}
                 </SectionCard>

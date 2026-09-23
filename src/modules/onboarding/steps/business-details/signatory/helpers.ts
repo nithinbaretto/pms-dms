@@ -1,5 +1,5 @@
 import { EMAIL_PATTERN, MOBILE_PATTERN, NAME_PATTERN, PAN_REGEX } from "./constants";
-import type { SignatoryDetails } from "./types";
+import type { SignatoryDetails, SignatoryDocumentFile } from "./types";
 
 export const createSignatoryId = (): string =>
   `signatory-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -81,3 +81,28 @@ export const isSignatoryStepComplete = (
   const selectedCount = signatories.filter((item) => item.selected).length;
   return selectedCount >= 1 && anyCount >= 1 && anyCount <= selectedCount;
 };
+
+export const documentFileFromUrl = (
+  url: string,
+  label: string,
+): SignatoryDocumentFile | null => {
+  const documentUrl = url.trim();
+  if (!documentUrl) {
+    return null;
+  }
+
+  return {
+    fileName: label,
+    previewUrl: documentUrl,
+    documentUrl,
+  };
+};
+
+export const signatoryDocumentUrl = (file: SignatoryDocumentFile | null): string => {
+  const url = (file?.documentUrl || file?.previewUrl || "").trim();
+  if (!url || url.startsWith("blob:")) {
+    return "";
+  }
+  return url;
+};
+

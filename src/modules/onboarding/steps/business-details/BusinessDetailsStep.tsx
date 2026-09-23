@@ -12,12 +12,11 @@ import BranchSelectionSection from "./sections/BranchSelectionSection";
 import EntityTypeSection from "./sections/EntityTypeSection";
 import GstSelectionSection from "./sections/GstSelectionSection";
 import {
-  DEFAULT_BUSINESS_ENTITY_TYPE,
-  isBusinessEntityTypeSelectionEnabled,
-  SHOW_PROPRIETORSHIP_SIGNATORY,
+  isPmsIndividualEntityTypeLocked,
+  shouldShowAuthorizedSignatory,
 } from "./signatory/constants";
 import { isSignatoryStepComplete } from "./signatory/helpers";
-import type { BusinessEntityType, SignatoryDetails, SignatoryMode } from "./signatory/types";
+import type { SignatoryDetails } from "./signatory/types";
 import { useBusinessDetailsFlow } from "./useBusinessDetailsFlow";
 
 type BusinessDetailsStepProps = {
@@ -32,20 +31,28 @@ const BusinessDetailsStep = ({
   isEditMode = false,
 }: BusinessDetailsStepProps): ReactElement => {
   const setStep = useOnboardingStore((state) => state.setStep);
-  const productCategories = useOnboardingStore((state) => state.productCategories);
   const currentFlow = useOnboardingStore((state) => state.currentFlow);
   const onboardingMethod = useOnboardingStore((state) => state.onboardingMethod);
-  const showEntityTypeSection = isBusinessEntityTypeSelectionEnabled(productCategories);
+  const personalEntityType =
+    useOnboardingStore((state) => state.personalDetails?.personalDetails.entityType) ?? "";
   const isAifManualFlow = currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
+  const isAmfiFetchedFlow =
+    currentFlow === "aif-individual" &&
+    (onboardingMethod === "ARN" || onboardingMethod === "KRA");
+  const isEntityTypeLocked = isPmsIndividualEntityTypeLocked(currentFlow);
   const subtitle = isAifManualFlow
     ? "Please enter the details below to continue"
-    : "Your details have been fetched from APMI. Fields shown in grey cannot be changed";
+    : `Your details have been fetched from ${isAmfiFetchedFlow ? "AMFI" : "APMI"}. Fields shown in grey cannot be changed`;
 
   const {
     records,
     selectedBranch,
     branchOptions,
     stateOptions,
+    entityType,
+    signatories,
+    signatoryMode,
+    anySignatoryCount,
     isLoading,
     isSaving,
     isValidatingGst,
@@ -56,30 +63,32 @@ const BusinessDetailsStep = ({
     openAddGstModal,
     closeAddGstModal,
     selectBranch,
+    setEntityType,
+    setSignatories,
+    setSignatoryMode,
+    setAnySignatoryCount,
     toggleGstSelection,
     selectAllGst,
     addManualGst,
     validateGstNumber,
     uploadGstDocument,
     uploadGstDocumentForRecord,
+    uploadSignatoryDocument,
     saveBusinessDetails,
   } = useBusinessDetailsFlow();
 
-  const [entityType, setEntityType] = useState<BusinessEntityType>(DEFAULT_BUSINESS_ENTITY_TYPE);
-  const [signatories, setSignatories] = useState<SignatoryDetails[]>([]);
-  const [signatoryMode, setSignatoryMode] = useState<SignatoryMode>("jointly");
-  const [anySignatoryCount, setAnySignatoryCount] = useState(1);
   const [signatoryModalOpen, setSignatoryModalOpen] = useState(false);
   const [editingSignatory, setEditingSignatory] = useState<SignatoryDetails | null>(null);
   const [viewingSignatory, setViewingSignatory] = useState<SignatoryDetails | null>(null);
 
-  const canContinueWithSignatory = SHOW_PROPRIETORSHIP_SIGNATORY
+  const showSignatory = shouldShowAuthorizedSignatory(personalEntityType, entityType);
+  const canContinueWithSignatory = showSignatory
     ? !isLoading &&
     canContinue &&
     isSignatoryStepComplete(signatories, signatoryMode, anySignatoryCount)
     : canContinue;
 
-  if (!SHOW_PROPRIETORSHIP_SIGNATORY && isLoading) {
+  if (!showSignatory && isLoading) {
     return (
       <OnboardingStepSkeleton
         nextLabel="Bank Details"
@@ -99,7 +108,7 @@ const BusinessDetailsStep = ({
             <h1 className="text-[22px] font-semibold leading-[33px] text-[#231f20]">
               Business Details
             </h1>
-            {(SHOW_PROPRIETORSHIP_SIGNATORY || records.length >= 0) ? (
+            {(showSignatory || records.length >= 0) ? (
               <p className="text-[15px] leading-[22.5px] text-[#435160]">
                 {subtitle}
               </p>
@@ -119,14 +128,17 @@ const BusinessDetailsStep = ({
 
           <div className="px-4 pb-4 pt-6 md:px-6 md:pb-6">
             <div className="space-y-5">
-              {showEntityTypeSection ? (
-                <>
-                  <EntityTypeSection onChange={setEntityType} value={entityType} />
-                  <div className="h-px bg-[#e5e5e6]" />
-                </>
-              ) : null}
+              <>
+                <EntityTypeSection
+                  disabled={isEntityTypeLocked}
+                  onChange={setEntityType}
+                  showSelectionCaption={!isEntityTypeLocked}
+                  value={entityType}
+                />
+                <div className="h-px bg-[#e5e5e6]" />
+              </>
 
-              {SHOW_PROPRIETORSHIP_SIGNATORY ? (
+              {showSignatory ? (
                 <>
                   <AuthorizedSignatorySection
                     anyCount={anySignatoryCount}
@@ -241,11 +253,12 @@ const BusinessDetailsStep = ({
         stateOptions={stateOptions}
       />
 
-      {SHOW_PROPRIETORSHIP_SIGNATORY ? (
+      {showSignatory ? (
         <>
           <AddSignatoryModal
             editing={editingSignatory}
             existing={signatories}
+            isUploading={isUploading}
             onClose={() => {
               setSignatoryModalOpen(false);
               setEditingSignatory(null);
@@ -268,6 +281,9 @@ const BusinessDetailsStep = ({
               setEditingSignatory(null);
             }}
             open={signatoryModalOpen}
+            uploadAddressFile={(file) => uploadSignatoryDocument(file, "address")}
+            uploadIdentityFile={(file) => uploadSignatoryDocument(file, "identity")}
+            uploadSignatureFile={(file) => uploadSignatoryDocument(file, "signature")}
           />
 
           <ViewSignatoryDocumentsModal

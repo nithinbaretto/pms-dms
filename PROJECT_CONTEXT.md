@@ -1,6 +1,6 @@
 # Project Context and Implementation Guardrails
 
-Last Updated: 2026-08-06
+Last Updated: 2026-09-21
 Status: Active implementation snapshot for contributors and coding agents
 
 ## 1) Project Overview
@@ -36,6 +36,7 @@ src/modules/onboarding/
 - container/ -> main orchestration container and step rendering
 - flow/
   - flow configs per journey (PMS/AIF x Individual/NRI/Corporate)
+  - HUF entity step (`huf-entity-details`) when `getPersonalDetails.entityType` is `HUF`
   - config/steps.ts for base step order used by engine
   - engine/step-engine.ts for next/prev progression
   - getScreenForStep.ts for override resolution
@@ -63,8 +64,19 @@ Supported flow keys:
 - aif-nri
 - aif-corporate
 
+HUF journey (entity type from personal details, PMS + AIF):
+- After personal details: `huf-entity-details` (Karta, co-parceners, signatories) then `business-details` (same as Individual).
+- Individual (`entityType: Individual`): skips `huf-entity-details`.
+- Entity APIs: `validateKarthaPanByAPMI`, `getEntityDetails`, `saveEntityDetails`.
+
+Sole Proprietorship journey (`getPersonalDetails.entityType` is `Sole Proprietorship` or `Proprietorship`):
+- Personal details: Contact Person Name + Same as distributor (GET `contactPersonName`; SAVE `contactPersonName` + `isContactPersonSameAsDistributor`).
+- Business details: Entity Type toggle defaults to Sole Proprietorship and shows Authorized Signatory + GST. Selecting Individual hides Authorized Signatory.
+- `getBusinessDetails` / `saveGstDetails` persist `entityType`, `authSignatoryData`, `riaNumber`, `dataSource`, and `isRia` with GST and branch.
+
 Current Step union in types:
 1. entity-details
+1b. huf-entity-details (HUF only)
 2. onboarding-method
 3. verify-contact
 4. personal-details
@@ -140,6 +152,7 @@ Onboarding API client currently implements:
 - verifyOtp
 - verifyAmfiOtp
 - saveBusinessDetails
+- validateKarthaPanByAPMI, getEntityDetails, saveEntityDetails (HUF)
 
 Environment-aware endpoint strategy:
 - Endpoints are resolved from VITE_PMS_* environment variables when provided.

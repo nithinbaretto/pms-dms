@@ -12,6 +12,7 @@ import {
   createEmptyOtherSignatory,
   createSignatoryFromCoparcener,
   createSignatoryFromKarta,
+  formatHufPersonName,
   formatMobileDisplay,
   isValidIndividualPan,
 } from "../helpers";
@@ -32,6 +33,10 @@ type AddSignatoryModalProps = {
   editing: SignatoryDetails | null;
   onClose: () => void;
   onSave: (signatories: SignatoryDetails[]) => void;
+  uploadIdentityFile?: (file: File) => Promise<KartaDocumentFile | null>;
+  uploadAddressFile?: (file: File) => Promise<KartaDocumentFile | null>;
+  uploadSignatureFile?: (file: File) => Promise<KartaDocumentFile | null>;
+  isUploading?: boolean;
 };
 
 const labelClass =
@@ -84,17 +89,17 @@ const FileRow = ({
       <span className="flex size-6 shrink-0 items-center justify-center rounded-[4px] bg-[#FFFAF6]">
         {icon}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
         <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none text-[#231F20]">
           {title}
         </p>
         {file ? (
-          <p className="mt-1 inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#37b400]">
+          <p className="inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#37b400]">
             <CheckCircle2 className="size-3.5" />
             1 File(s) Uploaded
           </p>
         ) : (
-          <p className="mt-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
+          <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
             Format Supported: PNG, PDF or JPEG up to 2MB
           </p>
         )}
@@ -146,6 +151,10 @@ const AddSignatoryModal = ({
   editing,
   onClose,
   onSave,
+  uploadIdentityFile,
+  uploadAddressFile,
+  uploadSignatureFile,
+  isUploading = false,
 }: AddSignatoryModalProps): ReactElement => {
   const [step, setStep] = useState<"picker" | "form">("picker");
   const [items, setItems] = useState<SignatoryDetails[]>([]);
@@ -238,7 +247,7 @@ const AddSignatoryModal = ({
     const nextDraft = {
       ...draft,
       pan: draft.pan.trim().toUpperCase(),
-      name: draft.name.trim(),
+      name: formatHufPersonName(draft.name),
     };
     const nextItems = items.some((item) => item.id === nextDraft.id)
       ? items.map((item) => (item.id === nextDraft.id ? nextDraft : item))
@@ -313,12 +322,14 @@ const AddSignatoryModal = ({
                           <Check className="size-3" strokeWidth={3} /> Added
                         </span>
                       ) : null}
-                      <p className="pr-16 font-['Mulish',sans-serif] text-[14px] font-medium leading-5 text-[#231F20]">
-                        {karta.name}
-                      </p>
-                      <p className="mt-1 font-['Mulish',sans-serif] text-[12px] font-normal text-[#5A6B7D]">
-                        {karta.pan}
-                      </p>
+                      <div className="flex flex-col gap-[4px]">
+                        <p className="pr-16 font-['Mulish',sans-serif] text-[14px] font-medium leading-5 text-[#231F20]">
+                          {formatHufPersonName(karta.name)}
+                        </p>
+                        <p className="font-['Mulish',sans-serif] text-[12px] font-normal text-[#5A6B7D]">
+                          {karta.pan}
+                        </p>
+                      </div>
                     </button>
                   ) : null}
 
@@ -344,12 +355,14 @@ const AddSignatoryModal = ({
                           <Check className="size-3" strokeWidth={3} /> Added
                         </span>
                       ) : null}
-                      <p className="pr-16 font-['Mulish',sans-serif] text-[14px] font-medium leading-5 text-[#231F20]">
-                        {coparcener.name}
-                      </p>
-                      <p className="mt-1 font-['Mulish',sans-serif] text-[12px] font-normal text-[#5A6B7D]">
-                        {coparcener.pan}
-                      </p>
+                      <div className="flex flex-col gap-[4px]">
+                        <p className="pr-16 font-['Mulish',sans-serif] text-[14px] font-medium leading-5 text-[#231F20]">
+                          {formatHufPersonName(coparcener.name)}
+                        </p>
+                        <p className="font-['Mulish',sans-serif] text-[12px] font-normal text-[#5A6B7D]">
+                          {coparcener.pan}
+                        </p>
+                      </div>
                       <span className="absolute bottom-3 right-3 rounded-full bg-[#E8F1FF] px-2 py-0.5 font-['Mulish',sans-serif] text-[11px] font-medium text-[#2F6FED]">
                         Co-Parcener
                       </span>
@@ -597,6 +610,7 @@ const AddSignatoryModal = ({
 
       {uploadKind && draft ? (
         <UploadKartaDocumentModal
+          isUploading={isUploading}
           kind={uploadKind}
           onClose={() => {
             setUploadKind(null);
@@ -612,6 +626,13 @@ const AddSignatoryModal = ({
             setUploadKind(null);
           }}
           open
+          uploadFile={
+            uploadKind === "identity"
+              ? uploadIdentityFile
+              : uploadKind === "address"
+                ? uploadAddressFile
+                : uploadSignatureFile
+          }
         />
       ) : null}
     </>

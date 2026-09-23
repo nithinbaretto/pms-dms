@@ -13,27 +13,32 @@ import CorrespondenceAddressModal from "../../personal-details/modals/Correspond
 import type { Address } from "../../personal-details/types";
 import {
   EMAIL_PATTERN,
-  KARTA_FETCH_DELAY_MS,
+  KARTA_PAN_NOT_FOUND_MESSAGE,
   KARTA_PROOF_OPTIONS,
   MOBILE_PATTERN,
 } from "../constants";
+import type { ValidateKarthaPanResult } from "../types";
 import {
-  createEmptyManualKarta,
-  createFetchedKarta,
   formatAddressLine,
-  formatMobileDisplay,
+  formatHufPersonName,
   getApplicantAddress,
   isValidPan,
-  shouldMockFetchSucceed,
 } from "../helpers";
 import type { KartaDetails, KartaDocumentFile, KartaDocumentKind } from "../types";
-import KartaPersonAvatar from "../components/KartaPersonAvatar";
+import KartaDetailsPreviewCard from "../components/KartaDetailsPreviewCard";
 import UploadKartaDocumentModal from "./UploadKartaDocumentModal";
 
 type AddKartaModalProps = {
   open: boolean;
+  /** When set, modal updates the single Karta record (still only one Karta on the step). */
+  editingKarta?: KartaDetails | null;
   onClose: () => void;
   onSave: (karta: KartaDetails) => void;
+  onValidatePan: (pan: string) => Promise<ValidateKarthaPanResult | null>;
+  isValidatingPan?: boolean;
+  uploadIdentityFile?: (file: File) => Promise<KartaDocumentFile | null>;
+  uploadAddressFile?: (file: File) => Promise<KartaDocumentFile | null>;
+  isUploading?: boolean;
 };
 
 const labelClass =
@@ -64,17 +69,17 @@ const FileRow = ({
       <span className="flex size-6 shrink-0 items-center justify-center rounded-[4px] bg-[#FFFAF6]">
         <img alt="" className="h-[13px] w-[11px]" src={identityIcon} />
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-[4px]">
         <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none text-[#231F20]">
           {title}
         </p>
         {file ? (
-          <p className="mt-1 inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#37b400]">
+          <p className="inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#37b400]">
             1 File(s) Uploaded
             <CheckCircle2 className="size-3.5" />
           </p>
         ) : (
-          <p className="mt-1 font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
+          <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
             Format Supported: PNG, PDF or JPEG up to 2MB
           </p>
         )}
@@ -102,10 +107,19 @@ const FileRow = ({
   );
 };
 
-const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElement => {
+const AddKartaModal = ({
+  open,
+  editingKarta = null,
+  onClose,
+  onSave,
+  onValidatePan,
+  uploadIdentityFile,
+  uploadAddressFile,
+  isUploading = false,
+  isValidatingPan = false,
+}: AddKartaModalProps): ReactElement => {
   const applicantAddress = getApplicantAddress();
   const [pan, setPan] = useState("");
-  const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [draft, setDraft] = useState<KartaDetails | null>(null);
   const [addressEditTarget, setAddressEditTarget] = useState<"permanent" | "correspondence" | null>(
@@ -120,14 +134,19 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
       return;
     }
 
-    setPan("");
-    setIsFetching(false);
-    setFetchError(null);
-    setDraft(null);
+    if (editingKarta) {
+      setPan(editingKarta.pan);
+      setDraft({ ...editingKarta });
+      setFetchError(null);
+    } else {
+      setPan("");
+      setDraft(null);
+      setFetchError(null);
+    }
     setAddressEditTarget(null);
     setUploadKind(null);
     setShowProofDropdown(false);
-  }, [open]);
+  }, [open, editingKarta]);
 
   useEffect(() => {
     if (!showProofDropdown) {
@@ -155,22 +174,23 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
       return;
     }
 
-    setIsFetching(true);
     setFetchError(null);
 
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, KARTA_FETCH_DELAY_MS);
-    });
-
-    if (shouldMockFetchSucceed(normalizedPan)) {
-      setDraft(createFetchedKarta(normalizedPan));
-      setFetchError(null);
-    } else {
-      setDraft(createEmptyManualKarta(normalizedPan));
-      setFetchError("PAN not found in records. Please enter details manually below.");
+    const result = await onValidatePan(normalizedPan);
+    if (!result) {
+      setDraft(null);
+      setFetchError("Unable to validate PAN. Missing lead information.");
+      return;
     }
 
-    setIsFetching(false);
+    if (result.isValidated) {
+      setDraft(result.karta);
+      setFetchError(null);
+      return;
+    }
+
+    setDraft(result.karta);
+    setFetchError(KARTA_PAN_NOT_FOUND_MESSAGE);
   };
 
   const updateDraft = (patch: Partial<KartaDetails>): void => {
@@ -201,6 +221,7 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
 
   const canSave = draft?.source === "fetched" ? canSaveFetched : canSaveManual;
   const panHasError = Boolean(fetchError);
+  const showPanEntry = draft?.source !== "fetched";
   const isSubflowOpen = Boolean(uploadKind) || Boolean(addressEditTarget);
 
   return (
@@ -213,13 +234,13 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
         }}
         open={open && !isSubflowOpen}
       >
-        <DialogContent className="max-h-[calc(100vh-48px)] w-[calc(100%-2rem)] max-w-[760px] overflow-y-auto rounded-[16px] border-0 p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] [&>button.absolute]:hidden">
-          <div className="relative space-y-5 bg-white p-6">
-            <div className="pr-8">
-              <h2 className="font-['Mulish',sans-serif] text-[20px] font-medium leading-none tracking-normal text-[#435160] md:text-[22px]">
-                Add Karta
+        <DialogContent className="hide-scrollbar flex max-h-[min(680px,calc(100vh-64px))] w-[calc(100%-2rem)] max-w-[840px] flex-col gap-0 overflow-hidden rounded-[16px] border-0 bg-white p-0 shadow-[0px_24px_60px_rgba(0,0,0,0.2)] sm:max-w-[600px] [&>button.absolute]:hidden">
+          <div className="relative shrink-0 px-6 pt-6">
+            <div className="flex flex-col gap-[3px] pr-8">
+              <h2 className="font-['Mulish',sans-serif] text-[22px] font-medium leading-[100%] tracking-[0px] text-[#435160]">
+                {editingKarta ? "Edit Karta" : "Add Karta"}
               </h2>
-              <p className="mt-2 font-['Mulish',sans-serif] text-[14px] font-medium leading-[21px] tracking-normal text-[#71859B] md:text-[16px] md:leading-6">
+              <p className="font-['Mulish',sans-serif] text-[16px] font-medium leading-6 tracking-normal text-[#71859B]">
                 Enter PAN to auto-fill details or add manually
               </p>
             </div>
@@ -231,108 +252,62 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
             >
               <X className="size-6" strokeWidth={1.5} />
             </button>
+          </div>
 
-            <div className="space-y-1">
-              <label className={labelClass} htmlFor="add-karta-pan">
-                Enter PAN <span className="text-[#E8402F]">*</span>
-              </label>
-              <div className="relative">
-                <Input
-                  aria-invalid={panHasError}
-                  autoComplete="off"
-                  className="uppercase pr-[72px]"
-                  id="add-karta-pan"
-                  maxLength={10}
-                  onChange={(event) => {
-                    setPan(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10));
-                    setFetchError(null);
-                    if (draft) {
-                      setDraft(null);
-                    }
-                  }}
-                  placeholder="Enter PAN"
-                  value={pan}
-                />
-                <button
-                  className="absolute right-1 top-1/2 inline-flex h-6 -translate-y-1/2 items-center justify-center rounded-[4px] bg-[#93161E] px-3 font-['Mulish',sans-serif] text-[11px] font-normal text-white disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
-                  disabled={isFetching || pan.trim().length < 10}
-                  onClick={() => {
-                    void handleFetch();
-                  }}
-                  type="button"
-                >
-                  {isFetching ? <Loader2 className="size-3 animate-spin" /> : "Fetch"}
-                </button>
-              </div>
-              {fetchError ? (
-                <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#E8402F]">
-                  {fetchError}
-                </p>
-              ) : null}
-            </div>
-
-            {draft?.source === "fetched" ? (
-              <div className="space-y-4 rounded-[8px] bg-[#FFF4F4] p-4">
-                <div className="flex items-center gap-3">
-                  <KartaPersonAvatar />
-                  <div>
-                    <p className="font-['Mulish',sans-serif] text-[16px] font-medium leading-6 text-[#231F20]">
-                      {draft.name}
-                    </p>
-                    <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none text-[#5A6B7D]">
-                      PAN: {draft.pan}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
-                      Mobile
-                    </p>
-                    <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-none text-[#435160]">
-                      {formatMobileDisplay(draft.mobile)}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
-                      Email
-                    </p>
-                    <p className="break-all font-['Mulish',sans-serif] text-[14px] font-normal leading-none text-[#435160]">
-                      {draft.email}
-                    </p>
-                  </div>
-                </div>
-
+          <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-6 pb-6 pt-5">
+            <div className="space-y-5">
+              {showPanEntry ? (
                 <div className="space-y-1">
-                  <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
-                    Permanent Address
-                  </p>
-                  <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-[21px] text-[#435160]">
-                    {formatAddressLine(draft.permanentAddress)}
-                  </p>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none text-[#71859B]">
-                      Correspondent Address
-                    </p>
+                  <label className={labelClass} htmlFor="add-karta-pan">
+                    Enter PAN <span className="text-[#E8402F]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      aria-invalid={panHasError}
+                      autoComplete="off"
+                      className="uppercase pr-[72px]"
+                      id="add-karta-pan"
+                      maxLength={10}
+                      onChange={(event) => {
+                        setPan(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10));
+                        setFetchError(null);
+                        if (draft) {
+                          setDraft(null);
+                        }
+                      }}
+                      placeholder="Enter PAN"
+                      value={pan}
+                    />
                     <button
-                      className="inline-flex items-center gap-1 font-['Mulish',sans-serif] text-[12px] font-normal text-[#93161E]"
+                      className="absolute right-1 top-1/2 inline-flex h-6 -translate-y-1/2 items-center justify-center rounded-[4px] bg-[#93161E] px-3 font-['Mulish',sans-serif] text-[11px] font-normal text-white disabled:bg-[#e5e5e6] disabled:text-[#5a6b7d]"
+                      disabled={isValidatingPan || pan.trim().length < 10}
                       onClick={() => {
-                        setAddressEditTarget("correspondence");
+                        void handleFetch();
                       }}
                       type="button"
                     >
-                      <img alt="" className="h-3 w-3" src={editIcon} /> Edit
+                      {isValidatingPan ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        "Fetch"
+                      )}
                     </button>
                   </div>
-                  <p className="font-['Mulish',sans-serif] text-[14px] font-normal leading-[21px] text-[#435160]">
-                    {formatAddressLine(draft.correspondenceAddress)}
-                  </p>
+                  {fetchError ? (
+                    <p className="font-['Mulish',sans-serif] text-[12px] font-normal leading-none tracking-normal text-[#E8402F]">
+                      {fetchError}
+                    </p>
+                  ) : null}
                 </div>
-              </div>
+              ) : null}
+
+            {draft?.source === "fetched" ? (
+              <KartaDetailsPreviewCard
+                karta={draft}
+                onEditCorrespondence={() => {
+                  setAddressEditTarget("correspondence");
+                }}
+              />
             ) : null}
 
             {draft?.source === "manual" ? (
@@ -570,22 +545,23 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
               </div>
             ) : null}
 
-            <button
-              className={`h-9 w-full rounded-[8px] font-['Mulish',sans-serif] text-[14px] font-normal leading-none ${canSave
-                ? "bg-[#93161E] text-white hover:bg-[#7a1319]"
-                : "cursor-not-allowed bg-[#E5E5E6] text-[#5A6B7D]"
-                }`}
-              disabled={!canSave}
-              onClick={() => {
-                if (!draft || !canSave) {
-                  return;
-                }
-                onSave(draft);
-              }}
-              type="button"
-            >
-              Save & Update
-            </button>
+              <button
+                className={`h-9 w-full rounded-[8px] font-['Mulish',sans-serif] text-[14px] font-normal leading-none ${canSave
+                  ? "bg-[#93161E] text-white hover:bg-[#7a1319]"
+                  : "cursor-not-allowed bg-[#E5E5E6] text-[#5A6B7D]"
+                  }`}
+                disabled={!canSave}
+                onClick={() => {
+                  if (!draft || !canSave) {
+                    return;
+                  }
+                  onSave({ ...draft, name: formatHufPersonName(draft.name) });
+                }}
+                type="button"
+              >
+                Save & Update
+              </button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -624,6 +600,7 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
 
       {uploadKind ? (
         <UploadKartaDocumentModal
+          isUploading={isUploading}
           kind={uploadKind}
           onClose={() => {
             setUploadKind(null);
@@ -637,6 +614,13 @@ const AddKartaModal = ({ open, onClose, onSave }: AddKartaModalProps): ReactElem
             setUploadKind(null);
           }}
           open
+          uploadFile={
+            uploadKind === "identity"
+              ? uploadIdentityFile
+              : uploadKind === "address"
+                ? uploadAddressFile
+                : undefined
+          }
         />
       ) : null}
     </>

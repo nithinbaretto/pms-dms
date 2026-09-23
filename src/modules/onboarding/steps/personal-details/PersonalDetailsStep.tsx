@@ -5,6 +5,7 @@ import OnboardingStepFooter from "../../components/OnboardingStepFooter";
 import OnboardingStepSkeleton from "../../components/OnboardingStepSkeleton";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import { ENTITY_TYPE_OPTIONS } from "./constants";
+import { isSoleProprietorshipEntityType } from "./helpers";
 import CorrespondenceAddressModal from "./modals/CorrespondenceAddressModal";
 import OtpVerificationModal from "./modals/OtpVerificationModal";
 import AddressSection from "./sections/AddressSection";
@@ -51,6 +52,8 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
     closeOtpModal,
     savePermanentAddress,
     saveCorrespondenceAddress,
+    setContactPersonName,
+    setSameAsDistributor,
     saveDetails,
   } = usePersonalDetailsFlow();
 
@@ -63,6 +66,9 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
     void value;
   };
 
+  const fetchedDetailsSource = isArnFlow || isKraFlow ? "AMFI" : "APMI";
+  const fetchedDetailsSubtitle = `Your details have been fetched from ${fetchedDetailsSource}. Fields shown in grey cannot be changed`;
+
   if (isLoading) {
     return (
       <OnboardingStepSkeleton
@@ -70,7 +76,11 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
         progressPercent={20}
         showPrevious={false}
         stepLabel="Step 1 of 6"
-        subtitle="Your details have been fetched from APMI. Fields shown in grey cannot be changed."
+        subtitle={
+          isManualFlow
+            ? "Please enter the details below to continue."
+            : `${fetchedDetailsSubtitle}.`
+        }
         title="Personal Information"
       />
     );
@@ -106,7 +116,9 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
               Personal Information
             </h1>
             <p className="font-['Mulish',sans-serif] text-[15px] font-semibold leading-[22.5px] tracking-normal text-[#435160]">
-              Your details have been fetched from APMI. Fields shown in grey cannot be changed
+              {isManualFlow
+                ? "Please enter the details below to continue."
+                : fetchedDetailsSubtitle}
             </p>
           </header>
 
@@ -154,6 +166,11 @@ const PersonalDetailsStep = ({ onContinue, isEditMode = false }: PersonalDetails
                 }}
                 mobileErrorMessage={mobileContactError}
                 emailErrorMessage={emailContactError}
+                showContactPerson={isSoleProprietorshipEntityType(data.personalDetails.entityType)}
+                contactPersonName={data.contactPersonName}
+                isContactPersonSameAsDistributor={data.isContactPersonSameAsDistributor}
+                onContactPersonNameChange={setContactPersonName}
+                onSameAsDistributorChange={setSameAsDistributor}
               />
 
               {isManualFlow ? (

@@ -15,6 +15,7 @@ import { Dialog, DialogClose, DialogContent } from "../../../../../shared/ui/dia
 import { Input } from "../../../../../shared/ui/input";
 import { cn } from "../../../../../shared/ui/utils";
 import locationIcon from "../../../../../assets/icons/svg/Location.svg";
+import { ADDRESS_MAX_LENGTH, clampAddressInput } from "../constants";
 import { hasAddressValue } from "../helpers";
 import type { Address } from "../types";
 
@@ -75,7 +76,7 @@ const addressFromPlace = (place: google.maps.places.PlaceResult): Address | null
   return {
     lat: location.lat(),
     lng: location.lng(),
-    addressLine: place.formatted_address?.trim() || place.name?.trim() || "",
+    addressLine: clampAddressInput(place.formatted_address?.trim() || place.name?.trim() || ""),
     city:
       getAddressComponent(components, "locality") ||
       getAddressComponent(components, "administrative_area_level_2"),
@@ -241,7 +242,7 @@ const CorrespondenceAddressModal = ({
           </p>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 pb-6 md:px-8 md:pb-8">
+        <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-4 pb-6 md:px-8 md:pb-8">
           <div className="space-y-4">
             {!isPermanentMode ? (
               <div
@@ -275,11 +276,11 @@ const CorrespondenceAddressModal = ({
                       }
                     }}
                   />
-                  <span className="space-y-3">
+                  <span className="min-w-0 space-y-3">
                     <span className="block text-[13px] leading-[19.5px] text-[#435160]">
                       {sameAsLabel ?? "Same as permanent address"}
                     </span>
-                    <span className="block text-[13px] leading-[19.5px] text-[#231f20]">
+                    <span className="block break-all text-[13px] leading-[19.5px] text-[#231f20]">
                       {toSingleLine(permanentAddress)}
                     </span>
                   </span>
@@ -288,7 +289,7 @@ const CorrespondenceAddressModal = ({
             ) : null}
 
             {isPermanentMode || !sameAsPermanent ? (
-              <div className="space-y-3">
+              <div className="min-w-0 space-y-3">
                 <div className="flex h-9 w-full items-center gap-2 rounded-[8px] border border-[#eeeeee] bg-white px-[14px]">
                   <Search className="size-[14px] shrink-0 text-[#231F20]" strokeWidth={1.75} />
                   <div className="min-w-0 flex-1">
@@ -411,10 +412,17 @@ const CorrespondenceAddressModal = ({
                     Address Details <span className="text-[#E8402F]">*</span>
                   </label>
                   <Input
+                    className="overflow-hidden"
+                    maxLength={ADDRESS_MAX_LENGTH}
                     onChange={(event) => {
+                      const nextValue = event.target.value;
+                      if (nextValue.length > ADDRESS_MAX_LENGTH) {
+                        return;
+                      }
+
                       setDraft((current) => ({
                         ...current,
-                        addressLine: event.target.value,
+                        addressLine: nextValue,
                       }));
                     }}
                     placeholder="Flat No., Floor, Tower"
@@ -422,10 +430,10 @@ const CorrespondenceAddressModal = ({
                   />
                 </div>
 
-                <div className="rounded-[8px] border border-[#eeeeee] bg-white p-[14px]">
-                  <p className="inline-flex items-center gap-2 text-[14px] leading-[21px] font-medium text-[#231f20]">
-                    <img alt="" className="h-4 w-4 shrink-0" src={locationIcon} />
-                    {draft.addressLine || "Selected location"}
+                <div className="min-w-0 overflow-hidden rounded-[8px] border border-[#eeeeee] bg-white p-[14px]">
+                  <p className="flex min-w-0 items-start gap-2 text-[14px] leading-[21px] font-medium text-[#231f20]">
+                    <img alt="" className="mt-0.5 h-4 w-4 shrink-0" src={locationIcon} />
+                    <span className="min-w-0 break-all">{draft.addressLine || "Selected location"}</span>
                   </p>
                   {(draft.lat || draft.lng) ? (
                     <p className="mt-1 text-[11px] text-[#5a6b7d]">

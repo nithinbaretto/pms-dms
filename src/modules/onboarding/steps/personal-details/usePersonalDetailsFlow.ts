@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { resolveStepAfterPersonalDetails } from "../../flow/huf-entity-journey";
 import { onboardingApi, type PartnerOtpType } from "../../services/onboarding-api";
 import { useOnboardingStore } from "../../state/onboarding-store";
 import {
@@ -56,6 +57,8 @@ type UsePersonalDetailsFlowResult = {
   closeOtpModal: () => void;
   savePermanentAddress: (address: Address) => void;
   saveCorrespondenceAddress: (address: Address, sameAsPermanent: boolean) => void;
+  setContactPersonName: (value: string) => void;
+  setSameAsDistributor: (sameAsDistributor: boolean) => void;
   saveDetails: () => Promise<SaveResult | null>;
 };
 
@@ -127,6 +130,10 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         emailVerified,
         mobileVerified,
       });
+
+      if (!mapped.isContactPersonSameAsDistributor) {
+        mapped.contactPersonName = sanitizePersonName(mapped.contactPersonName);
+      }
 
       if (isManualFlow) {
         mapped.personalDetails.name = sanitizePersonName(mapped.personalDetails.name).trim();
@@ -203,12 +210,14 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         return current;
       }
 
+      const name = sanitizePersonName(value);
       return {
         ...current,
         personalDetails: {
           ...current.personalDetails,
-          name: sanitizePersonName(value),
+          name,
         },
+        contactPersonName: current.isContactPersonSameAsDistributor ? name : current.contactPersonName,
       };
     });
   }, []);
@@ -239,9 +248,10 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         return;
       }
 
+      const normalizedValue = value.toLowerCase();
       const matchesBaseline =
         verifiedEmailBaselineRef.current !== null &&
-        normalizeEmailForCompare(value) === verifiedEmailBaselineRef.current;
+        normalizeEmailForCompare(normalizedValue) === verifiedEmailBaselineRef.current;
 
       setEmailVerified(matchesBaseline);
       setContactErrorChannel((current) => (current === "email" ? null : current));
@@ -254,7 +264,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
         return {
           ...current,
           email: {
-            value,
+            value: normalizedValue,
             verified: matchesBaseline,
           },
         };
@@ -304,7 +314,7 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       setContactErrorChannel(null);
       setContactErrorMessage(null);
 
-      const email = model.email.value.trim();
+      const email = model.email.value.trim().toLowerCase();
       const mobile = model.mobile.value.trim();
 
       if (channel === "email" && !isEmailValid(email)) {
@@ -517,6 +527,35 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     });
   }, [isManualFlow]);
 
+  const setContactPersonName = useCallback((value: string): void => {
+    setData((current) => {
+      if (!current || current.isContactPersonSameAsDistributor) {
+        return current;
+      }
+
+      return {
+        ...current,
+        contactPersonName: sanitizePersonName(value),
+      };
+    });
+  }, []);
+
+  const setSameAsDistributor = useCallback((sameAsDistributor: boolean): void => {
+    setData((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        isContactPersonSameAsDistributor: sameAsDistributor,
+        contactPersonName: sameAsDistributor
+          ? current.personalDetails.name.trim()
+          : sanitizePersonName(current.contactPersonName),
+      };
+    });
+  }, []);
+
   const saveDetails = useCallback(async (): Promise<SaveResult | null> => {
     if (!data || !leadId || !canSave) {
       setError("Please complete required fields before continuing.");
@@ -547,9 +586,11 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
       setInputEmail(nextModel.email.value);
       setInputMobile(nextModel.mobile.value);
 
+      const entityType = nextModel.personalDetails.entityType;
+      const mappedNext = mapNextInfoSectionToStep(nextFromSave);
       return {
         data: nextModel,
-        nextStep: mapNextInfoSectionToStep(nextFromSave),
+        nextStep: resolveStepAfterPersonalDetails(entityType, mappedNext),
       };
     } catch {
       setError("Unable to save personal details. Please try again.");
@@ -598,6 +639,8 @@ export const usePersonalDetailsFlow = (): UsePersonalDetailsFlowResult => {
     closeOtpModal,
     savePermanentAddress,
     saveCorrespondenceAddress,
+    setContactPersonName,
+    setSameAsDistributor,
     saveDetails,
   };
 };

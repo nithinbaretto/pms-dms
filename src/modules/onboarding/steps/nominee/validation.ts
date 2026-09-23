@@ -4,7 +4,6 @@ import {
   EMAIL_PATTERN,
   MOBILE_PATTERN,
   NOMINEE_NAME_MAX_LENGTH,
-  NOMINEE_NAME_PATTERN,
   PAN_REGEX,
   PASSPORT_REGEX,
 } from "./constants";
@@ -73,10 +72,8 @@ export const getNomineeFieldErrors = (
   const nomineeName = form.nomineeName.trim();
   if (!nomineeName) {
     errors.nomineeName = "Nominee name is required.";
-  } else if (nomineeName.length > NOMINEE_NAME_MAX_LENGTH) {
+  } else if (form.nomineeName.length > NOMINEE_NAME_MAX_LENGTH) {
     errors.nomineeName = `Nominee name cannot exceed ${NOMINEE_NAME_MAX_LENGTH} characters.`;
-  } else if (!NOMINEE_NAME_PATTERN.test(nomineeName)) {
-    errors.nomineeName = "Nominee name can contain alphabets only.";
   }
 
   if (!form.relationshipWithApplicant.trim()) {
@@ -125,10 +122,8 @@ export const getNomineeFieldErrors = (
     const guardianName = form.guardianName.trim();
     if (!guardianName) {
       errors.guardianName = "Guardian name is required for minor nominees.";
-    } else if (guardianName.length > NOMINEE_NAME_MAX_LENGTH) {
+    } else if (form.guardianName.length > NOMINEE_NAME_MAX_LENGTH) {
       errors.guardianName = `Guardian name cannot exceed ${NOMINEE_NAME_MAX_LENGTH} characters.`;
-    } else if (!NOMINEE_NAME_PATTERN.test(guardianName)) {
-      errors.guardianName = "Guardian name can contain alphabets only.";
     }
 
     const guardianAddress = form.isGuardianAddressSameAsNomineeAddress

@@ -2,8 +2,9 @@ import type { ReactElement } from "react";
 import { Calendar } from "lucide-react";
 
 import { Input } from "../../../../../shared/ui/input";
+import { PERSON_NAME_MAX_LENGTH } from "../constants";
 import type { EntitySummary } from "../types";
-import { getTodayDateInputValue, isPersonalDobValid } from "../validation";
+import { getMaxAdultDobDateInputValue, isPersonalDobValid } from "../validation";
 
 type ManualIdentitySectionProps = {
   summary: EntitySummary;
@@ -50,6 +51,7 @@ const ManualIdentitySection = ({
         </label>
         <Input
           id="manual-personal-name"
+          maxLength={PERSON_NAME_MAX_LENGTH}
           onChange={(event) => {
             onNameChange(event.target.value);
           }}
@@ -78,7 +80,7 @@ const ManualIdentitySection = ({
           <Input
             className="pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
             id="manual-personal-dob"
-            max={getTodayDateInputValue()}
+            max={getMaxAdultDobDateInputValue()}
             onChange={(event) => {
               const nextValue = fromDateInputValue(event.target.value);
               if (nextValue && !isPersonalDobValid(nextValue)) {

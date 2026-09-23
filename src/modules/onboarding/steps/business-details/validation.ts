@@ -16,15 +16,22 @@ export const isDuplicateGstNumber = (gstNumber: string, existingGstNumbers: stri
   return existingGstNumbers.some((item) => item.trim().toUpperCase() === normalized);
 };
 
-export const sanitizeGstLegalName = (value: string): string => {
+/** Max characters (including spaces) for Legal Name entered in Add GST. */
+export const GST_LEGAL_NAME_MAX_LENGTH = 50;
+
+const normalizeGstLegalName = (value: string): string => {
   return value
-    .replace(/[^A-Za-z0-9 .,&'()/-]/g, "")
+    .replace(/[\u0000-\u001F\u007F]/g, "")
     .replace(/ {2,}/g, " ")
     .replace(/^ +/, "");
 };
 
+export const sanitizeGstLegalName = (value: string): string => {
+  return normalizeGstLegalName(value).slice(0, GST_LEGAL_NAME_MAX_LENGTH);
+};
+
 export const formatGstName = (name: string): string => {
-  return sanitizeGstLegalName(name).trim();
+  return normalizeGstLegalName(name).trim();
 };
 
 export const requireBranchSelection = (selectedBranch: string): boolean => {

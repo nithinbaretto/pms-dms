@@ -3,6 +3,7 @@ import type { Address, EntityType, PersonalDetailsModel, VerificationChannel } f
 
 const ENTITY_TYPES: EntityType[] = [
   "Individual",
+  "Sole Proprietorship",
   "Proprietorship",
   "Company",
   "Partnership",
@@ -11,6 +12,11 @@ const ENTITY_TYPES: EntityType[] = [
   "Trust",
   "AOP",
 ];
+
+export const isSoleProprietorshipEntityType = (entityType: string): boolean => {
+  const normalized = entityType.trim().toLowerCase();
+  return normalized === "sole proprietorship" || normalized === "proprietorship";
+};
 
 export const maskMobile = (mobile: string): string => {
   const digits = mobile.replace(/\D/g, "");
@@ -97,8 +103,32 @@ export const normalizeMobileForCompare = (mobile: string): string =>
   mobile.replace(/\D/g, "").slice(-10);
 
 const toEntityType = (value: string): EntityType | "" => {
+  if (isSoleProprietorshipEntityType(value)) {
+    return "Sole Proprietorship";
+  }
+
   const match = ENTITY_TYPES.find((item) => item.toLowerCase() === value.trim().toLowerCase());
   return match ?? "";
+};
+
+const resolveContactPersonFromGet = (
+  distributorName: string,
+  apiContactPersonName: string,
+): { contactPersonName: string; isContactPersonSameAsDistributor: boolean } => {
+  const name = distributorName.trim();
+  const contactPersonName = apiContactPersonName.trim();
+
+  if (!contactPersonName || contactPersonName.toLowerCase() === name.toLowerCase()) {
+    return {
+      contactPersonName: name,
+      isContactPersonSameAsDistributor: true,
+    };
+  }
+
+  return {
+    contactPersonName,
+    isContactPersonSameAsDistributor: false,
+  };
 };
 
 export const createEmptyPersonalDetails = (pan: string): PersonalDetailsModel => {
@@ -129,6 +159,8 @@ export const createEmptyPersonalDetails = (pan: string): PersonalDetailsModel =>
       value: "",
       verified: false,
     },
+    contactPersonName: "",
+    isContactPersonSameAsDistributor: true,
     permanentAddress: { ...emptyAddress },
     correspondenceAddress: { ...emptyAddress },
     isCorrespoingSameAsPermanent: false,
@@ -144,6 +176,7 @@ export const mapGetPersonalDetailsToModel = (
   const correspondenceAddress = sameAsPermanent
     ? { ...permanentAddress }
     : addressFromApiString(response.correspondenceAddress || response.permanentAddress);
+  const contactPerson = resolveContactPersonFromGet(response.name, response.contactPersonName);
 
   return {
     personalDetails: {
@@ -160,9 +193,11 @@ export const mapGetPersonalDetailsToModel = (
       verified: verification.mobileVerified,
     },
     email: {
-      value: response.email.trim(),
+      value: response.email.trim().toLowerCase(),
       verified: verification.emailVerified,
     },
+    contactPersonName: contactPerson.contactPersonName,
+    isContactPersonSameAsDistributor: contactPerson.isContactPersonSameAsDistributor,
     permanentAddress,
     correspondenceAddress,
     isCorrespoingSameAsPermanent: sameAsPermanent,
@@ -180,14 +215,20 @@ export const buildSavePayload = (
     ? formatAddressForApi(data.permanentAddress)
     : formatAddressForApi(data.correspondenceAddress);
 
+  const distributorName = data.personalDetails.name.trim();
+
   return {
     correspondenceAddress,
     isCorrespoingSameAsPermanent: data.isCorrespoingSameAsPermanent,
     leadId,
-    primaryEmail: data.email.value.trim(),
+    primaryEmail: data.email.value.trim().toLowerCase(),
     primaryMobile: data.mobile.value.trim(),
     dob: data.personalDetails.dob,
-    name: data.personalDetails.name.trim(),
+    name: distributorName,
+    contactPersonName: data.isContactPersonSameAsDistributor
+      ? distributorName
+      : data.contactPersonName.trim(),
+    isContactPersonSameAsDistributor: data.isContactPersonSameAsDistributor,
     permanentAddress: formatAddressForApi(data.permanentAddress),
     dataSource,
   };

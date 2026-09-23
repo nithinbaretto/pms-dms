@@ -23,6 +23,7 @@ import {
   isValidIfscCode,
   mapDocumentOcrToChequeFields,
   normalizeBankAccountInput,
+  sanitizeAccountHolderName,
 } from "./helpers";
 import type { BankDetailsModel } from "./types";
 import { useBankDetailsFlow } from "./useBankDetailsFlow";
@@ -47,8 +48,11 @@ const BankDetailsStep = ({
   const { leadId, pan, panNumber, currentFlow, onboardingMethod } = useOnboardingStore();
   const resolvedPan = (pan || panNumber).trim().toUpperCase();
   const isAddBankEntry =
+    currentFlow === "aif-individual" && onboardingMethod === "MANUAL";
+  const isAmfiFetchedFlow =
     currentFlow === "aif-individual" &&
-    (onboardingMethod === "MANUAL" || onboardingMethod === "KRA");
+    (onboardingMethod === "ARN" || onboardingMethod === "KRA");
+  const fetchedDetailsSubtitle = `Your details have been fetched from ${isAmfiFetchedFlow ? "AMFI" : "APMI"}. Fields shown in grey cannot be changed`;
 
   const {
     data,
@@ -363,7 +367,7 @@ const BankDetailsStep = ({
           setManualErrorReenterAccountNumber("");
         }
         if (ocrFields.accountHolderName) {
-          setManualErrorAccountHolderName(ocrFields.accountHolderName);
+          setManualErrorAccountHolderName(sanitizeAccountHolderName(ocrFields.accountHolderName));
         }
         if (ocrFields.bankName) {
           setManualErrorBankName(ocrFields.bankName);
@@ -451,7 +455,7 @@ const BankDetailsStep = ({
       setShowManualValidationError(false);
       clearChequeUploadState();
       setManualErrorReenterAccountNumber(result.data.accountNumber);
-      setManualErrorAccountHolderName(result.data.accountHolderName);
+      setManualErrorAccountHolderName(sanitizeAccountHolderName(result.data.accountHolderName));
       setManualErrorBankBranch(result.data.branchDisplay || result.data.bankAddress);
       if (result.data.accountType === "current" || result.data.accountType === "saving") {
         setManualErrorAccountType(result.data.accountType);
@@ -515,7 +519,7 @@ const BankDetailsStep = ({
         subtitle={
           isAddBankEntry
             ? "Select your preferred method to update bank account details"
-            : "Your details have been fetched from APMI. Fields shown in grey cannot be changed"
+            : fetchedDetailsSubtitle
         }
         stepLabel={BANK_DETAILS_STEP_LABEL}
         progressPercent={BANK_DETAILS_PROGRESS_PERCENT}
@@ -623,6 +627,7 @@ const BankDetailsStep = ({
         setShowLoadingModal={setShowLoadingModal}
         setShowManualErrorChequeModal={setShowManualErrorChequeModal}
         setShowManualValidationError={setShowManualValidationError}
+        fetchedDetailsSubtitle={fetchedDetailsSubtitle}
         hasBankData={data.hasBankData}
         isAddBankEntry={isAddBankEntry}
         showChangeBankScreen={showChangeBankScreen}

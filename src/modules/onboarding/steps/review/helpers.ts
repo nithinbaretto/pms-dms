@@ -14,10 +14,6 @@ export const displayList = (values: string[] | undefined): string => {
   return values.map((item) => item.trim()).filter(Boolean).join(", ") || "-";
 };
 
-export const displayYesNo = (value: boolean): string => {
-  return value ? "Uploaded" : "Pending";
-};
-
 export const formatAccountType = (value: string | undefined | null): string => {
   const trimmed = value?.trim() ?? "";
   if (!trimmed) {

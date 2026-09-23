@@ -21,6 +21,8 @@ type UploadSignatoryDocumentModalProps = {
   kind: SignatoryDocumentKind;
   onClose: () => void;
   onSave: (file: SignatoryDocumentFile) => void;
+  uploadFile?: (file: File) => Promise<SignatoryDocumentFile | null>;
+  isUploading?: boolean;
 };
 
 const TITLES: Record<SignatoryDocumentKind, string> = {
@@ -44,9 +46,12 @@ const UploadSignatoryDocumentContent = ({
   kind,
   onClose,
   onSave,
+  uploadFile,
+  isUploading = false,
 }: Omit<UploadSignatoryDocumentModalProps, "open">): ReactElement => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [draft, setDraft] = useState<SignatoryDocumentFile | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
@@ -77,6 +82,7 @@ const UploadSignatoryDocumentContent = ({
     }
 
     setError(null);
+    setPendingFile(file);
     setDraft({
       fileName: file.name,
       previewUrl: URL.createObjectURL(file),
@@ -200,20 +206,32 @@ const UploadSignatoryDocumentContent = ({
               </button>
               <button
                 className={`h-9 rounded-[8px] font-['Mulish',sans-serif] text-[14px] font-normal ${
-                  draft
+                  draft && !isUploading
                     ? "bg-[#93161E] text-white hover:bg-[#7a1319]"
                     : "cursor-not-allowed bg-[#E5E5E6] text-[#5A6B7D]"
                 }`}
-                disabled={!draft}
+                disabled={!draft || isUploading}
                 onClick={() => {
-                  if (!draft) {
-                    return;
-                  }
-                  onSave(draft);
+                  void (async () => {
+                    if (!draft) {
+                      return;
+                    }
+
+                    if (uploadFile && pendingFile) {
+                      const uploaded = await uploadFile(pendingFile);
+                      if (!uploaded) {
+                        return;
+                      }
+                      onSave(uploaded);
+                      return;
+                    }
+
+                    onSave(draft);
+                  })();
                 }}
                 type="button"
               >
-                Save
+                {isUploading ? "Uploading..." : "Save"}
               </button>
             </div>
           </div>
@@ -272,6 +290,8 @@ const UploadSignatoryDocumentModal = ({
   kind,
   onClose,
   onSave,
+  uploadFile,
+  isUploading,
 }: UploadSignatoryDocumentModalProps): ReactElement => {
   if (!open) {
     return <></>;
@@ -280,9 +300,11 @@ const UploadSignatoryDocumentModal = ({
   return (
     <UploadSignatoryDocumentContent
       key={kind}
+      isUploading={isUploading}
       kind={kind}
       onClose={onClose}
       onSave={onSave}
+      uploadFile={uploadFile}
     />
   );
 };
