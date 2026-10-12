@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { Camera, Loader2, Upload } from 'lucide-react';
+import { Camera, Loader2, Trash2, Upload } from 'lucide-react';
 import changeBankSvgPaths from '../../../../assets/figma-svg/svg-1hi99h9mgv';
 import qrGeneratedSvgPaths from '../../../../assets/figma-svg/svg-idaonln9ok';
 import loadingSvgPaths from '../../../../assets/figma-svg/svg-0crc3rdhsl';
-import emailOtpSvgPaths from '../../../../assets/figma-svg/svg-ftc9bj5bhu';
 import mobileBankSvgPaths from '../../../../assets/figma-svg/svg-clyhwdl8oc';
 import mobileBankFailedSvgPaths from '../../../../assets/figma-svg/svg-zkn9tvc148';
 import personalInfo5SvgPaths from '../../../../assets/figma-svg/svg-k5zifkr9hc';
@@ -1809,9 +1808,8 @@ export function BankDetailsScreen({
                   <div className={`my-auto w-full max-w-[679.5px] max-h-[calc(100dvh-48px)] overflow-y-auto bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-transform duration-200 ease-out ${chequeUploadModalAnimating ? 'scale-100' : 'scale-95'
                     }`} onClick={(e) => e.stopPropagation()}>
                     {/* Header */}
-                    <div className="flex items-center justify-between w-full h-[33px] shrink-0">
+                    <div className="flex items-center w-full h-[33px] shrink-0">
                       <p className="font-['Mulish',sans-serif] font-medium text-[22px] leading-[100%] tracking-[0px] text-[#435160]">Upload Cancelled Cheque</p>
-                      <div className="opacity-0 pointer-events-none size-[24px] shrink-0" />
                     </div>
 
                     {/* Upload Area */}
@@ -1824,6 +1822,15 @@ export function BankDetailsScreen({
                     />
                     {chequeFileSelected ? (
                       <div className="relative w-full rounded-[8px] border border-dashed border-[#eee] shrink-0">
+                        <button
+                          aria-label="Remove"
+                          className="absolute right-[12px] top-[12px] z-10 flex size-[24px] items-center justify-center text-[#71859B] hover:opacity-70 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                          disabled={isUploadingCheque}
+                          onClick={clearChequeSelection}
+                          type="button"
+                        >
+                          <Trash2 className="size-[24px]" strokeWidth={1.75} />
+                        </button>
                         <div className="flex w-full items-center justify-center p-[12px]">
                           <div className="relative min-h-[140px] w-full" style={{ height: '211px' }}>
                             <div className="absolute inset-0 overflow-hidden">
@@ -2043,22 +2050,8 @@ export function BankDetailsScreen({
               <div className={`my-auto w-full max-w-[679.5px] max-h-[calc(100dvh-48px)] overflow-y-auto bg-white rounded-[16px] shadow-[4px_4px_20px_0px_rgba(0,0,0,0.12)] flex flex-col gap-[16px] p-[20px] md:p-[32px] transition-transform duration-200 ease-out ${manualErrorChequeModalAnimating ? 'scale-100' : 'scale-95'
                 }`} onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
-                <div className="flex items-center justify-between w-full h-[33px]">
+                <div className="flex items-center w-full h-[33px]">
                   <p className="font-['Mulish',sans-serif] font-medium text-[22px] leading-[100%] tracking-[0px] text-[#435160]">Upload Cancelled Cheque</p>
-                  <button
-                    onClick={() => {
-                      setManualErrorChequeModalAnimating(false);
-                      setTimeout(() => {
-                        setShowManualErrorChequeModal(false);
-                        clearManualErrorChequeSelection();
-                      }, 200);
-                    }}
-                    className="size-[24px] flex items-center justify-center hover:opacity-70 transition-opacity duration-200 shrink-0 opacity-0 pointer-events-none"
-                  >
-                    <svg className="size-full" fill="none" viewBox="0 0 15.0008 15.0008">
-                      <path d={emailOtpSvgPaths.p3bbf7480} fill="#435160" />
-                    </svg>
-                  </button>
                 </div>
 
                 {/* Upload Area */}
@@ -2071,6 +2064,15 @@ export function BankDetailsScreen({
                 />
                 {manualErrorChequeFileSelected ? (
                   <div className="relative w-full rounded-[8px] border border-dashed border-[#eee] shrink-0">
+                    <button
+                      aria-label="Remove"
+                      className="absolute right-[12px] top-[12px] z-10 flex size-[24px] items-center justify-center text-[#71859B] hover:opacity-70 transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={isUploadingCheque}
+                      onClick={clearManualErrorChequeSelection}
+                      type="button"
+                    >
+                      <Trash2 className="size-[24px]" strokeWidth={1.75} />
+                    </button>
                     <div className="flex flex-col items-center justify-center p-[12px]">
                       <div className="relative min-h-[140px] w-full" style={{ height: '211px' }}>
                         <div className="absolute inset-0 overflow-hidden">

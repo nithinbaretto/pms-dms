@@ -218,7 +218,7 @@ const ArnVerifyContactStep = ({
             Please enter AMFI registered Mobile or Email
           </p>
 
-          <div className="inline-flex w-fit rounded-full bg-[#ececec] p-1">
+          <div className="inline-flex w-fit rounded-full bg-[#f5f5f5] p-1">
             <button
               className={cn(
                 "h-8 rounded-full px-5 font-['Mulish',sans-serif] text-[14px] font-normal leading-none tracking-normal",

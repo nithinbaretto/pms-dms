@@ -1,204 +1,320 @@
 # Project Context and Implementation Guardrails
 
-Last Updated: 2026-09-21
+Last Updated: 2026-09-23
 Status: Active implementation snapshot for contributors and coding agents
+
+Read this file before changing onboarding behavior. It describes what the app actually does today. When TypeScript contracts or runtime branching change, update this file in the same change.
 
 ## 1) Project Overview
 
-Project Name: Distributor Management System (DMS) - Digital Self-Empanelment Portal
+Project Name: Distributor Management System (DMS) — Digital Self-Empanelment Portal
 
 Objective:
-Deliver a web-based onboarding journey for distributor empanelment across PMS and AIF using API-driven validation, verification, and document workflows.
+A web onboarding journey for distributor empanelment across PMS and AIF. The user validates PAN, chooses a product, verifies identity through APRN, ARN, KRA, or manual entry, then completes personal, entity, business, bank, nominee, document, and review steps. Review ends with application creation and e-sign.
 
-Current Runtime State:
-- App entry is wired to the onboarding module.
-- The application renders the full onboarding container (not a placeholder home screen).
-- Flow selection is state-driven with product/entity variants configured in flow files.
+Current runtime:
+- `src/App.tsx` renders only `OnboardingContainer`. There is no other route.
+- The live product choice is Individual only. After business category, the container sets `pms-individual` or `aif-individual`.
+- NRI and Corporate flow config files exist, but nothing in the container selects those flow keys.
+- Digilocker is a visible method option. Continue on it shows a placeholder alert and does not start a journey.
 
-## 2) Tech Stack (Current)
+## 2) Tech Stack
 
 Frontend:
 - React 19 + TypeScript
-- Vite 8
+- Vite 8 (`npm run dev` uses `--mode uat`)
 - Tailwind CSS 4
-- Zustand for onboarding state
-- Radix UI primitives and shared UI component library under shared/ui
+- Zustand 5 for onboarding state (`src/modules/onboarding/state/onboarding-store.ts`)
+- Radix UI primitives and shared components under `src/shared/ui`
+- react-hook-form is installed. Step flows mostly keep local React state in `use*Flow` hooks.
+- `@tanstack/react-query` and `react-router-dom` are dependencies. The running app does not use them.
 
-Networking and Data Access:
-- API adapters under modules/onboarding/services
-- Request wrappers support normal and CSRF-aware requests
+Networking:
+- `src/services/http/apiClient.ts` posts through `encryptedAxios`.
+- JSON bodies are encrypted as `{ part1, part2 }` and responses are decrypted in the interceptor (`src/services/http/encryptedAxios.ts`, `src/enc.js`).
+- These paths stay plaintext: document upload, file download, document OCR, and PDF generate.
+- Onboarding calls live in `src/modules/onboarding/services/onboarding-api.ts`.
+- Endpoint URLs come from `VITE_PMS_*` env vars. Missing vars fall back to paths under `VITE_PMS_API_BASE_URL`.
 
-## 3) Repository Structure (Authoritative)
+## 3) Repository Structure
 
-Primary feature module:
+`src/modules/onboarding/`
+- `container/onboarding-container.tsx` — real orchestrator. It renders each step, calls early APIs, and owns most branching.
+- `flow/` — flow keys, per-journey step lists, HUF skip helpers, a linear step engine, and a screen registry that the container mostly bypasses.
+- `state/onboarding-store.ts` — Zustand store.
+- `steps/` — the screens the container actually mounts. Each heavy step has a `use*Flow` hook, helpers, validation, and local types.
+- `overrides/aif/` — alternate screens. The container uses the AIF onboarding-method override. The AMFI verify-contact override is only a fallback when the method is neither ARN nor KRA.
+- `services/onboarding-api.ts` — request types, response normalization, and the `onboardingApi` client.
+- `types/onboarding-types.ts` — `Step` union and store shape.
+- `components/` — shared onboarding chrome (hero, OTP input, footer, slide transition, camera capture, upload picker).
+- `screens/` — older screen wrappers registered in `flow/screen.registry.ts`. Do not treat them as the live UI unless the container imports them.
 
-src/modules/onboarding/
-- container/ -> main orchestration container and step rendering
-- flow/
-  - flow configs per journey (PMS/AIF x Individual/NRI/Corporate)
-  - HUF entity step (`huf-entity-details`) when `getPersonalDetails.entityType` is `HUF`
-  - config/steps.ts for base step order used by engine
-  - engine/step-engine.ts for next/prev progression
-  - getScreenForStep.ts for override resolution
-  - screen.registry.ts for default screen mapping
-- state/ -> Zustand onboarding store
-- steps/ -> step-level UI and local logic
-- overrides/ -> flow-specific screen overrides (currently AIF-specific overrides exist)
-- services/ -> onboarding API integration clients
-- types/ -> central onboarding state and step unions
+`src/shared/`
+- `styles/` — design tokens (`tokens.css`, `tokens.ts`).
+- `ui/` — reusable primitives.
+- `constants/` and `utils/`.
 
-Shared layer:
+`src/services/http/` — encrypted axios client.
 
-src/shared/
-- styles/ -> global design tokens (tokens.css, tokens.ts, index.ts)
-- ui/ -> reusable primitives/components
-- constants/ and utils/
+## 4) What Is Live vs Scaffold
 
-## 4) Flow Model (As Implemented)
+Live journeys the container can enter:
+- `pms-individual` — user selected PMS, or PMS and AIF together.
+- `aif-individual` — user selected AIF only (`resolveIndividualFlow` in the container).
 
-Supported flow keys:
-- pms-individual
-- pms-nri
-- pms-corporate
-- aif-individual
-- aif-nri
-- aif-corporate
+Scaffolded and not selected at runtime:
+- `pms-nri`, `pms-corporate`, `aif-nri`, `aif-corporate`.
 
-HUF journey (entity type from personal details, PMS + AIF):
-- After personal details: `huf-entity-details` (Karta, co-parceners, signatories) then `business-details` (same as Individual).
-- Individual (`entityType: Individual`): skips `huf-entity-details`.
-- Entity APIs: `validateKarthaPanByAPMI`, `getEntityDetails`, `saveEntityDetails`.
+Screen resolution today:
+- The container switches on `currentStep` and mounts step components directly.
+- `getScreenForStep` is used for `onboarding-method`, and for `verify-contact` only when the method is not ARN or KRA.
+- `flow/screen.registry.ts` maps a different id, `document-upload`, while the live step id is `upload-documents`. Do not assume the registry is the screen the user sees.
 
-Sole Proprietorship journey (`getPersonalDetails.entityType` is `Sole Proprietorship` or `Proprietorship`):
-- Personal details: Contact Person Name + Same as distributor (GET `contactPersonName`; SAVE `contactPersonName` + `isContactPersonSameAsDistributor`).
-- Business details: Entity Type toggle defaults to Sole Proprietorship and shows Authorized Signatory + GST. Selecting Individual hides Authorized Signatory.
-- `getBusinessDetails` / `saveGstDetails` persist `entityType`, `authSignatoryData`, `riaNumber`, `dataSource`, and `isRia` with GST and branch.
+## 5) Journey Map
 
-Current Step union in types:
-1. entity-details
-1b. huf-entity-details (HUF only)
-2. onboarding-method
-3. verify-contact
-4. personal-details
-5. business-details
-6. business-category
-7. aprn-verification
-8. otp-verification
-9. bank-details
-10. nominee-details
-11. upload-documents
-12. review-confirm
+Canonical step ids (`types/onboarding-types.ts` and `flow/config/steps.ts`):
 
-Engine behavior today:
-- nextStep and prevStep use flow/config/steps.ts sequence.
-- getNextStepWithRules currently delegates to linear sequencing (rules are not yet enforcing dynamic branching in engine).
-- The container performs additional explicit branching for certain transitions (for example onboarding-method, verify-contact, and edit-to-review routes).
+1. `entity-details`
+2. `business-category`
+3. `onboarding-method`
+4. `verify-contact`
+5. `aprn-verification`
+6. `otp-verification`
+7. `personal-details`
+8. `huf-entity-details` (only when personal entity type is HUF)
+9. `business-details`
+10. `bank-details`
+11. `nominee-details`
+12. `upload-documents`
+13. `review-confirm`
 
-Flow config behavior today:
-- getFlowConfig returns per-flow config objects.
-- Flow configs declare steps, documents requirements, and optional screen overrides.
-- AIF individual currently uses custom override screens for onboarding method, verify contact, business, and review.
+`STEPS` in `flow/config/steps.ts` is the linear engine order. The container does not walk that list blindly. Product choice and onboarding method pick a different path.
 
-## 5) Screen Resolution Contract
+### Shared start
 
-- Default screens are resolved through flow/screen.registry.ts.
-- Step-level overrides are resolved by flow/getScreenForStep.ts using override keys.
-- Contributors must keep step IDs and override keys synchronized to avoid silent fallback or undefined mappings.
+1. `entity-details` — PAN entry. `validatePan`. On success, store PAN, lead id, existing-product flags, and any returned email/mobile, then go to `business-category`.
+2. `business-category` — PMS, AIF, or both. `saveBusinessDetails` stores category and `applicationIds`. Then:
+   - PMS, or PMS+AIF → flow `pms-individual`, next step `aprn-verification`.
+   - AIF only → flow `aif-individual`, next step `onboarding-method`.
 
-## 6) State Contract (Zustand)
+### PMS individual
 
-The onboarding store currently tracks:
+`aprn-verification` → `otp-verification` → `personal-details` → (HUF step if applicable) → `business-details` → `bank-details` → `nominee-details` → `upload-documents` → `review-confirm`.
 
-Journey and flow:
-- currentFlow
-- currentStep
-- isEditMode
+APRN calls `verifyAprn` and stores APRN status plus contact used for OTP. OTP back goes to `aprn-verification`.
 
-Identity and onboarding metadata:
-- pan, panNumber, leadId, applicationIds
-- existingProductTypes, isExistingApplicant, isExistingDistributor
-- businessCategory, productCategories
-- empanelmentType, onboardingMethod
+### AIF individual
 
-Verification and contact:
-- aprnNumber, aprnStatus, arn
-- inputEmail, inputMobile
-- amfiMaskedEmail, amfiMaskedMobile
-- emailVerified, mobileVerified
-- emailVerifiedAt, mobileVerifiedAt
-- otpAttempts, otpTimerSeconds, accountRestricted
+Onboarding method (`EmpanelmentType` is Distributor or RIA; method is ARN, KRA, Digilocker, or Manual):
 
-Form/document state:
-- personalDetails
-- documentUploads.signatureUploaded
-- documentUploads.photoUploaded
-- bankDocuments.chequeUploaded
+- ARN → `ArnVerifyContactStep`. User enters ARN plus mobile or email. `validateArn`, then `sendOtp`, then `otp-verification`.
+- KRA → `getPanDetailsByKra` first, then `KraVerifyContactStep`. User confirms the registered contact. `validateInputWithKra`, then `sendOtp`, then `otp-verification`.
+- Manual → `updateManualData`, then jump straight to `personal-details`. No verify-contact and no entry OTP.
+- Digilocker → placeholder alert. No navigation.
 
-Store actions include:
-- navigation actions (nextStep, prevStep, setStep)
-- flow selection and metadata setters
-- OTP and verification state management helpers
-- document upload flag setters
+AIF ARN/KRA OTP back returns to `verify-contact`. OTP continue always goes to `personal-details`.
 
-## 7) API Integration Surface (Current)
+Entry OTP sets `emailVerifiedFromEntry` / `mobileVerifiedFromEntry`. Personal details treats those channels as already verified and locks them.
 
-Onboarding API client currently implements:
-- validatePan
-- checkPanInInternalDb
-- verifyAprn
-- validateAmfiContact
-- sendOtp
-- sendAmfiOtp
-- verifyOtp
-- verifyAmfiOtp
-- saveBusinessDetails
-- validateKarthaPanByAPMI, getEntityDetails, saveEntityDetails (HUF)
+### After personal details
 
-Environment-aware endpoint strategy:
-- Endpoints are resolved from VITE_PMS_* environment variables when provided.
-- Fallback paths are derived from VITE_PMS_API_BASE_URL where applicable.
+`savePersonalDetails` returns `nextInfoSection`. `mapNextInfoSectionToStep` can jump to business, bank, nominee, documents, or review.
 
-## 8) UI and Design System Notes
+Exception: if `entityType` is `HUF`, `resolveStepAfterPersonalDetails` always inserts `huf-entity-details` before that mapped step. The engine also skips `huf-entity-details` when the entity type is not HUF. If the store is not HUF and the step is still `huf-entity-details`, the container redirects to `business-details`.
 
-- Global design tokens are centralized under src/shared/styles.
-- index.css imports tokens.css and applies app-wide typography/background/base styles.
-- Onboarding-specific visual behavior should consume shared token variables rather than hardcoded one-off values when possible.
+## 6) Step Behavior
 
-## 9) Known Implementation Gaps and Risk Flags
+### Personal details
 
-1. Rule engine maturity:
-- Flow rules are not yet fully integrated into navigation decisions; engine is mostly linear today.
+Hook: `steps/personal-details/usePersonalDetailsFlow.ts`.
 
-2. Step naming consistency:
-- Multiple step identifiers are used across files (for example upload-documents vs document-upload and onboarding-method vs onboarding-type in config contexts).
-- Any new work in flow/config/registry/overrides must preserve consistent naming or include explicit mapping.
+- Loads `getPersonalDetails`, saves `savePersonalDetails`.
+- Entity type comes from the API and is locked (`entityTypeLocked`). Options include Individual, Sole Proprietorship, Company, Partnership, LLP, HUF, Trust, AOP.
+- Sole Proprietorship shows Contact Person Name and “same as distributor”. Save sends `contactPersonName` and `isContactPersonSameAsDistributor`.
+- Addresses are permanent and correspondence, with a same-as-permanent flag. Address text is capped at 300 characters. Names are capped at 50.
+- Changed email or mobile that was not verified at entry must be OTP-verified in the step modal before save.
+- `dataSource` on save is `MANUAL` for the manual method, the stored KRA data source (or `KRA`) for the KRA method, and `APMI` otherwise, including the PMS APRN path.
 
-3. Logic distribution:
-- Container currently owns significant transition logic.
-- Future refactors should move durable business branching into flow/rules and keep screens focused on rendering and local interaction.
+### HUF entity details
 
-## 10) Contributor Guardrails
+Hook: `steps/huf-entity-details/useHufEntityDetailsFlow.ts`.
 
-Before adding or changing onboarding behavior:
-1. Confirm target flow key and step IDs are present in types and flow config.
-2. Keep state additions typed and explicit in onboarding-types and onboarding-store.
-3. Place reusable branching decisions in flow engine/rules instead of embedding repeatedly in UI screens.
-4. Keep API response normalization centralized in services/onboarding-api.ts.
-5. Update this document in the same PR whenever architectural contracts change.
+Shown only for entity type HUF, on both PMS and AIF.
 
-## 11) Local Development Commands
+- Karta: PAN check via `validateKarthaPanByAPMI`, then name, contact, addresses, and proof documents.
+- Co-parceners and authorized signatories (jointly or any-N).
+- Load `getEntityDetails`, save `saveEntityDetails`.
+- Mappers: `steps/huf-entity-details/entity-api-mappers.ts`.
+- Continue goes to `business-details`, or back to review in edit mode.
 
-- npm install
-- npm run dev
-- npm run build
-- npm run lint
-- npm run preview
+### Business details
 
-## 12) Source of Truth Priority
+Hook: `steps/business-details/useBusinessDetailsFlow.ts`.
 
-When there is a mismatch:
+- GST list: select existing numbers, add a manual GST, `validateGstIn`, upload a GST certificate (max 2MB).
+- Branch: `getBranchList` by pincode from the address. Static `BRANCH_OPTIONS` are the fallback.
+- Entity type on this step is only `Individual` or `Sole Proprietorship`.
+- On `pms-individual`, that toggle is locked from the personal-details entity type.
+- Authorized signatory (documents, jointly / any-N) shows only when personal entity type is Sole Proprietorship and the selected business entity type is Sole Proprietorship. Choosing Individual hides it.
+- Save uses `saveGstDetails` and also persists `entityType`, `authSignatoryData`, `riaNumber`, `dataSource`, and `isRia`.
+
+### Bank details
+
+Hook: `steps/bank-details/useBankDetailsFlow.ts`. Screen: `BankDetailsScreen.tsx`.
+
+- Load `getBankDetails`, save `saveBankDetails`.
+- Verification paths: penny drop (`pennyDropCall` with account number and IFSC) and reverse penny drop (QR).
+- Reverse penny drop: `initiateReversePennyDropPayment`, poll `getReversePennyDropValidationStatus`, then `fetchReversePennyDropBankDetails`. Default vendor is `VITE_PMS_REVERSE_PENNY_DROP_VENDOR` or `hyperverge`.
+- Cancelled cheque upload, optional OCR via `documentOcr`.
+- The container passes `chequeUploaded` through the store flag `bankDocuments.chequeUploaded`.
+
+### Nominee
+
+Hook: `steps/nominee/useNomineeFlow.ts`.
+
+- Option `now` or `later`. Later skips the form and still continues.
+- Fields: name, relationship, proof of identity, mobile, email, DOB, address. Address can match the applicant permanent address.
+- A minor DOB reveals guardian name and address.
+- `getNomineeDetails` / `saveNomineeDetails`.
+
+### Upload documents
+
+Hook: `steps/documents/useDocumentsFlow.ts`. Screen: `UploadDocumentsStep.tsx`.
+
+Slots: photo, signature, proof of identity, proof of address.
+
+- Photo and signature follow `flowConfig.documents` (`requiresPhoto`, `requiresSignature`). AIF individual also sets `requiresDueDiligenceDoc` and `requiresCheque` on the config object.
+- Files: PNG, JPEG, or PDF, max 2MB. Camera capture and file picker both exist.
+- Load `getUploadDocuments`, upload with `uploadDocument`, persist with `saveUploadedDocuments`.
+- Backend labels are in `steps/documents/constants.ts` (`photo`, `signature`, `proofOfIdentity`, `proofOfAddress`).
+
+### Review and submit
+
+- Load `getApplicationReviewDetails`.
+- PDF: `generatePdf`.
+- Edit jumps back with `isEditMode: true` to personal, business, bank, nominee, or documents. Saving that step clears edit mode and returns to `review-confirm`.
+- Submit (`steps/review/useReviewSubmitFlow.ts`): `createApplication`, then `createEsign` (opens `signUrl`), then `getEsignStatus`.
+
+### OTP
+
+`steps/otp-verification/OtpVerificationStep.tsx`.
+
+- PMS APRN verifies both email and mobile when both exist.
+- AIF ARN/KRA verifies the single channel captured on verify-contact.
+- Failed attempts increment `otpAttempts`. The account can be marked restricted.
+- Verified channels are stored with timestamps and the entry-verified flags.
+
+## 7) State Contract
+
+Store: `useOnboardingStore` in `state/onboarding-store.ts`. Shape: `OnboardingStateType`.
+
+Journey:
+- `currentFlow` (default `pms-individual`), `currentStep` (default `entity-details`), `isEditMode`
+
+Identity:
+- `pan`, `panNumber`, `leadId`, `applicationIds`
+- `existingProductTypes`, `isExistingApplicant`, `isExistingDistributor`
+- `businessCategory` (`AIF` | `PMS` | `PMS+AIF`), `productCategories`
+- `empanelmentType` (`Distributor` | `RIA`, default Distributor)
+- `onboardingMethod` (`ARN` | `KRA` | `DIGILOCKER` | `MANUAL`)
+
+Verification:
+- `aprnNumber`, `aprnStatus`, `arn`
+- `kraArnStatus`, `kraDataSource`, `kraRegisteredEmail`, `kraRegisteredMobile`
+- `inputEmail`, `inputMobile`, `amfiMaskedEmail`, `amfiMaskedMobile`
+- `emailVerified`, `mobileVerified`, `emailVerifiedFromEntry`, `mobileVerifiedFromEntry`
+- `emailVerifiedAt`, `mobileVerifiedAt`
+- `otpAttempts`, `otpTimerSeconds`, `accountRestricted`
+
+Forms:
+- `personalDetails` (`PersonalDetailsModel` from the personal-details step)
+- `documentUploads.signatureUploaded`, `documentUploads.photoUploaded`
+- `bankDocuments.chequeUploaded`
+
+Navigation actions `nextStep` / `prevStep` call the linear engine, which skips HUF when it does not apply. Most product branching uses `setStep` from the container or from a step’s `nextInfoSection` mapping. Do not add a new branch only inside a screen if the container already owns that transition.
+
+## 8) API Surface
+
+All methods are on `onboardingApi` in `services/onboarding-api.ts`. Keep response normalization there.
+
+Identity and category:
+- `validatePan`, `checkPanInInternalDb`, `saveBusinessDetails` (product category, not the GST screen)
+
+PMS APRN:
+- `verifyAprn`
+
+AIF contact:
+- `updateManualData`, `getPanDetailsByKra`, `validateInputWithKra`, `validateArn`
+- `validateAmfiContact`, `sendAmfiOtp`, `verifyAmfiOtp` (AMFI fallback path)
+
+OTP:
+- `sendOtp`, `verifyOtp`
+
+Personal and HUF:
+- `getPersonalDetails`, `savePersonalDetails`
+- `validateKarthaPanByAPMI`, `getEntityDetails`, `saveEntityDetails`
+
+Business:
+- `getBusinessDetails`, `getBranchList`, `getStates`, `validateGstIn`, `saveGstDetails`
+
+Bank:
+- `getBankDetails`, `pennyDropCall`, `saveBankDetails`
+- `initiateReversePennyDropPayment`, `getReversePennyDropValidationStatus`, `fetchReversePennyDropBankDetails`
+
+Nominee and documents:
+- `getNomineeDetails`, `saveNomineeDetails`
+- `getUploadDocuments`, `saveUploadedDocuments`, `uploadDocument`, `downloadFile`, `documentOcr`
+
+Review:
+- `getApplicationReviewDetails`, `createApplication`, `generatePdf`, `createEsign`, `getEsignStatus`
+
+## 9) UI Notes
+
+- Tokens live in `src/shared/styles`. `src/index.css` imports them.
+- Early steps (PAN through OTP) use the hero layout: logo, hero copy, floating card, legal footer.
+- Form steps (personal, HUF, business, bank, nominee, documents, review) use the wide form layout and hide the hero and legal footer.
+- Step changes animate through `StepSlideTransition`.
+- Prefer token variables over one-off colors when touching shared chrome. Existing step screens still contain many literal hex values; match the surrounding screen when editing it.
+
+## 10) Known Gaps
+
+1. Engine vs container.
+   `getNextStepWithRules` only special-cases HUF. Product, method, OTP, edit-mode, and `nextInfoSection` branching live in the container and in step hooks.
+
+2. Step id drift.
+   Live id is `upload-documents`. Flow configs and the screen registry still say `document-upload`. Override lookup also knows `onboarding-type`, which is not the live step id `onboarding-method`. New flow work must use the `Step` union and map old ids explicitly.
+
+3. NRI and Corporate configs are unused by the container.
+
+4. Digilocker does not start a flow.
+
+5. `checkPanInInternalDb` exists on the client and is not the PAN step’s current call. The PAN step uses `validatePan`.
+
+## 11) Contributor Guardrails
+
+1. Confirm the flow key (`pms-individual` or `aif-individual`) and the `Step` id before adding a screen.
+2. Add new store fields to `onboarding-types.ts` and `onboarding-store.ts` together.
+3. Put a new API call, and its response normalization, on `onboardingApi`.
+4. If a transition depends on product, method, entity type, or edit mode, update the container (or the existing step-hook router) and this file. Do not hide that branch only inside JSX.
+5. HUF insertion and Sole Proprietorship signatory visibility are entity-type rules. Do not duplicate them with a hardcoded flow key check unless the code already locks that behavior to `pms-individual` (business entity-type lock does).
+6. Entry-verified email and mobile must stay locked on personal details. Do not clear `emailVerifiedFromEntry` / `mobileVerifiedFromEntry` except where OTP or method reset already does.
+7. Edit mode must return to `review-confirm` after a successful save of the edited section.
+
+## 12) Local Development
+
+- `npm install`
+- `npm run dev` (Vite, mode `uat`)
+- `npm run dev:local`
+- `npm run build`
+- `npm run lint`
+- `npm run preview`
+
+## 13) Source of Truth
+
+When sources disagree, trust them in this order:
+
 1. Confirmed business requirement
-2. Current TypeScript contracts and runtime behavior
+2. Current TypeScript contracts and the container’s runtime branching
 3. This document
 
-If runtime behavior or contracts change, update this file immediately so it remains reliable onboarding context.
+If runtime behavior or contracts change, update this file in the same change.

@@ -121,7 +121,11 @@ const BusinessDetailsStep = ({
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)]">
+        <section
+          className={`overflow-hidden rounded-[16px] bg-white shadow-[0px_0px_12px_0px_rgba(0,0,0,0.06)] ${
+            records.length === 0 ? "mb-10" : ""
+          }`}
+        >
           <div className="h-2 w-full bg-[#e6e7e8]">
             <div className="h-full w-[20%] rounded-r-full bg-[#37b400]" />
           </div>

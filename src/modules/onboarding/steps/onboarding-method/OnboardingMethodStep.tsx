@@ -113,7 +113,7 @@ const OnboardingMethodStep = ({
               className={cn(
                 "h-7 rounded-full px-4 text-xs transition-colors",
                 empanelmentType === "Distributor"
-                  ? "bg-[#fceee7] text-[var(--color-onboarding-primary)]"
+                  ? "bg-white text-[var(--color-onboarding-primary)] shadow-sm"
                   : "text-[var(--color-onboarding-heading)]",
               )}
               onClick={() => {
@@ -127,7 +127,7 @@ const OnboardingMethodStep = ({
               className={cn(
                 "h-7 rounded-full px-4 text-xs transition-colors",
                 empanelmentType === "RIA"
-                  ? "bg-[#fceee7] text-[var(--color-onboarding-primary)]"
+                  ? "bg-white text-[var(--color-onboarding-primary)] shadow-sm"
                   : "text-[var(--color-onboarding-heading)]",
               )}
               onClick={() => {
@@ -153,7 +153,7 @@ const OnboardingMethodStep = ({
                 <button
                   aria-checked={selected}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-lg border px-2 py-2 text-left transition-colors",
+                    "flex w-full items-center gap-2.5 rounded-md border px-2 py-2 text-left transition-colors",
                     selected
                       ? "border-[#93161E] bg-[#93161E0A]"
                       : "border-[#EEEEEE] bg-white hover:border-[#c7aa7b]",

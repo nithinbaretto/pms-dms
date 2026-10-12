@@ -17,6 +17,7 @@ const BranchSelectionSection = ({
 }: BranchSelectionSectionProps): ReactElement => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [allowTyping, setAllowTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedLabel = useMemo(() => {
@@ -36,10 +37,17 @@ const BranchSelectionSection = ({
 
   const displayedValue = isOpen || query ? query : selectedLabel;
 
+  const openSearch = () => {
+    setAllowTyping(true);
+    setIsOpen(true);
+  };
+
   useEffect(() => {
-    if (isOpen) {
-      inputRef.current?.focus();
+    if (!isOpen || document.activeElement === inputRef.current) {
+      return;
     }
+
+    inputRef.current?.focus();
   }, [isOpen]);
 
   return (
@@ -66,8 +74,15 @@ const BranchSelectionSection = ({
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71859B]" />
               <input
+                aria-autocomplete="list"
+                aria-expanded={isOpen}
+                autoCapitalize="none"
+                autoComplete="off"
+                autoCorrect="off"
                 className="h-8 w-full rounded-[8px] border border-[#E5E5E6] bg-[#FFFFFF] pl-9 pr-8 text-[14px] font-normal leading-[20px] tracking-[0px] text-[#231f20] shadow-none outline-none placeholder:text-[#71859B]"
                 id="business-branch"
+                name="branch-search-query"
+                onBlur={() => setAllowTyping(false)}
                 onChange={(event) => {
                   const nextQuery = event.target.value;
                   setQuery(nextQuery);
@@ -76,10 +91,13 @@ const BranchSelectionSection = ({
                     onSelectBranch("");
                   }
                 }}
-                onClick={() => setIsOpen(true)}
-                onFocus={() => setIsOpen(true)}
+                onClick={openSearch}
+                onFocus={openSearch}
                 placeholder="Search Branch"
+                readOnly={!allowTyping}
                 ref={inputRef}
+                role="combobox"
+                spellCheck={false}
                 style={{ fontFamily: "Mulish" }}
                 type="text"
                 value={displayedValue}
